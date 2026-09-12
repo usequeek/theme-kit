@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { Component, Suspense, use, useEffect, useMemo, type ComponentType, type ReactNode } from 'react';
 import type { Block, BlockDataMap } from './types/block';
 import type { Product } from './types/product';

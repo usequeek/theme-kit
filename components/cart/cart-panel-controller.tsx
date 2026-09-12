@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CartItem } from '../../types/cart';

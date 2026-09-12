@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { Image, type PlaceholderProp } from './image';
 import type { ImageIntent } from '../utils/image-srcset';
 import type { MediaFrame } from '../utils/product-media';

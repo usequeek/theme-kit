@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import type { Product, ProductVariant } from '../types/product';
 import './variant-picker.css';
 

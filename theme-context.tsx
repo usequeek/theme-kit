@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { createContext, useContext, type ReactNode } from 'react';
 import type { ThemeModule } from './types/theme';
 

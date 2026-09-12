@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import type { ImageBlockData } from '../types/block';
 import { Image } from '../components/image';
 

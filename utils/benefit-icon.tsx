@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 /**
  * Shared icon-keyword vocabulary for "benefit row" content blocks (glow's
  * `trust-badges`, any theme's `features-columns`, and similar icon+title+text

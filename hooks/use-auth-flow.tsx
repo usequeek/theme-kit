@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { QueekSdkError, type EmailVerifyOtpResponse } from '@queekai/client-sdk';
 import { useStorefront } from '../provider';

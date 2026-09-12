@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
 interface ShareButtonsProps {

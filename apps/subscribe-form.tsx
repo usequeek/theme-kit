@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useCallback, useId, useState } from 'react';
 import { useStorefront } from '../provider';
 import { getQueekClient } from '../sdk/queek-client';

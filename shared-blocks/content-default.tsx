@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import type { ContentBlockData } from '../types/block';
 import { Markdown } from '../components/markdown';
 

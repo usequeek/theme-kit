@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react';
 import type { Menu } from './types/menu';
 import type { ReviewItem } from './types/block';

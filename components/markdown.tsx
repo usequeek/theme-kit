@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import type { ComponentPropsWithoutRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';

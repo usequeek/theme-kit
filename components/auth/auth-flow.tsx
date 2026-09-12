@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { AuthFlowProvider, useAuthFlow } from '../../hooks/use-auth-flow';
 import { AuthEmailOtpStep } from './auth-email-otp-step';
 import { AuthEmailOtpVerifyStep } from './auth-email-otp-verify-step';

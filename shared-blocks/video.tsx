@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import type { VideoBlockData } from '../types/block';
 import { resolveVideoEmbedUrl } from '../utils/video-embed';
 

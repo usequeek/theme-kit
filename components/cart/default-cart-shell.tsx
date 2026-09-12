@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import type { CartShellProps } from '../../types/theme';

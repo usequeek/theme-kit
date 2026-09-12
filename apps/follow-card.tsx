@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useState, useCallback, useEffect } from 'react';
 import { useStorefront } from '../provider';
 import { useUserStore } from '../stores/user-store';

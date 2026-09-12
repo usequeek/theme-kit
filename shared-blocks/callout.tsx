@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import type { CalloutBlockData, CalloutTone } from '../types/block';
 import { Markdown } from '../components/markdown';
 

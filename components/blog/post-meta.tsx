@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import type { Post } from '../../types/page';
 import { useStorefront } from '../../provider';
 import { Image } from '../image';

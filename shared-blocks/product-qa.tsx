@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useState } from 'react';
 import type { ProductQaBlockData, ProductQuestionItem } from '../types/block';
 import { Image } from '../components/image';

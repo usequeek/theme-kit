@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import { useEffect, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 

@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import Link from 'next/link';
 import type { BlogCategory } from '../../types/page';
 import { useStorefront } from '../../provider';

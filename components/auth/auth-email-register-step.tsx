@@ -1,4 +1,5 @@
 'use client';
+import type { JSX } from 'react';
 import { useAuthFlow } from '../../hooks/use-auth-flow';
 
 export function AuthEmailRegisterStep(): JSX.Element {

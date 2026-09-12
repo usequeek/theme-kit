@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSX } from 'react';
 import type { Block } from './types/block';
 import { useEditPreviewStore } from './stores/edit-preview-store';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
