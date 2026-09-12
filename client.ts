@@ -50,3 +50,7 @@ export * from './stores/location-store';
 export * from './stores/address-modal-store';
 export * from './stores/auth-modal-store';
 export * from './stores/cart-store';
+
+// Mounting a theme — the piece a theme developer cannot build without.
+export * from './theme-mount';
+export * from './theme-context';
