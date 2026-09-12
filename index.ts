@@ -1,13 +1,13 @@
 /**
  * The public surface a theme is allowed to build against.
  *
- * The package is `@queek/theme-kit`: what a theme is built AGAINST, named for
+ * The package is `@usequeek/theme-kit`: what a theme is built AGAINST, named for
  * the job rather than for our internals — "storefront core" describes where the
  * code lives here, which is meaningless to someone who has never seen this repo.
  *
  * Themes currently import core through deep paths (`@/lib/core/hooks/use-cart`).
  * These two barrels name which of those paths are API — the set that would ship
- * as `@queek/theme-kit` — so the boundary is written down before it is
+ * as `@usequeek/theme-kit` — so the boundary is written down before it is
  * published and frozen. Anything NOT re-exported here is core's own plumbing and
  * may change without notice.
  *
@@ -26,7 +26,7 @@
  * declares no `sideEffects`, so webpack must treat every re-export as live and
  * cannot drop the unused ones. Themes keep importing the exact module they use;
  * when core is published it should expose SUBPATH exports
- * (`@queek/theme-kit/hooks/use-cart`) and these barrels stay the
+ * (`@usequeek/theme-kit/hooks/use-cart`) and these barrels stay the
  * machine-checkable statement of what is in the contract.
  */
 

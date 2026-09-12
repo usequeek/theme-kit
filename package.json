@@ -1,8 +1,17 @@
 {
-  "name": "@queek/theme-kit",
+  "name": "@usequeek/theme-kit",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "license": "UNLICENSED",
   "description": "The framework a Queek storefront theme is built against.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usequeek/queek-storefront.git",
+    "directory": "packages/theme-kit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./index.ts",
   "types": "./index.ts",

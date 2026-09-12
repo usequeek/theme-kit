@@ -1,4 +1,4 @@
-# @queek/theme-kit
+# @usequeek/theme-kit
 
 The framework a Queek storefront theme is built against: hooks, stores, headless
 flows (auth, cart, checkout), types and the block renderer.
@@ -7,7 +7,7 @@ flows (auth, cart, checkout), types and the block renderer.
 `'use client'` directive, and that directive is the whole contract with the React
 Server Components boundary — bundlers routinely strip or hoist it when a library
 is pre-compiled, which turns a client module into a server one silently. The
-consumer transpiles instead (`transpilePackages: ['@queek/theme-kit']`), so the
+consumer transpiles instead (`transpilePackages: ['@usequeek/theme-kit']`), so the
 directives survive to the bundler that actually enforces them.
 
 Deep subpaths resolve off the filesystem — there is deliberately NO `exports`
@@ -21,8 +21,8 @@ where the real contract lives anyway. Revisit if this is ever published.
 ## Use
 
 ```ts
-import { useCart } from '@queek/theme-kit/hooks/use-cart';
-import type { ThemeModule } from '@queek/theme-kit/types/theme';
+import { useCart } from '@usequeek/theme-kit/hooks/use-cart';
+import type { ThemeModule } from '@usequeek/theme-kit/types/theme';
 ```
 
 Deep paths, mirroring the old `@/lib/core/*`. Barrels exist (`.` and `./client`)
