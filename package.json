@@ -1,0 +1,32 @@
+{
+  "name": "@queek/theme-kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The framework a Queek storefront theme is built against.",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "*.ts",
+    "*.tsx",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.css",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "next": ">=15",
+    "react": ">=19",
+    "react-dom": ">=19",
+    "@queekai/client-sdk": "*"
+  },
+  "dependencies": {
+    "zustand": "^5.0.0",
+    "react-markdown": "^10.0.0",
+    "remark-gfm": "^4.0.0",
+    "html-to-image": "^1.11.0"
+  }
+}

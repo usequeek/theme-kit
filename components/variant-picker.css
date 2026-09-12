@@ -1,0 +1,84 @@
+/* ============================================================
+   VariantPicker — shared option-selection UI (QR ordering sheet,
+   default theme's quick-view modal). Prefix: qk-variant-.
+   Reads --brand-* directly (not a context-scoped token set like
+   --qr- or --qka-) so it renders correctly regardless of which
+   surface mounts it. Mirrors quick-add-page.css's qka-option/qka-swatch
+   rules — same visual language, kept as a separate small file since
+   this component is reused outside that page's scope.
+   ============================================================ */
+
+.qk-variant-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qk-variant-option + .qk-variant-option {
+  margin-top: 12px;
+}
+
+.qk-variant-option__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--brand-text-muted, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qk-variant-option__selected {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--brand-text, #1a1a1a);
+}
+
+.qk-variant-option__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.qk-variant-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--brand-text, #1a1a1a) 12%, transparent);
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.qk-variant-swatch.is-selected {
+  border-color: var(--brand-primary, #229879);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary, #229879) 30%, transparent);
+}
+
+.qk-variant-swatch--image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.qk-variant-option__btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--brand-text, #1a1a1a) 12%, transparent);
+  background: var(--brand-surface, #ffffff);
+  color: var(--brand-text, #1a1a1a);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.qk-variant-option__btn.is-selected {
+  border-color: var(--brand-primary, #229879);
+  background: color-mix(in srgb, var(--brand-primary, #229879) 12%, var(--brand-surface, #ffffff));
+  font-weight: 600;
+}
