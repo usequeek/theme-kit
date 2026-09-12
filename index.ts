@@ -47,3 +47,6 @@ export * from './utils/contact-location';
 export * from './utils/benefit-icon';
 export * from './utils/video-embed';
 export * from './utils/match-variant';
+
+// Rendering a theme's own demo.json — what makes local preview possible.
+export * from './demo';
