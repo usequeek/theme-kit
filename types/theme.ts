@@ -82,10 +82,21 @@ export interface SubscribeFormProps {
 export interface HeaderProps {
   menu: MenuItem[];
   logo?: string | null;
+  /**
+   * `text` is the message currently showing — the shell rotates it through
+   * the `|`/newline-separated list the vendor wrote (see
+   * hooks/use-announcement). A header that wants its own pager reads
+   * `messages`/`index` and calls `next`/`prev`; outside the shell (style
+   * guide, variant previews) only `text` is set.
+   */
   announcement?: {
     enabled: boolean;
     text: string;
     link?: string | null;
+    messages?: string[];
+    index?: number;
+    next?: () => void;
+    prev?: () => void;
   } | null;
   /** Site-wide header icon visibility — all default true (see config.header.show_*). */
   showSearch?: boolean;
