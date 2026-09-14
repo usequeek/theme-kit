@@ -201,6 +201,8 @@ export type ThemeManifestFieldType =
   | 'boolean'
   | 'color'
   | 'string[]'
+  /** A list of image urls (plain strings) — e.g. photographs between a marquee's phrases. The merchant editor renders a media picker per entry. */
+  | 'image[]'
   | 'object'
   | 'object[]'
   | 'enum';
