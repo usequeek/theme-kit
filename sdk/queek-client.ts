@@ -39,10 +39,39 @@ const platformFetch: typeof fetch = (input, init) => {
   if (init?.headers) {
     const headers = new Headers(init.headers);
     headers.set('X-Platform', getActivePlatform());
-    return fetch(input, { ...init, headers });
+    return fetch(input, { ...init, headers }).then(captureRequestId);
   }
-  return fetch(input, init);
+  return fetch(input, init).then(captureRequestId);
 };
+
+/**
+ * Every API response carries a backend request id. The SDK's `request()` returns
+ * only the parsed body, so this wrapper — the one place every SDK call's raw
+ * Response passes through — is where it can be read at all. Kept as the last-seen
+ * value: the storefront has no error-reporting integration (no Sentry), so the
+ * only consumer today is the checkout failure log, which is exactly the report a
+ * customer support ticket needs to be traceable to a backend request.
+ */
+const REQUEST_ID_HEADERS = ['x-request-id', 'x-correlation-id', 'request-id'];
+
+let lastRequestId: string | null = null;
+
+function captureRequestId(response: Response): Response {
+  for (const name of REQUEST_ID_HEADERS) {
+    const value = response.headers.get(name);
+    if (value) {
+      lastRequestId = value;
+      break;
+    }
+  }
+
+  return response;
+}
+
+/** The backend request id of the most recent SDK call, when it sent one. */
+export function getLastRequestId(): string | null {
+  return lastRequestId;
+}
 
 let cachedClient: QueekClientInstance | null = null;
 let cachedSlug: string | null = null;
