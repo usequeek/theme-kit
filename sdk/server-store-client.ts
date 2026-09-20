@@ -105,6 +105,11 @@ function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolic
   const product = /^\/products\/([^/]+)(?:\/related)?$/.exec(path);
   if (product) return policy(60, 'products', `product:${product[1]}`);
 
+  // Product metafield definitions (the labels/types the core-owned
+  // <ProductMetafields /> section renders values under). Merchant-edited,
+  // shared across visitors — cached like pages, busted by revalidation.
+  if (path === '/metafield-definitions') return policy(300, 'metafields');
+
   return null;
 }
 

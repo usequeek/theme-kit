@@ -157,6 +157,32 @@ export interface ProductFlags {
   is_new: boolean;
 }
 
+/** A scalar metafield value (single_line_text, boolean, date, url, …). */
+export type MetafieldScalar = string | number | boolean;
+
+/**
+ * One metaobject entry linked through a `metaobject_reference` /
+ * `list.metaobject_reference` metafield. Presented by the backend
+ * (MetafieldPresenter) as the entry resource minus timestamps — a `draft`
+ * entry, or one whose definition is not storefront-visible, is already
+ * omitted on client surfaces, so the storefront renders whatever arrives.
+ */
+export interface MetaobjectEntry {
+  p_id: number;
+  type: string;
+  handle: string;
+  display_name: string;
+  /** Flat entry values (definitions never nest references). */
+  fields: Record<string, MetafieldScalar | MetafieldScalar[]>;
+}
+
+/** A presented product metafield value: scalar, scalar list, or linked entry/entries. */
+export type MetafieldValue =
+  | MetafieldScalar
+  | MetafieldScalar[]
+  | MetaobjectEntry
+  | MetaobjectEntry[];
+
 export interface Product {
   shop_id: string;
   id: string;
@@ -183,6 +209,9 @@ export interface Product {
   variants: ProductVariant[];
   addons: ProductAddon[];
   reviews: ProductReview[];
+  /** Presented product metafields keyed by definition key (incl. linked
+   *  metaobject entries). Absent when the backend sends none. */
+  metafields?: Record<string, MetafieldValue>;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -271,6 +300,8 @@ export interface LegacyProductLike {
   >;
   addons?: ProductAddon[];
   reviews?: ProductReview[];
+  /** Raw presented metafields — passed through verbatim by the normalizer. */
+  metafields?: Record<string, unknown>;
   review_summary?: Partial<ProductReviewSummary>;
   created_at?: string | null;
   updated_at?: string | null;

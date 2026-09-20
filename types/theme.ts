@@ -63,6 +63,13 @@ export interface CollectionPageProps {
 
 export interface ProductPageProps {
   product: Product;
+  /**
+   * Product metafield definitions keyed by metafield key — the labels (and
+   * types) the core-owned `<ProductMetafields />` section renders values
+   * under. OPTIONAL so external themes that destructure `{ product }` keep
+   * compiling; unknown keys fall back to a humanised key label.
+   */
+  metafieldDefinitions?: Record<string, { name: string; type: string }>;
 }
 
 export interface GalleryPageProps {

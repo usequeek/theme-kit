@@ -1,5 +1,6 @@
 import type {
   LegacyProductLike,
+  MetafieldValue,
   Product,
   ProductCategory,
   ProductOption,
@@ -196,6 +197,18 @@ function normalizeCategories(raw: LegacyProductLike): ProductCategory[] {
   }, []);
 }
 
+function normalizeMetafields(raw: LegacyProductLike): Record<string, MetafieldValue> {
+  // Explicit whitelist like every other field above: without this the
+  // presented metafields (incl. linked metaobject entries) are dropped at
+  // runtime and <ProductMetafields /> renders nothing at every call site.
+  const source = raw.metafields;
+  if (!source || typeof source !== 'object' || Array.isArray(source)) {
+    return {};
+  }
+
+  return source as Record<string, MetafieldValue>;
+}
+
 export function normalizeProduct(raw: LegacyProductLike): Product {
   const shopId = String(raw.shop_id ?? raw.vendor_id ?? raw.shop?.id ?? raw.vendor?.id ?? '');
 
@@ -292,6 +305,7 @@ export function normalizeProduct(raw: LegacyProductLike): Product {
       : [],
     addons: raw.addons ?? [],
     reviews: raw.reviews ?? [],
+    metafields: normalizeMetafields(raw),
     created_at: raw.created_at ?? null,
     updated_at: raw.updated_at ?? null,
   };
