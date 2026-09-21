@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react';
 import { Component, Suspense, use, useEffect, useMemo, type ComponentType, type ReactNode } from 'react';
-import type { Block, BlockDataMap } from './types/block';
+import type { Block, BlockDataMap, MetaobjectsResolved } from './types/block';
 import type { Product } from './types/product';
 import { useTheme } from './theme-context';
 import { useStorefront } from './provider';
@@ -16,6 +16,7 @@ import {
   CoreQuoteBlock,
   CoreFaqBlock,
   CoreImageBlock,
+  CoreMetaobjectsBlock,
   CoreProductQaBlock,
   CoreReviewsBlock,
   CoreTableBlock,
@@ -323,6 +324,21 @@ export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
             const data = block.data as BlockDataMap['product_qa'];
             return <CoreProductQaBlock key={key} {...data} />;
           }
+          case 'metaobjects': {
+            // Framework-owned. Themes never fetch metaobjects client-side —
+            // without a server-seeded promise (a route that hasn't called
+            // `hydrateProductBlocks`), the block renders nothing rather than
+            // falling back to a client fetch (mirrors `products`' fallback
+            // being a THEME concern only because that block is theme-owned).
+            const data = block.data as BlockDataMap['metaobjects'];
+            if (!block.metaobjectsPromise) return null;
+
+            return (
+              <Suspense key={key} fallback={<MetaobjectsBlockFallback title={data.title} limit={data.limit} />}>
+                <MetaobjectsBlockResolved data={data} promise={block.metaobjectsPromise} />
+              </Suspense>
+            );
+          }
           default:
             return null;
     }
@@ -359,6 +375,44 @@ function ProductsBlockFallback({ title, limit }: { title?: string | null; limit?
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
         {Array.from({ length: limit ?? 4 }).map((_, i) => (
           <div key={i} style={{ aspectRatio: '3 / 4', borderRadius: 8, background: 'rgba(127,127,127,0.15)' }} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Unwraps a server-seeded metaobjects promise and hands the resolved entries
+ *  + definition straight to `CoreMetaobjectsBlock`. */
+function MetaobjectsBlockResolved({
+  data,
+  promise,
+}: {
+  data: BlockDataMap['metaobjects'];
+  promise: Promise<MetaobjectsResolved>;
+}): JSX.Element | null {
+  const resolved = use(promise);
+  return (
+    <CoreMetaobjectsBlock
+      title={data.title}
+      layout={data.layout ?? 'grid'}
+      entries={resolved.entries}
+      definition={resolved.definition}
+    />
+  );
+}
+
+/**
+ * Shown only while a `metaobjects` block's server-side fetch is still
+ * pending (cache-cold request). Deliberately theme-neutral, same rationale
+ * as `ProductsBlockFallback`.
+ */
+function MetaobjectsBlockFallback({ title, limit }: { title?: string | null; limit?: number }): JSX.Element {
+  return (
+    <section aria-hidden="true">
+      {title ? <h2>{title}</h2> : null}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+        {Array.from({ length: limit ?? 12 }).map((_, i) => (
+          <div key={i} style={{ minHeight: 160, borderRadius: 8, background: 'rgba(127,127,127,0.15)' }} />
         ))}
       </div>
     </section>

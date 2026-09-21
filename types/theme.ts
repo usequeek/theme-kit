@@ -4,7 +4,7 @@ import type { CartItem as CartLineItem } from './cart';
 import type { ImageVariants } from './media';
 import type { MenuItem } from './menu';
 import type { BlogCategory, Collection, Page, Pagination, Post } from './page';
-import type { Product } from './product';
+import type { MetaobjectEntry, Product } from './product';
 import type { DesignTokenAxisPath, DesignTokens, StorefrontConfig, VendorProfile } from './vendor';
 
 export interface HomePageProps {
@@ -37,6 +37,19 @@ export interface PoliciesPageProps {
    *  `Page` with `type: 'policy'`; its detail view resolves through the
    *  generic `/[vendor]/[slug]` route. */
   policies: Page[];
+}
+
+/** Field label/type metadata for a metaobject entry page — the same shape
+ *  `GET store/metaobject-definitions` sends, scoped to one definition. */
+export interface MetaobjectPageDefinition {
+  type: string;
+  name: string;
+  fields: Array<{ key: string; name: string; type: string }>;
+}
+
+export interface MetaobjectPageProps {
+  entry: MetaobjectEntry;
+  definition: MetaobjectPageDefinition;
 }
 
 export interface ShopCategory {
@@ -343,7 +356,7 @@ export interface ThemeManifest {
  * Block types that are framework-owned (React logic ships in core, themes
  * only style via `.core-block-*` CSS). Themes do NOT implement these.
  */
-export type FrameworkBlockType = 'divider' | 'embed' | 'video' | 'table' | 'button' | 'image' | 'reviews' | 'faq' | 'callout' | 'quote' | 'product_qa';
+export type FrameworkBlockType = 'divider' | 'embed' | 'video' | 'table' | 'button' | 'image' | 'reviews' | 'faq' | 'callout' | 'quote' | 'product_qa' | 'metaobjects';
 
 /**
  * Block types the theme is responsible for implementing. Framework-owned
@@ -383,6 +396,11 @@ export interface ThemeModule {
     Collection: FC<CollectionPageProps>;
     Product: FC<ProductPageProps>;
     Gallery: FC<GalleryPageProps>;
+    /** Optional override for a metaobject entry's own page (`/{type}/{handle}`,
+     *  only routed when the definition has `has_pages`). When absent, core
+     *  renders `DefaultMetaobjectPage` (themeable via `.core-metaobject-page-*`
+     *  CSS), same fallback pattern as `Policies`. */
+    Metaobject?: FC<MetaobjectPageProps>;
   };
   shells?: {
     CartShell?: FC<CartShellProps>;

@@ -46,6 +46,10 @@ export const FRAMEWORK_BLOCK_MANIFEST: Record<string, ThemeManifestVariant[]> = 
   product_qa: [
     { id: 'default', label: 'Product Q&A', default: true, purpose: 'Customer questions and vendor answers for this product' },
   ],
+  metaobjects: [
+    { id: 'grid', label: 'Grid', default: true, purpose: 'Entries of a chosen content type (designers, ingredients, …) in a responsive grid' },
+    { id: 'list', label: 'List', purpose: 'Entries of a chosen content type as a vertical list' },
+  ],
 };
 
 /**
@@ -65,6 +69,7 @@ export const FRAMEWORK_OWNED_TYPES = new Set<string>([
   'reviews',
   'faq',
   'product_qa',
+  'metaobjects',
 ]);
 
 /**

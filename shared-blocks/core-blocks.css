@@ -1790,3 +1790,66 @@
   font-size: 0.85rem;
   color: var(--brand-text-muted, rgba(0, 0, 0, 0.6));
 }
+
+/* ── Metaobjects (content-entries section block) ────────────────── */
+.core-block-metaobjects__title {
+  margin: 0 0 1.5rem;
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 600;
+  color: var(--brand-text, #1a1a1a);
+}
+
+.core-block-metaobjects__list {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.core-block-metaobjects__list--grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.core-block-metaobjects__list--list {
+  grid-template-columns: 1fr;
+}
+
+.core-block-metaobjects__card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.core-block-metaobjects__card-link:hover .core-metafields__entry-card {
+  border-color: var(--brand-accent, rgba(0, 0, 0, 0.2));
+}
+
+/* ── Metaobject entry page (DefaultMetaobjectPage) ───────────────── */
+.core-metaobject-page {
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) 1.25rem;
+  max-width: var(--core-block-max-width, 1200px);
+}
+
+.core-metaobject-page__title {
+  margin: 0 0 2rem;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 700;
+  color: var(--brand-text, #1a1a1a);
+}
+
+.core-metaobject-page__fields {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.core-metaobject-page__label {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--brand-text-muted, rgba(0, 0, 0, 0.55));
+}
+
+.core-metaobject-page__value {
+  color: var(--brand-text, #1a1a1a);
+}

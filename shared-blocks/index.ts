@@ -16,6 +16,7 @@ export { CoreContentDefaultBlock } from './content-default';
 export { CoreReviewsBlock } from './reviews';
 export { CoreFaqBlock } from './faq';
 export { CoreProductQaBlock } from './product-qa';
+export { CoreMetaobjectsBlock } from './metaobjects';
 
 export {
   FRAMEWORK_BLOCK_MANIFEST,

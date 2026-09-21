@@ -110,6 +110,14 @@ function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolic
   // shared across visitors — cached like pages, busted by revalidation.
   if (path === '/metafield-definitions') return policy(300, 'metafields');
 
+  // Metaobject definitions (storefront-visible types + their field labels)
+  // and entry lists/detail reads for the `metaobjects` block and its entry
+  // pages. Merchant-edited, shared across visitors — same tag for both so
+  // a definition edit (e.g. has_pages) and an entry write both bust the
+  // same cache entries.
+  if (path === '/metaobject-definitions') return policy(300, 'metaobjects');
+  if (/^\/metaobjects(\/.+)?$/.test(path)) return policy(300, 'metaobjects');
+
   return null;
 }
 

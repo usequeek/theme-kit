@@ -1,5 +1,5 @@
 import type { DesignTokens } from './vendor';
-import type { Product } from './product';
+import type { MetaobjectEntry, Product } from './product';
 
 export type BlockType =
   | 'content'
@@ -18,7 +18,8 @@ export type BlockType =
   | 'reviews'
   | 'faq'
   | 'product_qa'
-  | 'blog';
+  | 'blog'
+  | 'metaobjects';
 
 export interface ContentBlockData {
   markdown: string;
@@ -245,6 +246,25 @@ export interface BlogBlockData {
   limit?: number;
 }
 
+export interface MetaobjectsBlockData {
+  title?: string | null;
+  /** Metaobject definition handle (`designer`, `ingredient`, …). */
+  type: string;
+  limit?: number;
+  layout?: 'grid' | 'list';
+}
+
+/**
+ * Server-seeded resolution for a `metaobjects` block — the entries of
+ * `data.type` plus the definition meta needed to decide whether each card
+ * links out (`definition.has_pages`). Mirrors `MetaobjectsResolved` shape
+ * used by `hydrateProductBlocks` in the storefront.
+ */
+export interface MetaobjectsResolved {
+  entries: MetaobjectEntry[];
+  definition: { type: string; name: string; has_pages: boolean };
+}
+
 export type BlockDataMap = {
   content: ContentBlockData;
   image: ImageBlockData;
@@ -263,6 +283,7 @@ export type BlockDataMap = {
   faq: FaqBlockData;
   product_qa: ProductQaBlockData;
   blog: BlogBlockData;
+  metaobjects: MetaobjectsBlockData;
 };
 
 export type Block<T extends BlockType = BlockType> = {
@@ -289,4 +310,12 @@ export type Block<T extends BlockType = BlockType> = {
    * block type and for any route that hasn't been wired to hydrate.
    */
   productsPromise?: Promise<Product[]>;
+  /**
+   * Server-seeded entries + definition meta for `metaobjects` blocks — set
+   * by `hydrateProductBlocks` alongside `productsPromise`. Same contract:
+   * absent for every other block type and for any route that hasn't been
+   * wired to hydrate; the renderer falls back to rendering nothing (themes
+   * never fetch metaobjects client-side).
+   */
+  metaobjectsPromise?: Promise<MetaobjectsResolved>;
 };

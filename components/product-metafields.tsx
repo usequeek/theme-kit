@@ -142,7 +142,14 @@ function renderEntryField(value: MetafieldScalar | MetafieldScalar[], fieldKey: 
   return renderScalar(value, fieldKey, humaniseMetafieldKey(fieldKey), '');
 }
 
-function EntryCard({ entry }: { entry: MetaobjectEntry }): JSX.Element {
+/**
+ * Renders one linked metaobject entry as a card — shared by
+ * `ProductMetafields` (a product's linked entries), `CoreMetaobjectsBlock`
+ * (a section listing a type's entries) and `DefaultMetaobjectPage` (via
+ * `renderValue` below, for entry detail pages). Exported so those two
+ * consumers never re-implement entry-card markup.
+ */
+export function EntryCard({ entry }: { entry: MetaobjectEntry }): JSX.Element {
   const fields = entry.fields && typeof entry.fields === 'object' ? entry.fields : {};
 
   return (
@@ -160,7 +167,13 @@ function EntryCard({ entry }: { entry: MetaobjectEntry }): JSX.Element {
   );
 }
 
-function renderValue(value: MetafieldValue, fieldKey: string, label: string, type: string): JSX.Element {
+/**
+ * Per-type value renderer — scalar, scalar list, linked entry, or list of
+ * entries — shared by `ProductMetafields` and `DefaultMetaobjectPage` (a
+ * metaobject entry's own fields are always flat scalars, never nested
+ * entries, so this same function covers both without a second renderer).
+ */
+export function renderValue(value: MetafieldValue, fieldKey: string, label: string, type: string): JSX.Element {
   if (isEntry(value)) {
     return <EntryCard entry={value} />;
   }
