@@ -6,8 +6,7 @@
   "description": "The framework a Queek storefront theme is built against.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/usequeek/queek-storefront.git",
-    "directory": "packages/theme-kit"
+    "url": "git+https://github.com/usequeek/theme-kit.git"
   },
   "publishConfig": {
     "access": "public"
@@ -38,5 +37,22 @@
     "react-markdown": "^10.0.0",
     "remark-gfm": "^4.0.0",
     "html-to-image": "^1.11.0"
+  },
+  "devDependencies": {
+    "@queekai/client-sdk": "^0.3.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "next": "^16.0.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify-package": "tsx scripts/verify-package.ts"
   }
 }

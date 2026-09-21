@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      # Packs the CURRENT SOURCE and consumes it from a sandbox, so a broken
+      # kit fails here instead of after publishing. This is the step that would
+      # have caught 0.1.0 (`Cannot find namespace 'JSX'` for every external
+      # consumer while the storefront's own checks were all green).
+      - name: Package is consumable from outside this repo
+        run: npm run verify-package

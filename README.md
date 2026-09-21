@@ -3,7 +3,7 @@
 The framework a Queek storefront theme is built against: hooks, stores, headless
 flows (auth, cart, checkout), types and the block renderer.
 
-**Ships TypeScript source, not a build.** 78 of its 115 modules carry a
+**Ships TypeScript source, not a build.** Most of its modules carry a
 `'use client'` directive, and that directive is the whole contract with the React
 Server Components boundary — bundlers routinely strip or hoist it when a library
 is pre-compiled, which turns a client module into a server one silently. The
@@ -15,8 +15,16 @@ map. One was tried: with source-shipped `.ts`/`.tsx` an extensionless wildcard
 target does not resolve, and spelling out extensions cannot cover both. Legacy
 resolution under `moduleResolution: bundler` handles it. The cost is that the
 package has no subpath encapsulation, so what a theme may import is enforced by
-`tests/core-public-surface.test.ts` in the storefront repo instead — which is
-where the real contract lives anyway. Revisit if this is ever published.
+convention plus tests: `tests/public-surface.test.ts` here (barrels declare
+only modules that exist) and `core-public-surface.test.ts` in the storefront
+repo (barrels cover every module the themes actually import).
+
+Every module that annotates a return as `JSX.Element` does
+`import type { JSX } from 'react'` — React 19 removed the global `JSX`
+namespace, and 0.1.0 shipped broken for every external consumer by relying on
+the storefront app's `next-env.d.ts` to provide it. `scripts/verify-package.ts`
+packs the current source and typechecks a real theme against it from a sandbox,
+so that class of breakage fails here instead of after publishing.
 
 ## Use
 
@@ -30,8 +38,50 @@ to DECLARE the public surface — what a theme is allowed to build against — b
 importing through them pulls every client module into one chunk and was measured
 to break the app's build. Import the module you want.
 
+Theme CSS ships with the package: `@usequeek/theme-kit/shared-blocks/core-blocks.css`
+(framework-owned blocks), plus per-component CSS next to its component
+(`components/variant-picker.css`, `apps/apps.css`).
+
+## Consumers
+
+- **The Queek storefront** (`usequeek/queek-storefront`) installs this package
+  from the npm registry (`"@usequeek/theme-kit": "^x.y.z"`) and transpiles it
+  via `transpilePackages`. Its vitest config inlines the package
+  (`server.deps.inline: ['@usequeek/theme-kit']`) so the shipped `.tsx`
+  source is transformed like first-party code.
+- **External theme developers** start from `packages/theme-starter` in the
+  storefront repo, which builds standalone against a packed tarball of this
+  source. Anyone testing a theme with vitest needs the same `inline` line;
+  anyone compiling one needs `moduleResolution: bundler` + `jsx: react-jsx`.
+
 ## Boundary
 
 The kit must never import the storefront app, its themes, or `lib/storefront`.
-That one-way rule is enforced by `tests/core-storefront-boundary.test.ts` in the
-storefront repo, and it is why this package can be extracted at all.
+That one-way rule is what makes this package extractable at all.
+
+## Develop
+
+```bash
+npm install
+npm run typecheck   # tsc --noEmit, standalone — no storefront files
+npm test            # vitest run
+npm run verify-package  # pack current source, typecheck a real theme against it
+```
+
+## Release
+
+The package is public on npm; the repo is private. Publishing runs on tags via
+`.github/workflows/publish.yml` (needs the `NPM_TOKEN` secret):
+
+```bash
+# 1. Bump version in package.json and commit
+# 2. Tag and push the tag — the workflow typechecks, tests, verify-packages,
+#    then `npm publish --access public`:
+git tag v0.1.6
+git push origin main --tags
+```
+
+The storefront then bumps its dependency to match the published version
+(`yarn add @usequeek/theme-kit@^0.1.6` + lockfile) and pushes separately —
+never the other way round: the app must only ever depend on a version that
+actually exists on the registry.
