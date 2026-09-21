@@ -54,6 +54,45 @@ Theme CSS ships with the package: `@usequeek/theme-kit/shared-blocks/core-blocks
   source. Anyone testing a theme with vitest needs the same `inline` line;
   anyone compiling one needs `moduleResolution: bundler` + `jsx: react-jsx`.
 
+## Custom data: metafields & metaobjects
+
+Product pages receive custom data already resolved — never fetch it:
+
+```tsx
+import { ProductMetafields } from '@usequeek/theme-kit/components/product-metafields';
+import type { ProductPageProps } from '@usequeek/theme-kit/types/theme';
+
+export default function ProductPage({ product, metafieldDefinitions }: ProductPageProps) {
+  return <ProductMetafields product={product} definitions={metafieldDefinitions} />;
+}
+```
+
+- MUST: place `<ProductMetafields product definitions={metafieldDefinitions} />`
+  on the product page. `product.metafields` (`types/product.ts`) arrives as
+  presented values — a scalar, scalar list, `MetaobjectEntry`, or
+  `MetaobjectEntry[]`; labels come via `metafieldDefinitions` (unknown keys
+  fall back to a humanised key). The component renders nothing when there is
+  nothing visible to show.
+- MAY: compose your own layout with the exported `EntryCard` and `renderValue`
+  from the same module instead of placing the section.
+- Style only: the section emits `core-metafields*` classes (`core-metafields`,
+  `__field`, `__label`, `__value`, `__text`, `__link`, `__image`, `__pre`,
+  `__list`, `__list-item`, `__entry-card`, `__entry-title`, `__entry-field`,
+  `__entry-field-label`, `__entry-field-value`, `__entry-grid`);
+  `DefaultMetaobjectPage` emits `core-metaobject-page*`. No kit CSS ships for
+  these — style them in your theme.
+- The `metaobjects` section block (`shared-blocks/metaobjects`,
+  framework-owned) renders a merchant-picked type's entries when the page
+  supplies its data; it emits `core-block-metaobjects` with `--grid`/`--list`
+  modifiers, `core-block-metaobjects__list` with `--grid`/`--list` variants,
+  plus `__title` and `__card-link`. Never re-implement it — style the classes.
+- Optional entry pages: provide `pages.Metaobject: FC<MetaobjectPageProps>`
+  (`entry` plus `definition { type; name; fields: [{ key; name; type }] }`).
+  When absent, core `DefaultMetaobjectPage`
+  (`components/default-metaobject-page`) is used.
+- Dynamic sources (`$source` refs) resolve server-side; block data always
+  reaches the theme as literals — nothing to handle.
+
 ## Boundary
 
 The kit must never import the storefront app, its themes, or `lib/storefront`.
