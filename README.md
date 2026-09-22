@@ -93,6 +93,41 @@ export default function ProductPage({ product, metafieldDefinitions }: ProductPa
 - Dynamic sources (`$source` refs) resolve server-side; block data always
   reaches the theme as literals — nothing to handle.
 
+## Attribution: Powered by Queek
+
+Every storefront is a billboard — every footer variant of every theme renders
+the core-owned attribution link:
+
+```tsx
+import { PoweredByQueek } from '@usequeek/theme-kit/components/powered-by-queek';
+
+export default function Footer() {
+  return (
+    <footer>
+      {/* ... */}
+      <PoweredByQueek />
+    </footer>
+  );
+}
+```
+
+- MUST: place `<PoweredByQueek />` on every footer variant (`footers/*.tsx`,
+  or `footer.tsx` where a theme has no `footers/` dir). The placement and
+  spacing are the theme's — the component is the content, the footer owns
+  where it sits. `theme-check` rule `theme/footer-shows-powered-by` enforces
+  this, so a theme cannot ship without it.
+- Style only: the link emits `core-powered-by` with a
+  `core-powered-by__brand` hook on the `Queek` wordmark; an optional
+  `className` passthrough lets a footer position it (e.g.
+  `<PoweredByQueek className="my-footer__powered" />`). No kit CSS ships for
+  it — style the classes in your theme.
+- The href (`https://usequeek.com/business`), `target="_blank"` and
+  `rel="noopener noreferrer"` are the contract — never re-implement the
+  markup by hand.
+- `hidden` (default false) takes the component's visibility from a prop as
+  the seam for a possible future plan perk. There is no merchant-facing
+  toggle for it in v1 — always render it visible.
+
 ## Boundary
 
 The kit must never import the storefront app, its themes, or `lib/storefront`.

@@ -13,6 +13,7 @@ export * from './shared-blocks';
 export * from './components/blog';
 export * from './components/image';
 export * from './components/product-metafields';
+export * from './components/powered-by-queek';
 export * from './components/default-metaobject-page';
 export * from './components/product-media-frame';
 export * from './components/variant-picker';
