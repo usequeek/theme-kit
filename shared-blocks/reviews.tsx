@@ -6,6 +6,7 @@ import type { ReviewItem, ReviewsBlockData, ReviewsSummary } from '../types/bloc
 import { Image } from '../components/image';
 import { useReviews } from '../hooks/use-reviews';
 import { useStorefront } from '../provider';
+import { formatDisplayDate } from '../utils/format';
 
 /**
  * Framework-owned reviews block. Renders verified, platform-generated reviews
@@ -425,13 +426,6 @@ function initialsFor(name: string): string {
 }
 
 function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  } catch {
-    return '';
-  }
+  // Fixed locale + zone: this block renders on the server too (see formatDisplayDate).
+  return formatDisplayDate(iso);
 }

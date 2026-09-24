@@ -58,13 +58,25 @@ class DraftSectionBoundary extends Component<
   }
 }
 
+/** JSON.stringify replacer that drops promises/thenables and functions. */
+function signatureReplacer(_key: string, value: unknown): unknown {
+  if (typeof value === 'function') return undefined;
+  if (value !== null && typeof value === 'object' && typeof (value as { then?: unknown }).then === 'function') return undefined;
+  return value;
+}
+
 export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
   const draftBlocks = useEditPreviewStore((state) => state.blocks);
   const reconcileDraftBlocks = useEditPreviewStore((state) => state.reconcile);
 
   // A new server payload is authoritative — drop the streamed draft so the
   // debounced save reconciles and a drifted preview cannot outlive a refresh.
-  const serverSignature = useMemo(() => JSON.stringify(blocks), [blocks]);
+  // Fingerprint of the page DATA only. Blocks can carry values that are not data:
+  // the storefront attaches streamed `productsPromise`/`metaobjectsPromise`, which
+  // arrive here as React Flight thenables referencing the whole RSC response —
+  // stringifying those threw "Converting circular structure to JSON" during
+  // server rendering (dev) and serialised Flight internals on every render (prod).
+  const serverSignature = useMemo(() => JSON.stringify(blocks, signatureReplacer), [blocks]);
   useEffect(() => {
     reconcileDraftBlocks();
   }, [serverSignature, reconcileDraftBlocks]);

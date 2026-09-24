@@ -6,6 +6,7 @@ import { useStorefront } from '../provider';
 import { useUserStore } from '../stores/user-store';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { getQueekClient } from '../sdk/queek-client';
+import { formatCount } from '../utils/format';
 
 interface FollowData {
   following: boolean;
@@ -165,7 +166,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
           </p>
           {followersCount > 0 && (
             <p className="core-follow-card__count">
-              {followersCount.toLocaleString()} {followersCount === 1 ? 'follower' : 'followers'}
+              {formatCount(followersCount)} {followersCount === 1 ? 'follower' : 'followers'}
             </p>
           )}
         </div>

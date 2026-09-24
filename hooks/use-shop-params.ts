@@ -2,9 +2,7 @@
 
 import { useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type { ShopSort } from './use-shop';
-
-const SORTS: ShopSort[] = ['latest', 'popular', 'price_low', 'price_high'];
+import { parseShopSearchParams, type ShopSort } from '../utils/shop-query';
 
 export interface ShopParams {
   categorySlug: string | null;
@@ -29,12 +27,8 @@ export function useShopParams(): ShopParams {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const categorySlug = searchParams.get('category');
-  const keyword = searchParams.get('q') ?? '';
-  const sortRaw = searchParams.get('sort');
-  const sort: ShopSort = SORTS.includes(sortRaw as ShopSort) ? (sortRaw as ShopSort) : 'latest';
-  const pageRaw = Number(searchParams.get('page'));
-  const page = Number.isFinite(pageRaw) && pageRaw > 1 ? Math.floor(pageRaw) : 1;
+  // Shared with the server's /shop prefetch, so both read the URL identically.
+  const { categorySlug, keyword, sort, page } = parseShopSearchParams((key) => searchParams.get(key));
 
   const apply = useCallback(
     (next: { category?: string | null; q?: string | null; sort?: ShopSort; page?: number }) => {

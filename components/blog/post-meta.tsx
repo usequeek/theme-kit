@@ -4,13 +4,16 @@ import type { JSX } from 'react';
 import type { Post } from '../../types/page';
 import { useStorefront } from '../../provider';
 import { Image } from '../image';
+import { formatDisplayDate } from '../../utils/format';
 
 function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return '';
   }
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  // en-US long form as before; the fixed zone keeps a post published near midnight
+  // UTC on the same day on the server and in the browser.
+  return formatDisplayDate(date, { year: 'numeric', month: 'long', day: 'numeric' }, 'en-US');
 }
 
 /**

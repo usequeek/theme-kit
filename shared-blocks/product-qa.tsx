@@ -8,6 +8,7 @@ import { useProductQuestions } from '../hooks/use-product-questions';
 import { useAuth } from '../hooks/use-auth';
 import { useStorefront } from '../provider';
 import { getQueekClient } from '../sdk/queek-client';
+import { formatDisplayDate } from '../utils/format';
 
 const MAX_QUESTION_LENGTH = 1000;
 
@@ -192,13 +193,6 @@ function initialsFor(name: string): string {
 }
 
 function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  } catch {
-    return '';
-  }
+  // Fixed locale + zone: this block renders on the server too (see formatDisplayDate).
+  return formatDisplayDate(iso);
 }

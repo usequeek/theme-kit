@@ -15,6 +15,33 @@
  * shows decimals only when the amount genuinely has them — ₦5,000 stays
  * ₦5,000, ₦0.28 now correctly shows as ₦0.28.
  */
+/**
+ * The locale and zone every date/number the kit DISPLAYS is formatted in.
+ * Fixed on purpose: storefront pages render on the server first, and a runtime
+ * default prints differently there (Node in UTC, en-US) than in the shopper's
+ * browser (Africa/Lagos, en-NG/en-GB) — "Feb 14, 2026" vs "14 Feb 2026". React
+ * then fails hydration and re-renders the whole page on the client. Queek's
+ * stores and shoppers are Nigerian, so that is the one answer both sides give.
+ */
+export const DISPLAY_LOCALE = 'en-NG';
+export const DISPLAY_TIME_ZONE = 'Africa/Lagos';
+
+/** A date for display (default "14 Feb 2026"), identical on server and browser. '' if unparseable. */
+export function formatDisplayDate(
+  value: string | number | Date,
+  options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' },
+  locale: string = DISPLAY_LOCALE,
+): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString(locale, { ...options, timeZone: DISPLAY_TIME_ZONE });
+}
+
+/** A count for display ("1,234"), identical on server and browser. */
+export function formatCount(value: number): string {
+  return value.toLocaleString(DISPLAY_LOCALE);
+}
+
 export function formatMoney(amount: number, currency = 'NGN'): string {
   try {
     return new Intl.NumberFormat('en-NG', {
@@ -24,7 +51,7 @@ export function formatMoney(amount: number, currency = 'NGN'): string {
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
-    return `${currency} ${amount.toLocaleString()}`;
+    return `${currency} ${amount.toLocaleString(DISPLAY_LOCALE)}`;
   }
 }
 

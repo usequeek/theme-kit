@@ -129,9 +129,20 @@ export function Image({ fallback, placeholder, variants, intent = 'raw', onError
     effectiveSizes = undefined;
   }
 
+  // Cards sit in grids and rails, mostly below the fold — and a card's hover
+  // image is invisible until hover. Eager, a server-rendered grid of 24 cards
+  // made React preload the first ~10 (also into the 103 Early Hints header) and
+  // fetch every image at once, racing the page's render-blocking CSS: /shop's
+  // first paint went 1.8 s → 2.9 s on Slow 4G (24/9/26). Lazy is next/image's
+  // default as well. A theme whose card IS the page's main image passes
+  // loading="eager" or fetchPriority="high".
+  const lazyByDefault = (intent === 'card' || intent === 'card2x') && props.fetchPriority !== 'high';
+  const loading = props.loading ?? (lazyByDefault ? 'lazy' : undefined);
+
   return (
     <img
       {...props}
+      loading={loading}
       src={effectiveSrc}
       srcSet={effectiveSrcSet}
       sizes={effectiveSizes}

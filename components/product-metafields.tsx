@@ -5,6 +5,7 @@ import type {
   MetaobjectEntry,
   Product,
 } from '../types/product';
+import { formatDisplayDate } from '../utils/format';
 
 export interface ProductMetafieldDefinitionLabels {
   [key: string]: { name: string; type: string };
@@ -106,7 +107,7 @@ function renderScalar(value: MetafieldScalar, key: string, label: string, type: 
     const time = new Date(text).getTime();
     return (
       <p className="core-metafields__text">
-        {Number.isNaN(time) ? text : new Date(time).toLocaleDateString()}
+        {Number.isNaN(time) ? text : formatDisplayDate(time, {})}
       </p>
     );
   }
