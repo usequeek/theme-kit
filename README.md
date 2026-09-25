@@ -128,10 +128,25 @@ export default function Footer() {
   the seam for a possible future plan perk. There is no merchant-facing
   toggle for it in v1 — always render it visible.
 
+## Links and navigation
+
+```ts
+import { Link, useRouter, usePathname } from '@usequeek/theme-kit/navigation';
+```
+
+A theme links and navigates through these, never through `next/link` or
+`next/navigation`. Which framework runs the storefront is Queek's decision: the
+kit is the one place that knows it, so a change there is a kit release, not an
+update to every theme. `Link` is an `<a>` that moves inside the store without a
+full page load (`href`, `prefetch`, `replace`, plus any anchor attribute);
+`useRouter()` gives `push`, `replace`, `back` and `refresh`; `usePathname()`
+returns the current path. The theme check rejects a theme that imports `next`.
+
 ## Boundary
 
 The kit must never import the storefront app, its themes, or `lib/storefront`.
-That one-way rule is what makes this package extractable at all.
+That one-way rule is what makes this package extractable at all. The reverse
+also holds for the framework: the kit may import `next`, a theme may not.
 
 ## Develop
 
