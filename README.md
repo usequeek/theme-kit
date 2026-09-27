@@ -93,6 +93,35 @@ export default function ProductPage({ product, metafieldDefinitions }: ProductPa
 - Dynamic sources (`$source` refs) resolve server-side; block data always
   reaches the theme as literals — nothing to handle.
 
+## App blocks slot
+
+Product pages render merchant-placed app blocks through the slot — never app
+code:
+
+```tsx
+import { AppBlocks } from '@usequeek/theme-kit/apps';
+
+export default function ProductPage({ product }: ProductPageProps) {
+  return <AppBlocks target="product" productId={product.slug} />;
+}
+```
+
+- MUST: place `<AppBlocks target="product" productId={...} />` on the
+  product page. `target` is product-only in phase 1 — no other slot exists.
+  `productId` scopes availability reads and deep links to the shown product;
+  omit `vendorSlug` (the host resolves the store itself).
+- The host registers its placement component once through `AppBlocksProvider`
+  (`renderBlocks`); the slot renders whatever the host registered, or nothing
+  when no provider is mounted — never an error, never a shifted layout.
+- Empty and error states render nothing: a store with no placements ships no
+  markup and fires no request; a slow or dead app collapses to its fallback
+  and never breaks the page. No app HTML/JS ever reaches the theme — blocks
+  are Queek-rendered primitives (date/time/select) plus a deep-link CTA.
+- Style only: blocks emit `core-app-block` with `__title`, `__description`,
+  `__box`, `__skeleton*`, `__fallback*`, `__field`, `__label`, `__input`,
+  `__slots`/`__slot`, `__empty`, `__cta`, `__retry` and `__image` hooks. No
+  kit CSS ships for these — style them in your theme.
+
 ## Attribution: Powered by Queek
 
 Every storefront is a billboard — every footer variant of every theme renders
