@@ -7,6 +7,7 @@
 
 export * from './provider';
 export * from './navigation';
+export * from './apps';
 export * from './page-renderer';
 export * from './edit-mode';
 export * from './theme-variant-resolver';
