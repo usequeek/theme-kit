@@ -1,6 +1,6 @@
 {
   "name": "@usequeek/theme-kit",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": false,
   "license": "MIT",
   "description": "The framework a Queek storefront theme is built against.",
