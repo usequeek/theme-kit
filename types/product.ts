@@ -28,10 +28,28 @@ export interface ProductShop {
   rating_count: number;
 }
 
+/**
+ * One entry of the ordered `images` list (backend
+ * `CustomerProductMedia::orderedImages()`): primary first,
+ * `{id, url, alt, variants}`. The listing payload caps the list
+ * (`media.listing.images_limit`); detail/PDP carries the full gallery.
+ */
+export interface ProductImage {
+  id: string | number;
+  url: string;
+  alt?: string;
+  variants?: ImageVariants | null;
+}
+
 export interface ProductMedia {
   thumbnail: string | null;
   image: string | null;
   original?: string | null;
+  /** The ONE ordered product-image list, primary first. Present on both list
+   *  and detail responses once the backend emits it; the normalizer derives
+   *  it from `gallery`/`image` for older payloads, so readers must treat it
+   *  as always available and never build a second ordering. */
+  images?: ProductImage[];
   primary_variant_image?: string | null;
   video_url?: string | null;
   /** Falls back to `image` server-side when the vendor hasn't set an explicit
@@ -44,6 +62,10 @@ export interface ProductMedia {
   image_variants?: ImageVariants | null;
   /** Sibling to `primary_variant_image`, same contract. */
   primary_variant_image_variants?: ImageVariants | null;
+  /**
+   * @deprecated Use `images` instead — frozen legacy alias of the same
+   *  ordered list (primary first), kept for existing clients. Never extend.
+   */
   gallery?: Array<{
     id: string | number;
     url: string;
