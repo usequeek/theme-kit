@@ -21,11 +21,7 @@ export type { ShopPagination, ShopPrefetch, ShopQuery, ShopSort } from '../utils
 
 const EMPTY_PAGINATION: ShopPagination = {
   currentPage: 1,
-  lastPage: 1,
   perPage: SHOP_DEFAULT_PER_PAGE,
-  total: 0,
-  from: null,
-  to: null,
   hasMore: false,
 };
 
@@ -137,11 +133,7 @@ export function useShop(options?: {
       products: slice,
       pagination: {
         currentPage: safePage,
-        lastPage,
         perPage,
-        total,
-        from: total === 0 ? null : start + 1,
-        to: total === 0 ? null : start + slice.length,
         hasMore: safePage < lastPage,
       } satisfies ShopPagination,
     };

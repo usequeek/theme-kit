@@ -10,8 +10,9 @@ interface ProductQuestionsResponse {
   data: {
     product: { id: string; slug: string; title: string };
     questions: ProductQuestionItem[];
-    pagination: { current_page: number; per_page: number; has_more: boolean };
   };
+  has_more?: boolean;
+  next_cursor?: string | null;
 }
 
 export function useProductQuestions(options: ProductQaBlockData): {

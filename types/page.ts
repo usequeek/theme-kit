@@ -4,15 +4,17 @@ import type { Product } from './product';
 
 export type PageType = 'page' | 'post' | 'gallery' | 'policy';
 
+/**
+ * A list page's walk state, as the page-mode storefront routes render it.
+ * `current_page` is the page the storefront ASKED for (the API echoes no page
+ * number, total or page count) — label it "Page N"; `has_more` from the API
+ * decides whether a next page exists.
+ */
 export interface Pagination {
   current_page?: number;
   per_page?: number;
-  total?: number;
   has_more?: boolean;
   next_cursor?: string | null;
-  next_page_url?: string | null;
-  prev_cursor?: string | null;
-  prev_page_url?: string | null;
 }
 
 export interface SeoData {

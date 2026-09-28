@@ -225,26 +225,25 @@ export interface Product {
   updated_at: string | null;
 }
 
+/** `meta` on `GET store/products` — the listing context beside the list. */
 export interface ProductListMeta {
-  next_cursor?: string | null;
-  has_more?: boolean;
+  listing_mode?: string;
+  filters?: { attributes?: unknown[] };
 }
 
+/**
+ * The storefront API envelope. List routes answer the walk state TOP-LEVEL:
+ * `has_more` (another page exists) and `next_cursor` (pass it back as
+ * `starting_after` to walk sequentially; `null` on the last page). A page-mode
+ * client (`?page=N`) advances with `page + 1` while `has_more` is true — the
+ * API sends no totals, page counts or page URLs.
+ */
 export interface ApiResponse<T, M = Record<string, unknown>> {
   data: T;
   message?: string;
   meta?: M;
-  /** Present on Laravel `simplePaginate()` resource responses (e.g. collection
-   *  products) — that paginator never computes a total/last-page count (it's
-   *  deliberately cheap on large catalogues), so `links.next`/`links.prev`
-   *  (a URL or null) is the only reliable "is there another page" signal,
-   *  not `meta.has_more` or a page count. */
-  links?: {
-    first?: string | null;
-    last?: string | null;
-    prev?: string | null;
-    next?: string | null;
-  };
+  has_more?: boolean;
+  next_cursor?: string | null;
 }
 
 export interface LegacyProductLike {

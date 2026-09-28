@@ -20,13 +20,13 @@ function product(id: string, title: string): Product {
 const PREFETCH: ShopPrefetch = {
   query: normalizeShopQuery({ categorySlug: 'soups', keyword: 'egusi', sort: 'popular', page: 1, perPage: 24 }),
   products: [product('p1', 'Egusi Soup'), product('p2', 'Ogbono Soup')],
-  pagination: { currentPage: 1, lastPage: 1, perPage: 24, total: 2, from: 1, to: 2, hasMore: false },
+  pagination: { currentPage: 1, perPage: 24, hasMore: true },
 };
 
 function Grid(props: Parameters<typeof useShop>[0]): JSX.Element {
   const { products, isLoading, pagination } = useShop(props);
   return (
-    <ul data-loading={String(isLoading)} data-total={pagination.total}>
+    <ul data-loading={String(isLoading)} data-has-more={String(pagination.hasMore)} data-page={pagination.currentPage}>
       {products.map((p) => <li key={p.id}>{p.title}</li>)}
     </ul>
   );
@@ -52,7 +52,7 @@ describe('useShop + ShopPrefetchProvider', () => {
   it('renders the prefetched page when the query matches exactly', () => {
     const html = render(<Grid categorySlug="soups" keyword="  egusi " sort="popular" page={1} perPage={24} />, { prefetch: PREFETCH });
     expect(html).toContain('data-loading="false"');
-    expect(html).toContain('data-total="2"');
+    expect(html).toContain('data-has-more="true"');
     expect(html).toContain('Egusi Soup');
     expect(html).toContain('Ogbono Soup');
   });
@@ -72,7 +72,8 @@ describe('useShop + ShopPrefetchProvider', () => {
   it('behaves exactly as before with no provider value', () => {
     const html = render(<Grid categorySlug="soups" keyword="egusi" sort="popular" />);
     expect(html).toContain('data-loading="true"');
-    expect(html).toContain('data-total="0"');
+    expect(html).toContain('data-has-more="false"');
+    expect(html).toContain('data-page="1"');
   });
 
   it('preview mode keeps using the demo catalogue, never the prefetch', () => {

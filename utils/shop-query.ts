@@ -16,13 +16,14 @@ export const SHOP_SORTS: readonly ShopSort[] = ['latest', 'popular', 'price_low'
 /** What every theme's shop page asks for, and `useShop`'s default. */
 export const SHOP_DEFAULT_PER_PAGE = 24;
 
+/**
+ * Where the shop grid is: the page it asked for and whether another follows.
+ * The API sends no totals or page counts (no COUNT on the hottest read), so a
+ * shop pager is prev/next + "Page N" — `hasMore` enables Next.
+ */
 export interface ShopPagination {
   currentPage: number;
-  lastPage: number;
   perPage: number;
-  total: number;
-  from: number | null;
-  to: number | null;
   hasMore: boolean;
 }
 
@@ -97,17 +98,11 @@ export function parseShopResponse(
   response: ApiResponse<unknown, Record<string, unknown>>,
   query: ShopQuery,
 ): { products: Product[]; pagination: ShopPagination } {
-  const meta = (response.meta ?? {}) as Record<string, unknown>;
-  const nestedMeta = (meta.pagination ?? meta) as Record<string, unknown>;
   return {
     pagination: {
-      currentPage: (nestedMeta.current_page as number) ?? query.page,
-      lastPage: (nestedMeta.last_page as number) ?? 1,
-      perPage: (nestedMeta.per_page as number) ?? query.perPage,
-      total: (nestedMeta.total as number) ?? 0,
-      from: (nestedMeta.from as number | null) ?? null,
-      to: (nestedMeta.to as number | null) ?? null,
-      hasMore: (nestedMeta.has_more as boolean) ?? false,
+      currentPage: query.page,
+      perPage: query.perPage,
+      hasMore: response.has_more ?? false,
     },
     products: extractProducts(response.data).map((item) => normalizeProduct(item as LegacyProductLike)),
   };

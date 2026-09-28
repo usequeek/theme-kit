@@ -47,12 +47,18 @@ describe('shop query (shared by useShop and the server prefetch)', () => {
       .toEqual({ per_page: 24, page: 2, category_slug: 'soups', keyword: 'egusi', sort: 'popular' });
   });
 
-  it('parses nested and flat pagination meta', () => {
+  it('reads the walk state top-level: the page it asked for, has_more from the API, no totals', () => {
     const query = normalizeShopQuery({ page: 2 });
-    const nested = parseShopResponse({ data: [], meta: { pagination: { current_page: 2, last_page: 5, per_page: 24, total: 110, from: 25, to: 48, has_more: true } } } as never, query);
-    expect(nested.pagination).toEqual({ currentPage: 2, lastPage: 5, perPage: 24, total: 110, from: 25, to: 48, hasMore: true });
-    const flat = parseShopResponse({ data: [], meta: { current_page: 1, last_page: 1, total: 3 } } as never, normalizeShopQuery());
-    expect(flat.pagination).toMatchObject({ currentPage: 1, lastPage: 1, total: 3, hasMore: false, perPage: 24 });
-    expect(parseShopResponse({ data: [] } as never, query).pagination.currentPage).toBe(2);
+    const page = parseShopResponse({ data: [], has_more: true, next_cursor: 'eyJ2IjoxfQ', meta: { listing_mode: 'listing' } } as never, query);
+    expect(page.pagination).toEqual({ currentPage: 2, perPage: 24, hasMore: true });
+
+    const last = parseShopResponse({ data: [], has_more: false, next_cursor: null } as never, normalizeShopQuery());
+    expect(last.pagination).toEqual({ currentPage: 1, perPage: 24, hasMore: false });
+
+    // A legacy paginator echo (the old meta.pagination/meta.current_page) is
+    // never read: the page is the one asked for, has_more defaults to false.
+    const legacy = parseShopResponse({ data: [], meta: { pagination: { current_page: 9, last_page: 12, total: 280, has_more: true } } } as never, query);
+    expect(legacy.pagination).toEqual({ currentPage: 2, perPage: 24, hasMore: false });
+    expect(Object.keys(legacy.pagination).sort()).toEqual(['currentPage', 'hasMore', 'perPage']);
   });
 });

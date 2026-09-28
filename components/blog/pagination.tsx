@@ -6,9 +6,10 @@ import type { Pagination } from '../../types/page';
 import { useStorefront } from '../../provider';
 
 /**
- * Shared blog pagination (Prev / page indicator / Next). SSR page-based
- * navigation preserving the active category. Renders nothing when there is
- * only a single page. Themes style via `.core-pagination*` selectors.
+ * Shared blog pagination (Prev / "Page N" / Next). SSR page-based navigation
+ * preserving the active category. The API sends no totals, so there is no
+ * "of M": `has_more` enables Next, page > 1 enables Previous. Renders nothing
+ * on a lone first page. Themes style via `.core-pagination*` selectors.
  */
 export function BlogPagination({
   pagination,
@@ -26,10 +27,7 @@ export function BlogPagination({
   }
 
   const current = pagination.current_page ?? 1;
-  const perPage = pagination.per_page ?? 0;
-  const total = pagination.total ?? 0;
-  const lastPage = perPage > 0 && total > 0 ? Math.ceil(total / perPage) : undefined;
-  const hasNext = pagination.has_more ?? (lastPage ? current < lastPage : false);
+  const hasNext = pagination.has_more ?? false;
   const hasPrev = current > 1;
 
   if (!hasNext && !hasPrev) {
@@ -59,7 +57,7 @@ export function BlogPagination({
           ← Previous
         </span>
       )}
-      <span className="core-pagination__status">{lastPage ? `Page ${current} of ${lastPage}` : `Page ${current}`}</span>
+      <span className="core-pagination__status">{`Page ${current}`}</span>
       {hasNext ? (
         <Link href={buildHref(current + 1)} className="core-pagination__link" rel="next">
           Next →

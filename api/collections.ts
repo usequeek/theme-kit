@@ -55,10 +55,7 @@ export async function fetchCollectionProducts(
   if (options?.sort) query.sort = options.sort;
   if (options?.keyword?.trim()) query.keyword = options.keyword.trim();
   if (options?.perPage) query.per_page = options.perPage;
-  // Laravel's paginator reads the CURRENT page off the `page` query param
-  // implicitly (there is no `page` field in VendorCollectionProductsRequest's
-  // own validation rules) — it must be sent as a plain query param, not
-  // folded into the validated filters the backend actually reads.
+  // Page mode (`?page=N`): the storefront URL is crawlable and bookmarkable.
   if (options?.page && options.page > 1) query.page = options.page;
 
   try {
@@ -67,22 +64,17 @@ export async function fetchCollectionProducts(
       client.get<ApiResponse<unknown, Record<string, unknown>>>(`/collections/${slug}/products`, query),
     ]);
 
-    const meta = response.meta ?? {};
-
     return {
       collection,
       products: extractProducts(response.data).map((product) => normalizeProduct(product)),
+      // The API answers the walk state top-level and echoes no page number or
+      // total: the page is the one asked for, `has_more` says whether another
+      // follows ("Page N" + prev/next — no page count exists to show).
       pagination: {
-        current_page: (meta.current_page as number) ?? options?.page ?? 1,
-        per_page: (meta.per_page as number) ?? options?.perPage,
-        // No `total`/`last_page` — this endpoint uses `simplePaginate()`
-        // (deliberately, to avoid a COUNT query on large catalogues), so
-        // `links.next` (a URL or null) is the only real "is there another
-        // page" signal. `CollectionPager` already treats total/last_page as
-        // optional and falls back to a plain "Page N" label without them.
-        has_more: Boolean(response.links?.next),
-        next_page_url: response.links?.next ?? null,
-        prev_page_url: response.links?.prev ?? null,
+        current_page: options?.page && options.page > 1 ? options.page : 1,
+        per_page: options?.perPage,
+        has_more: response.has_more ?? false,
+        next_cursor: response.next_cursor ?? null,
       },
     };
   } catch (error) {
