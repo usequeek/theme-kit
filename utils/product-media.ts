@@ -46,15 +46,17 @@ export function getHoverImage(product: Product): string | null {
 }
 
 /**
- * Builds the ordered list of PDP gallery frames for a product: main image,
- * then gallery images, then the product video (if any) appended last — was
- * duplicated verbatim as `buildFrames`/`buildGalleryFrames` in every theme's
- * pages/product.tsx; centralized here per the project's reuse-over-duplication
- * rule. Pair with `ProductMediaFrame` to render whatever comes back.
+ * Builds the ordered list of PDP media frames for a product from the ONE
+ * ordered `media.images` list (primary first), then the product video (if
+ * any) appended last — was duplicated verbatim as
+ * `buildFrames`/`buildGalleryFrames` in every theme's pages/product.tsx;
+ * centralized here per the project's reuse-over-duplication rule. Pair with
+ * `ProductMediaFrame` to render whatever comes back.
  *
- * Reads `media.images` (primary first) when present and falls back to the
- * legacy main+`gallery` pair for older payloads — same frames either way, so
- * no visual change, only the data source moves to the ONE ordered list.
+ * `images` is the only frame source: a legacy `gallery` key is never read.
+ * When `images` is empty the `media.image` primary still yields a single
+ * frame so imageless-list payloads keep their primary — no second ordering
+ * is ever built.
  */
 export function buildMediaFrames(product: Product): MediaFrame[] {
   const frames: MediaFrame[] = [];
@@ -98,20 +100,6 @@ export function buildMediaFrames(product: Product): MediaFrame[] {
       });
     }
 
-    if (product.media.gallery) {
-      for (const item of product.media.gallery) {
-        const itemVariants = item.variants ?? null;
-        frames.push({
-          id: String(item.id),
-          // item.url is already the CARD url server-side (480px) — too small for a
-          // main hero frame, which is why the `view` tier is preferred here too.
-          url: heroUrl(itemVariants) ?? item.url,
-          alt: item.alt ?? product.title,
-          type: 'image',
-          variants: itemVariants,
-        });
-      }
-    }
   }
 
   if (frames.length === 0 && product.media.thumbnail) {

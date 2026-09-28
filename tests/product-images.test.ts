@@ -55,7 +55,25 @@ describe('normalizeProduct images', () => {
     expect(product.media.images?.map((i) => i.url)).toEqual(['https://cdn/x/side.jpg']);
   });
 
-  it('falls back to gallery/image for old payloads: primary first, dupes removed', () => {
+  it('ignores a legacy gallery key: images come from images only', () => {
+    const product = normalizeProduct(
+      raw({
+        media: {
+          image: 'https://cdn/x/primary.jpg',
+          images: [{ id: 11, url: 'https://cdn/x/primary.jpg', alt: 'Front' }],
+          gallery: [
+            { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
+            { id: 13, url: 'https://cdn/x/back.jpg', alt: 'Back' },
+          ],
+        },
+      }),
+    );
+
+    expect(product.media.images?.map((i) => i.url)).toEqual(['https://cdn/x/primary.jpg']);
+    expect(product.media).not.toHaveProperty('gallery');
+  });
+
+  it('derives nothing from image/gallery on old payloads: no images list means []', () => {
     const product = normalizeProduct(
       raw({
         image: 'https://cdn/x/primary.jpg',
@@ -70,23 +88,20 @@ describe('normalizeProduct images', () => {
       }),
     );
 
-    expect(product.media.images?.map((i) => i.url)).toEqual([
-      'https://cdn/x/primary.jpg',
-      'https://cdn/x/side.jpg',
-    ]);
-    expect(product.media.images?.[0].id).toBe('main');
+    expect(product.media.images).toEqual([]);
+    expect(product.media).not.toHaveProperty('gallery');
+    // The primary shortcut itself is untouched.
+    expect(product.media.image).toBe('https://cdn/x/primary.jpg');
   });
 
-  it('falls back to a raw-URL-only single and to [] when there is no imagery', () => {
-    const single = normalizeProduct(raw({ image: 'https://cdn/x/only.jpg' }));
-    expect(single.media.images?.map((i) => i.url)).toEqual(['https://cdn/x/only.jpg']);
-
+  it('yields [] for a payload with no imagery at all and no gallery key', () => {
     const none = normalizeProduct(raw({}));
+
     expect(none.media.images).toEqual([]);
-    expect(none.media.gallery).toEqual([]);
+    expect(none.media).not.toHaveProperty('gallery');
   });
 
-  it('falls back when a provided images list is entirely blank', () => {
+  it('yields [] when a provided images list is entirely blank, even with gallery present', () => {
     const product = normalizeProduct(
       raw({
         media: {
@@ -97,10 +112,8 @@ describe('normalizeProduct images', () => {
       }),
     );
 
-    expect(product.media.images?.map((i) => i.url)).toEqual([
-      'https://cdn/x/primary.jpg',
-      'https://cdn/x/side.jpg',
-    ]);
+    expect(product.media.images).toEqual([]);
+    expect(product.media).not.toHaveProperty('gallery');
   });
 });
 
@@ -137,47 +150,61 @@ describe('getHoverImage / getSlideshowImages', () => {
 });
 
 describe('buildMediaFrames reads images', () => {
-  it('renders identical frames for a legacy payload and its images-carrying twin', () => {
-    const legacy = normalizeProduct(
+  it('renders identical frames with and without a legacy gallery key present', () => {
+    const images = [
+      { id: 11, url: 'https://cdn/x/primary.jpg', alt: 'Ankara Gown' },
+      { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
+      { id: 13, url: 'https://cdn/x/back.jpg', alt: 'Back' },
+    ];
+    const withGallery = normalizeProduct(
       raw({
         media: {
           image: 'https://cdn/x/primary.jpg',
           original: 'https://cdn/x/primary-orig.jpg',
-          gallery: [
-            { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
-            { id: 13, url: 'https://cdn/x/back.jpg', alt: 'Back' },
-          ],
+          gallery: [{ id: 99, url: 'https://cdn/x/stale.jpg', alt: 'Stale' }],
+          images,
         },
       }),
     );
-    delete legacy.media.images;
 
-    const next = normalizeProduct(
+    const stripped = normalizeProduct(
       raw({
         media: {
           image: 'https://cdn/x/primary.jpg',
           original: 'https://cdn/x/primary-orig.jpg',
-          gallery: [
-            { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
-            { id: 13, url: 'https://cdn/x/back.jpg', alt: 'Back' },
-          ],
-          images: [
-            { id: 11, url: 'https://cdn/x/primary.jpg', alt: 'Ankara Gown' },
-            { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
-            { id: 13, url: 'https://cdn/x/back.jpg', alt: 'Back' },
-          ],
+          images,
         },
       }),
     );
 
-    const legacyUrls = buildMediaFrames(legacy).map((f) => f.url);
-    const nextUrls = buildMediaFrames(next).map((f) => f.url);
-    expect(nextUrls).toEqual(legacyUrls);
-    expect(nextUrls).toEqual([
+    const withUrls = buildMediaFrames(withGallery).map((f) => f.url);
+    const strippedUrls = buildMediaFrames(stripped).map((f) => f.url);
+    expect(withUrls).toEqual(strippedUrls);
+    expect(withUrls).toEqual([
       'https://cdn/x/primary-orig.jpg',
       'https://cdn/x/side.jpg',
       'https://cdn/x/back.jpg',
     ]);
+    expect(withUrls).not.toContain('https://cdn/x/stale.jpg');
+  });
+
+  it('builds no frames from a gallery-only payload: gallery urls never render', () => {
+    const product = normalizeProduct(
+      raw({
+        media: {
+          image: 'https://cdn/x/primary.jpg',
+          gallery: [
+            { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
+            { id: 13, url: 'https://cdn/x/back.jpg', alt: 'Back' },
+          ],
+        },
+      }),
+    );
+
+    // Only the media.image primary single-frame fallback survives — the
+    // gallery urls are ignored, not derived into images.
+    expect(product.media.images).toEqual([]);
+    expect(buildMediaFrames(product).map((f) => f.url)).toEqual(['https://cdn/x/primary.jpg']);
   });
 
   it('prefers the view tier off images entries and appends video last', () => {

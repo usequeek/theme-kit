@@ -215,63 +215,36 @@ function cleanUrl(value: unknown): string | null {
 }
 
 /**
- * The ONE ordered product-image list, primary first. A backend that already
- * emits `media.images` wins verbatim (order preserved, entries cleaned);
- * older payloads fall back to the `gallery`/`image` pair — primary first,
- * then gallery items, skipping blanks and url-dupes of the primary. Never
- * an empty-string url, never a null: no-media products get `[]`.
+ * The ONE ordered product-image list, primary first, built from
+ * `media.images` ONLY (order preserved, entries cleaned). A legacy `gallery`
+ * key on the payload is ignored — never derived, never passed through.
+ * Never an empty-string url, never a null: products without an `images`
+ * list get `[]`.
  */
 function normalizeImages(raw: LegacyProductLike): ProductImage[] {
   const media = raw.media ?? {};
   const title = typeof raw.title === 'string' ? raw.title : '';
 
   const provided = media.images;
-  if (Array.isArray(provided) && provided.length > 0) {
-    const cleaned = provided.flatMap((entry, index): ProductImage[] => {
-      const url = entry ? cleanUrl(entry.url) : null;
-      if (!url) {
-        return [];
-      }
-
-      return [
-        {
-          id: entry.id ?? `image-${index}`,
-          url,
-          alt: cleanUrl(entry.alt) ?? title,
-          variants: entry.variants ?? null,
-        },
-      ];
-    });
-    if (cleaned.length > 0) {
-      return cleaned;
-    }
+  if (!Array.isArray(provided) || provided.length === 0) {
+    return [];
   }
 
-  const primary = cleanUrl(media.image) ?? cleanUrl(raw.image);
-  const seen = new Set<string>();
-  const items: ProductImage[] = [];
-
-  if (primary) {
-    items.push({ id: 'main', url: primary, alt: title, variants: media.image_variants ?? null });
-    seen.add(primary);
-  }
-
-  const gallery = Array.isArray(media.gallery) ? media.gallery : [];
-  gallery.forEach((entry, index) => {
+  return provided.flatMap((entry, index): ProductImage[] => {
     const url = entry ? cleanUrl(entry.url) : null;
-    if (!url || seen.has(url)) {
-      return;
+    if (!url) {
+      return [];
     }
-    seen.add(url);
-    items.push({
-      id: entry.id ?? `gallery-${index}`,
-      url,
-      alt: cleanUrl(entry.alt) ?? title,
-      variants: entry.variants ?? null,
-    });
-  });
 
-  return items;
+    return [
+      {
+        id: entry.id ?? `image-${index}`,
+        url,
+        alt: cleanUrl(entry.alt) ?? title,
+        variants: entry.variants ?? null,
+      },
+    ];
+  });
 }
 
 export function normalizeProduct(raw: LegacyProductLike): Product {
@@ -322,13 +295,9 @@ export function normalizeProduct(raw: LegacyProductLike): Product {
       // covers a preview/demo payload that happens to nest them there too.
       video_url: raw.media?.video_url ?? raw.video_url ?? null,
       video_poster_url: raw.media?.video_poster_url ?? raw.video_poster_url ?? null,
-      // The ONE ordered list (primary first) — backend `images` verbatim when
-      // present, else derived from gallery/image above. `gallery` stays as
-      // the deprecated frozen alias for existing readers.
+      // The ONE ordered list (primary first) — backend `images` verbatim,
+      // cleaned. No `gallery` passthrough: legacy keys are ignored.
       images: normalizeImages(raw),
-      // Pass-through: gallery items carry their own `variants` (ProductResource::
-      // buildGalleryPayload) and are not field-whitelisted here.
-      gallery: raw.media?.gallery ?? [],
     },
     inventory: {
       in_stock: toBool(raw.inventory?.in_stock, toBool(raw.in_stock, toNumber(raw.stock, 0) > 0)),

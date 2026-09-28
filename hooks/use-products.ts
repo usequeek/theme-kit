@@ -145,12 +145,12 @@ export function useProducts(options?: ProductQuery & {
 
 /**
  * Full product detail (the same `/products/{slug}` request the PDP itself
- * uses), including the real `media.gallery` — the list/collection endpoints
- * `useProducts` calls only ever return `media.{image,thumbnail}` (see
+ * uses), including the full ordered `media.images` list — the list/collection
+ * endpoints `useProducts` calls only ever return `media.{image,thumbnail}` (see
  * Customer\ProductResource::buildBaseMediaPayload vs buildDetailMediaPayload
  * in queek_backend). Single-product spotlight blocks (e.g. glow's `featured`
  * variant) need this instead of substituting image/thumbnail as a fake
- * 2-image gallery.
+ * 2-image list.
  */
 /**
  * Fetch one product by SLUG.

@@ -32,7 +32,7 @@ export interface ProductShop {
  * One entry of the ordered `images` list (backend
  * `CustomerProductMedia::orderedImages()`): primary first,
  * `{id, url, alt, variants}`. The listing payload caps the list
- * (`media.listing.images_limit`); detail/PDP carries the full gallery.
+ * (`media.listing.images_limit`); detail/PDP carries the full list.
  */
 export interface ProductImage {
   id: string | number;
@@ -45,10 +45,10 @@ export interface ProductMedia {
   thumbnail: string | null;
   image: string | null;
   original?: string | null;
-  /** The ONE ordered product-image list, primary first. Present on both list
-   *  and detail responses once the backend emits it; the normalizer derives
-   *  it from `gallery`/`image` for older payloads, so readers must treat it
-   *  as always available and never build a second ordering. */
+  /** The ONE ordered product-image list, primary first. Emitted by the
+   *  backend on both list and detail responses and built by the normalizer
+   *  from `images` only — readers must treat it as always available and
+   *  never build a second ordering. */
   images?: ProductImage[];
   primary_variant_image?: string | null;
   video_url?: string | null;
@@ -62,19 +62,6 @@ export interface ProductMedia {
   image_variants?: ImageVariants | null;
   /** Sibling to `primary_variant_image`, same contract. */
   primary_variant_image_variants?: ImageVariants | null;
-  /**
-   * @deprecated Use `images` instead — frozen legacy alias of the same
-   *  ordered list (primary first), kept for existing clients. Never extend.
-   */
-  gallery?: Array<{
-    id: string | number;
-    url: string;
-    alt?: string;
-    /** Per-gallery-item tier map (ProductResource::buildGalleryPayload).
-     *  Detail responses only — the list payload has no `gallery` at all.
-     *  Note `url` here is already the CARD url server-side, not the original. */
-    variants?: ImageVariants | null;
-  }>;
 }
 
 export interface ProductInventory {
@@ -293,7 +280,9 @@ export interface LegacyProductLike {
   pricing?: Partial<ProductPricing>;
   inventory?: Partial<ProductInventory>;
   flags?: Partial<ProductFlags>;
-  media?: Partial<ProductMedia>;
+  // Legacy payloads may still carry the removed `gallery` key — accepted
+  // here, ignored by the normalizer (never derived, never passed through).
+  media?: Partial<ProductMedia> & { [legacyKey: string]: unknown };
   categories?: Array<Partial<ProductCategory>>;
   options?: Array<{
     name?: string;
