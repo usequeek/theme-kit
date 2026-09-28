@@ -65,12 +65,25 @@ describe('normalizeProduct images', () => {
             { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
             { id: 13, url: 'https://cdn/x/back.jpg', alt: 'Back' },
           ],
-        },
+        } as LegacyProductLike['media'],
       }),
     );
 
     expect(product.media.images?.map((i) => i.url)).toEqual(['https://cdn/x/primary.jpg']);
     expect(product.media).not.toHaveProperty('gallery');
+  });
+
+  it('rejects a misspelled images key at compile time instead of silently yielding []', () => {
+    const product = normalizeProduct(
+      raw({
+        media: {
+          // @ts-expect-error `imagess` is not a media key — the narrowed type turns this typo into a compile error, not a [].
+          imagess: [{ id: 1, url: 'https://cdn/x/a.jpg' }],
+        },
+      }),
+    );
+
+    expect(product.media.images).toEqual([]);
   });
 
   it('derives nothing from image/gallery on old payloads: no images list means []', () => {
@@ -84,7 +97,7 @@ describe('normalizeProduct images', () => {
             { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
             { id: 13, url: '', alt: 'Blank' },
           ],
-        },
+        } as LegacyProductLike['media'],
       }),
     );
 
@@ -108,7 +121,7 @@ describe('normalizeProduct images', () => {
           image: 'https://cdn/x/primary.jpg',
           gallery: [{ id: 12, url: 'https://cdn/x/side.jpg' }],
           images: [{ id: 11, url: '' }],
-        },
+        } as LegacyProductLike['media'],
       }),
     );
 
@@ -163,7 +176,7 @@ describe('buildMediaFrames reads images', () => {
           original: 'https://cdn/x/primary-orig.jpg',
           gallery: [{ id: 99, url: 'https://cdn/x/stale.jpg', alt: 'Stale' }],
           images,
-        },
+        } as LegacyProductLike['media'],
       }),
     );
 
@@ -197,7 +210,7 @@ describe('buildMediaFrames reads images', () => {
             { id: 12, url: 'https://cdn/x/side.jpg', alt: 'Side' },
             { id: 13, url: 'https://cdn/x/back.jpg', alt: 'Back' },
           ],
-        },
+        } as LegacyProductLike['media'],
       }),
     );
 

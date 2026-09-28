@@ -46,9 +46,9 @@ export interface ProductMedia {
   image: string | null;
   original?: string | null;
   /** The ONE ordered product-image list, primary first. Emitted by the
-   *  backend on both list and detail responses and built by the normalizer
-   *  from `images` only — readers must treat it as always available and
-   *  never build a second ordering. */
+   *  backend on kit-consumed list/detail (preloaded) payloads and built by
+   *  the normalizer from `images` only — readers must treat it as always
+   *  available and never build a second ordering. */
   images?: ProductImage[];
   primary_variant_image?: string | null;
   video_url?: string | null;
@@ -280,9 +280,10 @@ export interface LegacyProductLike {
   pricing?: Partial<ProductPricing>;
   inventory?: Partial<ProductInventory>;
   flags?: Partial<ProductFlags>;
-  // Legacy payloads may still carry the removed `gallery` key — accepted
-  // here, ignored by the normalizer (never derived, never passed through).
-  media?: Partial<ProductMedia> & { [legacyKey: string]: unknown };
+  // A runtime legacy `gallery` key (still emitted by the backend detail
+  // payload) arrives via the cast path only — never re-add it here, and
+  // never derive `images` from it. Tests cast gallery-bearing literals.
+  media?: Partial<ProductMedia>;
   categories?: Array<Partial<ProductCategory>>;
   options?: Array<{
     name?: string;
