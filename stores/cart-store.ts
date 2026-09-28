@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { CartAddon, CartItem } from '../types/cart';
 import type { Product, ProductVariant } from '../types/product';
 import { toast } from './toast-store';
+import { normalizeCurrencyCode, PLATFORM_DEFAULT_CURRENCY } from '../utils/format';
 import { pushAddToCart } from '../apps/analytics-events';
 import { getActivePlatform, platformScopedStorage } from '../sdk/platform';
 import { productRequiresVariant } from '../utils/match-variant';
@@ -13,8 +14,9 @@ interface CartState {
   items: CartItem[];
   /** Set once per vendor mount (see vendor-shell.tsx) — the store has no
    *  React context, so this is how it learns the active vendor's currency
-   *  for GA4 event values. Defaults to the same 'NGN' fallback used
-   *  everywhere else in the storefront (see checkout-controller.tsx). */
+   *  for GA4 event values. The initial value is the platform default as a
+   *  last resort only; vendor-shell overwrites it with the vendor's currency
+   *  on mount. List-level `meta.currency` is never a source. */
   currency: string;
   setCurrency: (currency: string) => void;
   addProduct: (product: Product, quantity?: number, variant?: ProductVariant | null) => void;
@@ -50,8 +52,8 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-      currency: 'NGN',
-      setCurrency: (currency) => set({ currency }),
+      currency: PLATFORM_DEFAULT_CURRENCY,
+      setCurrency: (currency) => set({ currency: normalizeCurrencyCode(currency) }),
       addProduct: (product, quantity = 1, variant = null) => {
         get().addItemWithAddons(product, quantity, [], variant);
       },

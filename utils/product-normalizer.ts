@@ -8,6 +8,7 @@ import type {
   ProductPricing,
   ProductVariantOptionValue,
 } from '../types/product';
+import { normalizeCurrencyCode } from './format';
 
 const KIND_SET = new Set(['physical', 'service', 'digital']);
 const STATUS_SET = new Set(['active', 'inactive']);
@@ -267,7 +268,10 @@ export function normalizeProduct(raw: LegacyProductLike): Product {
         ? (raw.status as Product['status'])
         : 'active',
     barcode: typeof raw.barcode === 'string' && raw.barcode !== '' ? raw.barcode : null,
-    currency: String(raw.currency ?? 'NGN'),
+    // Item-level code is the source — list-level meta.currency is never read
+    // (it stamps the platform default even on non-NGN stores). Missing or
+    // malformed codes fall back to the platform default as a last resort.
+    currency: normalizeCurrencyCode(raw.currency),
     pricing: normalizePricing(raw),
     shop: {
       id: String(raw.shop?.id ?? raw.vendor?.id ?? shopId),

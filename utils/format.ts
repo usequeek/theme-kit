@@ -42,7 +42,29 @@ export function formatCount(value: number): string {
   return value.toLocaleString(DISPLAY_LOCALE);
 }
 
-export function formatMoney(amount: number, currency = 'NGN'): string {
+/**
+ * Platform default — the LAST resort only. Item rows carry their own
+ * `currency` code (see normalizeProduct) and store-wide display uses the
+ * vendor's currency (cart-store, set from vendor-shell on mount). A missing
+ * or malformed code must resolve through this function, never a bare
+ * `?? 'NGN'` at a call site, so the fallback stays in exactly one place.
+ */
+export const PLATFORM_DEFAULT_CURRENCY = 'NGN';
+
+/**
+ * The ONE currency-code resolver: trims/uppercases the item or vendor code,
+ * accepts it when it is a 3-letter code, and returns the platform default
+ * otherwise. List-level `meta.currency` is never consulted — it stamps the
+ * platform default even on non-NGN stores (api-currency-contract-fix).
+ */
+export function normalizeCurrencyCode(value: unknown, fallback: string = PLATFORM_DEFAULT_CURRENCY): string {
+  const code = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  if (/^[A-Z]{3}$/.test(code)) return code;
+  const cleanFallback = typeof fallback === 'string' ? fallback.trim().toUpperCase() : '';
+  return /^[A-Z]{3}$/.test(cleanFallback) ? cleanFallback : PLATFORM_DEFAULT_CURRENCY;
+}
+
+export function formatMoney(amount: number, currency = PLATFORM_DEFAULT_CURRENCY): string {
   try {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
