@@ -85,16 +85,18 @@ export interface OrderDetail {
   table?: { id: string; name: string; section?: string | null } | null;
 }
 
-export interface OrderPageMeta {
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
-}
-
+/**
+ * `GET store/orders` — the ONE storefront list envelope: the walk state rides
+ * top-level. A page-mode reader (`?page=N`) labels the page it asked for and
+ * loads the next while `has_more` is true; a cursor reader passes
+ * `next_cursor` back as `starting_after`. No totals, page counts or page URLs
+ * are sent; `meta` is context only (e.g. `currency`).
+ */
 export interface OrderListResponse {
   data: OrderListItem[];
-  meta: OrderPageMeta;
+  has_more: boolean;
+  next_cursor: string | null;
+  meta?: Record<string, unknown>;
 }
 
 export interface CheckoutPayload {
