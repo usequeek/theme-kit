@@ -8,6 +8,7 @@ import { useStorefront } from '../../provider';
 import { useHref } from '../../hooks/use-href';
 import { useShopCart } from '../../hooks/use-shop-cart';
 import { useCartPanelStore } from '../../stores/cart-panel-store';
+import { normalizeCurrencyCode } from '../../utils/format';
 
 export interface CartPanelControllerRenderProps {
   isOpen: boolean;
@@ -57,7 +58,9 @@ export function CartPanelController({
     isOpen,
     items,
     total,
-    currency: vendor.currency ?? 'NGN',
+    // Store-wide display uses the vendor's currency; item rows carry their own.
+    // List-level meta.currency is never read (platform default, wrong per store).
+    currency: normalizeCurrencyCode(vendor.currency),
     onClose: closePanel,
     onCheckout: () => navigate('/checkout'),
     onViewCart: () => navigate('/cart'),
