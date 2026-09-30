@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useStorefront, useStorefrontLocale } from '../provider';
 import type { Product } from '../types/product';
 import type { ApiResponse, LegacyProductLike, ProductListMeta } from '../types/product';
 import { createBrowserClient } from '../sdk/client';
+import { withLocaleQuery } from '../utils/locale';
 import { extractProducts, normalizeProduct } from '../utils/product-normalizer';
 
 type ProductQuery = {
@@ -49,6 +50,7 @@ export function useProducts(options?: ProductQuery & {
   hasVideo?: boolean;
 }): { products: Product[]; isLoading: boolean } {
   const { previewData, vendor } = useStorefront();
+  const locale = useStorefrontLocale();
   const hasPreviewProducts = Array.isArray(previewData?.products);
   const [products, setProducts] = useState<Product[]>(() => (
     options && hasPreviewProducts ? resolvePreviewProducts(previewData.products!, options) : []
@@ -92,6 +94,7 @@ export function useProducts(options?: ProductQuery & {
         if (options?.collection) {
           const response = await client.get<ApiResponse<unknown>>(
             `/collections/${options.collection}/products`,
+            withLocaleQuery(undefined, locale),
           );
           resolvedProducts = extractProducts(response.data).map((p) => normalizeProduct(p));
         } else {
@@ -106,7 +109,7 @@ export function useProducts(options?: ProductQuery & {
           // silently dropping hand-picked products from the storefront.
           if (options?.ids && options.ids.length > 0) query.ids = options.ids;
 
-          const response = await client.get<ApiResponse<unknown, ProductListMeta>>('/products', query);
+          const response = await client.get<ApiResponse<unknown, ProductListMeta>>('/products', withLocaleQuery(query, locale));
           resolvedProducts = extractProducts(response.data).map((p) => normalizeProduct(p));
         }
 
@@ -138,7 +141,7 @@ export function useProducts(options?: ProductQuery & {
     return () => {
       cancelled = true;
     };
-  }, [hasOptions, options?.collection, options?.ids, options?.limit, options?.sort, options?.hasVideo, previewData?.products, vendor.slug]);
+  }, [hasOptions, options?.collection, options?.ids, options?.limit, options?.sort, options?.hasVideo, previewData?.products, vendor.slug, locale]);
 
   return { products, isLoading };
 }
@@ -165,6 +168,7 @@ export function useProducts(options?: ProductQuery & {
  */
 export function useProductBySlug(slug: string | null | undefined): { product: Product | null; isLoading: boolean } {
   const { previewData, vendor } = useStorefront();
+  const locale = useStorefrontLocale();
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(!!slug);
 
@@ -190,7 +194,7 @@ export function useProductBySlug(slug: string | null | undefined): { product: Pr
     async function run(): Promise<void> {
       setIsLoading(true);
       try {
-        const response = await client.get<ApiResponse<LegacyProductLike>>(`/products/${slug}`);
+        const response = await client.get<ApiResponse<LegacyProductLike>>(`/products/${slug}`, withLocaleQuery(undefined, locale));
         const products = extractProducts(response.data);
         const payload = products[0] ?? response.data;
         if (!cancelled) {
@@ -212,7 +216,7 @@ export function useProductBySlug(slug: string | null | undefined): { product: Pr
     return () => {
       cancelled = true;
     };
-  }, [slug, previewData?.products, vendor.slug]);
+  }, [slug, previewData?.products, vendor.slug, locale]);
 
   return { product, isLoading };
 }

@@ -8,6 +8,7 @@ import type { Post } from './types/page';
 import type { Product } from './types/product';
 import type { StorefrontConfig, VendorProfile } from './types/vendor';
 import { getBrandCssVariables } from './utils/brand';
+import { parseLocaleCode } from './utils/locale';
 import { DesignTokenPreviewListener } from './design-token-preview';
 
 export interface StorefrontPreviewData {
@@ -36,6 +37,9 @@ interface StorefrontContextValue {
   /** slug => 'full' | 'bare', for ShellInner to decide the CURRENT page's
    * header/footer without a per-navigation fetch. See VendorShell. */
   pagesChrome: Record<string, 'full' | 'bare'>;
+  /** Validated request locale (null = primary). Browser hooks read it via
+   * `useStorefrontLocale()` and send `?locale=` when it is set. */
+  locale: string | null;
 }
 
 export const StorefrontContext = createContext<StorefrontContextValue | null>(null);
@@ -47,6 +51,7 @@ export function StorefrontProvider({
   previewData,
   basePath,
   pagesChrome,
+  locale,
   children,
 }: {
   vendor: VendorProfile;
@@ -55,9 +60,17 @@ export function StorefrontProvider({
   previewData?: StorefrontPreviewData;
   basePath?: string;
   pagesChrome?: Record<string, 'full' | 'bare'>;
+  /**
+   * Request locale for translated reads (the storefront host passes its
+   * `x-queek-locale` request header through). Optional — absent/invalid
+   * means the primary locale, exactly as before. Themes never set this;
+   * the host owns it, like `basePath`.
+   */
+  locale?: string | null;
   children: ReactNode;
 }): JSX.Element {
   const resolvedBasePath = basePath ?? `/${vendor.slug ?? ''}`;
+  const resolvedLocale = parseLocaleCode(locale);
   const value = useMemo(
     () => ({
       vendor,
@@ -66,8 +79,9 @@ export function StorefrontProvider({
       previewData,
       basePath: resolvedBasePath,
       pagesChrome: pagesChrome ?? {},
+      locale: resolvedLocale,
     }),
-    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome],
+    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale],
   );
   const brandRootRef = useRef<HTMLDivElement>(null);
 
@@ -89,4 +103,20 @@ export function useStorefront(): StorefrontContextValue {
   }
 
   return context;
+}
+
+/**
+ * Validated request locale for translated reads (`null` = primary).
+ * Browser hooks send `?locale=` when this is set and key their client
+ * caches by it, so two locales never share an entry. No provider prop →
+ * null, and every hook behaves exactly as before.
+ */
+export function useStorefrontLocale(): string | null {
+  const context = useContext(StorefrontContext);
+
+  if (!context) {
+    throw new Error('useStorefrontLocale must be used within StorefrontProvider');
+  }
+
+  return context.locale ?? null;
 }

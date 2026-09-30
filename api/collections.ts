@@ -13,18 +13,20 @@ export interface FetchCollectionProductsOptions {
   perPage?: number;
   sort?: CollectionSort;
   keyword?: string;
+  /** Explicit locale override; when omitted the request's `x-queek-locale` header decides. */
+  locale?: string;
 }
 
 // SSR collection reads go through `/client/store/*` so ResolveClientContext forces
 // X-Platform=storefront (base prices, no marketplace commission) — never the
 // legacy v1 routes shared with the commission-bearing marketplace.
-export async function fetchCollections(vendorSlug: string, storefrontOnly = true): Promise<Collection[]> {
+export async function fetchCollections(vendorSlug: string, storefrontOnly = true, locale?: string): Promise<Collection[]> {
   const client = createServerStoreClient(vendorSlug, await getRequestOrigin());
 
   try {
     const response = await client.get<ApiResponse<Collection[]>>(`/collections`, {
       storefront: storefrontOnly ? 1 : 0,
-    });
+    }, locale);
 
     return response.data ?? [];
   } catch (error) {
@@ -34,8 +36,8 @@ export async function fetchCollections(vendorSlug: string, storefrontOnly = true
   }
 }
 
-export async function fetchCollection(vendorSlug: string, slug: string): Promise<Collection | null> {
-  const collections = await fetchCollections(vendorSlug);
+export async function fetchCollection(vendorSlug: string, slug: string, locale?: string): Promise<Collection | null> {
+  const collections = await fetchCollections(vendorSlug, true, locale);
 
   return collections.find((collection) => collection.slug === slug) ?? null;
 }
@@ -60,8 +62,8 @@ export async function fetchCollectionProducts(
 
   try {
     const [collection, response] = await Promise.all([
-      fetchCollection(vendorSlug, slug),
-      client.get<ApiResponse<unknown, Record<string, unknown>>>(`/collections/${slug}/products`, query),
+      fetchCollection(vendorSlug, slug, options?.locale),
+      client.get<ApiResponse<unknown, Record<string, unknown>>>(`/collections/${slug}/products`, query, options?.locale),
     ]);
 
     return {

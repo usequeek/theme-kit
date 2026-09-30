@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useStorefront, useStorefrontLocale } from '../provider';
 import type { Product, ApiResponse, LegacyProductLike } from '../types/product';
 import { createBrowserClient } from '../sdk/client';
 import { getActivePlatform } from '../sdk/platform';
+import { localeCacheKeySegment, withLocaleQuery } from '../utils/locale';
 import { normalizeProduct } from '../utils/product-normalizer';
 
 export interface ProductSection {
@@ -59,9 +60,15 @@ export function useProductSections(): {
   isLoading: boolean;
 } {
   const { previewData, vendor } = useStorefront();
+  const locale = useStorefrontLocale();
   // Cache per vendor AND platform — the grouped catalogue can differ between
-  // storefront and instore_qr (the /qr page).
-  const cacheKey = `${vendor.slug ?? ''}::${getActivePlatform()}`;
+  // storefront and instore_qr (the /qr page) — AND locale, so two locales
+  // never share a client cache entry. The locale segment is appended only
+  // when set, leaving no-locale keys exactly what they always were.
+  const localeSegment = localeCacheKeySegment(locale);
+  const cacheKey = localeSegment
+    ? `${vendor.slug ?? ''}::${getActivePlatform()}::${localeSegment}`
+    : `${vendor.slug ?? ''}::${getActivePlatform()}`;
   const [result, setResult] = useState<SectionsResult>(() => sectionsCache.get(cacheKey) ?? EMPTY_RESULT);
   const [isLoading, setIsLoading] = useState(!sectionsCache.has(cacheKey));
 
@@ -108,7 +115,7 @@ export function useProductSections(): {
     if (!promise) {
       const client = createBrowserClient(vendor.slug ?? undefined);
       promise = client
-        .get<ApiResponse<unknown>>('/products')
+        .get<ApiResponse<unknown>>('/products', withLocaleQuery(undefined, locale))
         .then((response) => {
           const data = response.data;
           // instore_qr only — backend attaches this under meta.groups, never
@@ -159,7 +166,7 @@ export function useProductSections(): {
     });
 
     return () => { cancelled = true; };
-  }, [previewData?.products, vendor.slug, cacheKey]);
+  }, [previewData?.products, vendor.slug, cacheKey, locale]);
 
   return { sections: result.sections, groups: result.groups, isLoading };
 }

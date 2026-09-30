@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useStorefront, useStorefrontLocale } from '../provider';
 import { createBrowserClient } from '../sdk/client';
+import { withLocaleQuery } from '../utils/locale';
 
 export interface Category {
   id: string;
@@ -44,6 +45,7 @@ export function useCategories(options?: {
   isLoading: boolean;
 } {
   const { previewData, vendor } = useStorefront();
+  const locale = useStorefrontLocale();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -78,7 +80,7 @@ export function useCategories(options?: {
         }
 
         const query: Record<string, string> = { include_empty: '1' };
-        const response = await client.get<CategoriesResponse>('/collections', query);
+        const response = await client.get<CategoriesResponse>('/collections', withLocaleQuery(query, locale));
         let items = flattenCategories(Array.isArray(response.data) ? response.data : []);
 
         // Filter by specific IDs if provided — preserving input order
@@ -106,7 +108,7 @@ export function useCategories(options?: {
     return () => {
       cancelled = true;
     };
-  }, [idsKey, limit, previewData?.categories, vendor.slug]);
+  }, [idsKey, limit, previewData?.categories, vendor.slug, locale]);
 
   return { categories, isLoading };
 }

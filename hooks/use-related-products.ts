@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useStorefront, useStorefrontLocale } from '../provider';
 import type { Product } from '../types/product';
 import type { ApiResponse } from '../types/product';
 import { createBrowserClient } from '../sdk/client';
+import { withLocaleQuery } from '../utils/locale';
 import { extractProducts, normalizeProduct } from '../utils/product-normalizer';
 
 export function useRelatedProducts(
@@ -12,6 +13,7 @@ export function useRelatedProducts(
   limit = 4,
 ): { products: Product[]; isLoading: boolean } {
   const { vendor, previewData } = useStorefront();
+  const locale = useStorefrontLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,7 +34,7 @@ export function useRelatedProducts(
         const client = createBrowserClient(vendor.slug ?? undefined);
         const response = await client.get<ApiResponse<unknown>>(
           `/products/${currentSlug}/related`,
-          { limit },
+          withLocaleQuery({ limit }, locale),
         );
 
         const raw = extractProducts(response.data);
@@ -50,7 +52,7 @@ export function useRelatedProducts(
 
     void run();
     return () => { cancelled = true; };
-  }, [currentSlug, limit, vendor.slug, previewData?.products]);
+  }, [currentSlug, limit, vendor.slug, previewData?.products, locale]);
 
   return { products, isLoading };
 }

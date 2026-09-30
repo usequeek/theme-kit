@@ -157,6 +157,32 @@ export default function Footer() {
   the seam for a possible future plan perk. There is no merchant-facing
   toggle for it in v1 — always render it visible.
 
+## Locales
+
+Customer-facing reads accept `?locale=<code>` and answer translated text
+(unknown/unpublished locale → source text, no error). The kit forwards the
+request locale on every catalogue/content transport, server and browser:
+
+- Server: `createServerStoreClient().get()` reads the incoming request's
+  `x-queek-locale` header (set by the storefront proxy for published
+  non-primary locales only — absent on the primary), appends `locale=<code>`
+  to the backend URL, and suffixes every cache tag with `:locale:<code>` so
+  locales never share a cache entry. `fetchShopPrefetch`, `fetchCollections`,
+  `fetchCollection` and `fetchCollectionProducts` take the same behaviour plus
+  an optional explicit override. No header → byte-identical requests and tags.
+- Browser: `StorefrontProvider` takes an optional `locale` prop (the host
+  passes its request header through) and `useStorefrontLocale()` exposes it.
+  `useShop`, `useProducts`/`useProductBySlug`, `useRelatedProducts`,
+  `useProductSections`, `useCategories`, `usePosts`, `useReviews`,
+  `useProductQuestions` and `useProductDetail` send `?locale=` when it is set
+  and key their client caches by it. No prop → unchanged.
+
+What this means for themes: nothing to handle. Never read the header, never
+append `locale` yourself, and never build a language switcher — locale
+routing, `basePath` prefixing and the switcher are core-owned in the
+storefront. Links built from `basePath` keep their locale prefix with zero
+theme changes.
+
 ## Links and navigation
 
 ```ts

@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { resolveCustomDomainVendorSlug, resolveCustomDomainVendorSlugRemote, resolveSubdomainVendorSlug } from '../utils/vendor-host';
+import { LOCALE_CODE_HEADER, parseLocaleCode, withLocaleQuery, withLocaleTags } from '../utils/locale';
 import { API_BASE_URL, request, type RequestCachePolicy, type RequestOptions } from './client';
 import { getActivePlatform } from './platform';
 
@@ -142,8 +143,52 @@ async function isPreviewRender(): Promise<boolean> {
   return h.get('x-queek-preview') === '1';
 }
 
+/**
+ * Validated locale of the incoming storefront request, or null for the
+ * primary rendering. The proxy sets `x-queek-locale` for published
+ * non-primary locales ONLY (absent on the primary); anything else is
+ * ignored, mirroring the backend's unknown-locale → source-text rule.
+ *
+ * THE single header-parsing site — every server fetcher resolves its locale
+ * through here (directly or via `resolveRequestLocale`), never by reading
+ * `next/headers` itself. Never throws: outside a request scope `headers()`
+ * throws, which is treated as no locale (today's behaviour).
+ */
+export async function readRequestLocale(): Promise<string | null> {
+  try {
+    const h = await headers();
+    return parseLocaleCode(h.get(LOCALE_CODE_HEADER));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Effective locale for one server read: an explicit override wins when
+ * valid, otherwise the incoming request's header decides. Invalid values in
+ * either place are ignored (never an error).
+ */
+export async function resolveRequestLocale(explicit?: string | null): Promise<string | null> {
+  return parseLocaleCode(explicit) ?? readRequestLocale();
+}
+
+/**
+ * Adds the locale dimension to a resolved cache policy: every tag is
+ * suffixed (`<tag>:locale:<code>`) so one locale's entries never share an
+ * entry with another's, and the revalidate route's `<tag>:locale:<code>`
+ * contract clears exactly that locale. No locale → the policy is returned
+ * untouched (same reference, byte-identical tags).
+ */
+export function withLocaleCachePolicy(
+  policy: RequestCachePolicy | null,
+  locale: string | null | undefined,
+): RequestCachePolicy | null {
+  if (!policy || !parseLocaleCode(locale)) return policy;
+  return { revalidate: policy.revalidate, tags: withLocaleTags(policy.tags, locale) };
+}
+
 export function createServerStoreClient(vendorSlug: string, origin?: string): {
-  get: <T>(path: string, query?: RequestOptions['query']) => Promise<T>;
+  get: <T>(path: string, query?: RequestOptions['query'], locale?: string) => Promise<T>;
   post: <T>(path: string, body?: unknown) => Promise<T>;
 } {
   const buildHeaders = (): Record<string, string> => {
@@ -156,17 +201,26 @@ export function createServerStoreClient(vendorSlug: string, origin?: string): {
   };
 
   return {
-    get: async <T>(path: string, query?: RequestOptions['query']) =>
-      request<T>(
+    // `locale` is an explicit override; when omitted the incoming request's
+    // `x-queek-locale` header decides. Either way an absent/invalid locale
+    // leaves the query and the tags exactly as today (translated reads are
+    // strictly additive: `locale=<code>` on the URL plus a `:locale:<code>`
+    // suffix on every cache tag).
+    get: async <T>(path: string, query?: RequestOptions['query'], locale?: string) => {
+      const code = await resolveRequestLocale(locale);
+      return request<T>(
         API_BASE_URL,
         `/client/store${path}`,
         {
-          query,
+          query: withLocaleQuery(query, code),
           timeoutMs: SSR_TIMEOUT_MS,
-          cachePolicy: (await isPreviewRender()) ? null : resolveCachePolicy(vendorSlug, path),
+          cachePolicy: (await isPreviewRender())
+            ? null
+            : withLocaleCachePolicy(resolveCachePolicy(vendorSlug, path), code),
         },
         buildHeaders(),
-      ),
+      );
+    },
     post: <T>(path: string, body?: unknown) =>
       request<T>(API_BASE_URL, `/client/store${path}`, {
         method: 'POST',

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useStorefront, useStorefrontLocale } from '../provider';
 import { createBrowserClient } from '../sdk/client';
+import { withLocaleQuery } from '../utils/locale';
 import type { ReviewItem, ReviewsBlockData, ReviewsSummary } from '../types/block';
 
 interface ReviewsResponse {
@@ -67,6 +68,7 @@ export function useReviews(options: ReviewsBlockData): {
   isLoading: boolean;
 } {
   const { vendor, previewData } = useStorefront();
+  const locale = useStorefrontLocale();
   const seeded = options._preview?.reviews ?? (previewData?.reviews ? resolvePreviewReviews(previewData.reviews, options) : []);
   const [reviews, setReviews] = useState<ReviewItem[]>(seeded);
   const [summary, setSummary] = useState<ReviewsSummary>(options._preview?.summary ?? summarize(seeded));
@@ -116,7 +118,7 @@ export function useReviews(options: ReviewsBlockData): {
         let path = '/reviews';
         if (ids && ids.length > 0) {
           const params = new URLSearchParams();
-          for (const [key, value] of Object.entries(query)) {
+          for (const [key, value] of Object.entries(withLocaleQuery(query, locale) ?? {})) {
             params.set(key, String(value));
           }
           ids.forEach((id) => params.append('ids[]', id));
@@ -129,7 +131,7 @@ export function useReviews(options: ReviewsBlockData): {
           return;
         }
 
-        const response = await client.get<ReviewsResponse>('/reviews', query);
+        const response = await client.get<ReviewsResponse>('/reviews', withLocaleQuery(query, locale));
         if (!cancelled) {
           setReviews(response.data.reviews ?? []);
           setSummary(response.data.summary ?? EMPTY_SUMMARY);
@@ -161,6 +163,7 @@ export function useReviews(options: ReviewsBlockData): {
     with_media,
     limit,
     sort,
+    locale,
   ]);
 
   return { reviews, summary, isLoading };

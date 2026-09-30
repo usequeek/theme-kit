@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useStorefront, useStorefrontLocale } from '../provider';
 import { createBrowserClient } from '../sdk/client';
+import { withLocaleQuery } from '../utils/locale';
 import type { ProductQaBlockData, ProductQuestionItem } from '../types/block';
 
 interface ProductQuestionsResponse {
@@ -20,6 +21,7 @@ export function useProductQuestions(options: ProductQaBlockData): {
   isLoading: boolean;
 } {
   const { vendor, previewData } = useStorefront();
+  const locale = useStorefrontLocale();
   const [questions, setQuestions] = useState<ProductQuestionItem[]>(options._preview?.questions ?? []);
   const [isLoading, setIsLoading] = useState(!options._preview && !previewData);
 
@@ -52,7 +54,7 @@ export function useProductQuestions(options: ProductQaBlockData): {
       try {
         const response = await client.get<ProductQuestionsResponse>(
           `/products/${product_slug}/questions`,
-          query,
+          withLocaleQuery(query, locale),
         );
         if (!cancelled) {
           setQuestions(response.data.questions ?? []);
@@ -72,7 +74,7 @@ export function useProductQuestions(options: ProductQaBlockData): {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendor.slug, previewData, product_slug, limit]);
+  }, [vendor.slug, previewData, product_slug, limit, locale]);
 
   return { questions, isLoading };
 }

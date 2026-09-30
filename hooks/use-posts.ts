@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useStorefront, useStorefrontLocale } from '../provider';
 import type { ApiResponse } from '../types/product';
 import type { Post } from '../types/page';
 import { createBrowserClient } from '../sdk/client';
+import { withLocaleQuery } from '../utils/locale';
 
 /**
  * Client-side blog-post listing, for blocks embedded on an arbitrary page
@@ -15,6 +16,7 @@ import { createBrowserClient } from '../sdk/client';
  */
 export function usePosts(options?: { category?: string | null; limit?: number }): { posts: Post[]; isLoading: boolean } {
   const { previewData, vendor } = useStorefront();
+  const locale = useStorefrontLocale();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,7 +50,7 @@ export function usePosts(options?: { category?: string | null; limit?: number })
         if (options?.category) query.category = options.category;
         if (options?.limit) query.per_page = options.limit;
 
-        const response = await client.get<ApiResponse<Post[]>>('/posts', query);
+        const response = await client.get<ApiResponse<Post[]>>('/posts', withLocaleQuery(query, locale));
 
         if (!cancelled) {
           setPosts(response.data ?? []);
@@ -69,7 +71,7 @@ export function usePosts(options?: { category?: string | null; limit?: number })
     return () => {
       cancelled = true;
     };
-  }, [options?.category, options?.limit, previewData?.posts, vendor.slug]);
+  }, [options?.category, options?.limit, previewData?.posts, vendor.slug, locale]);
 
   return { posts, isLoading };
 }

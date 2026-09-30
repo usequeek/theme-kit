@@ -1,9 +1,10 @@
 'use client';
 
 import { createContext, createElement, useContext, useEffect, useMemo, useRef, useState, type JSX, type ReactNode } from 'react';
-import { useStorefront } from '../provider';
+import { useStorefront, useStorefrontLocale } from '../provider';
 import type { Product, ApiResponse } from '../types/product';
 import { createBrowserClient } from '../sdk/client';
+import { localeCacheKeySegment, withLocaleQuery } from '../utils/locale';
 import {
   SHOP_DEFAULT_PER_PAGE,
   normalizeShopQuery,
@@ -95,6 +96,7 @@ export function useShop(options?: {
   pagination: ShopPagination;
 } {
   const { vendor, previewData } = useStorefront();
+  const locale = useStorefrontLocale();
   const prefetch = useContext(ShopPrefetchContext);
 
   const perPage = options?.perPage ?? SHOP_DEFAULT_PER_PAGE;
@@ -107,15 +109,25 @@ export function useShop(options?: {
   const previewProducts = previewData?.products;
   const isPreview = Array.isArray(previewProducts);
 
-  // The server's page, when it is exactly this query (see ShopPrefetchProvider).
-  const seed = !isPreview && prefetch && sameShopQuery(prefetch.query, query) ? prefetch : null;
+  // The server's page, when it is exactly this query IN THIS LOCALE (see
+  // ShopPrefetchProvider). The locale check keeps two locales from sharing
+  // the seeded grid; an absent prefetch locale means primary, as before.
+  const seed = !isPreview && prefetch && sameShopQuery(prefetch.query, query) && (prefetch.locale ?? null) === locale ? prefetch : null;
+
+  // Client cache key: the query plus the locale dimension, so two locales
+  // never share fetched results. Unset locale leaves it the query JSON
+  // alone — exactly the key it always was.
+  const queryKey = JSON.stringify(query);
+  const localeSegment = localeCacheKeySegment(locale);
+  const fetchKey = localeSegment ? `${queryKey}::locale:${localeSegment}` : queryKey;
 
   const [products, setProducts] = useState<Product[]>(seed?.products ?? []);
   const [isLoading, setIsLoading] = useState(!isPreview && !seed);
   const [pagination, setPagination] = useState<ShopPagination>(seed?.pagination ?? { ...EMPTY_PAGINATION, perPage });
-  // The query whose results are already in state. Seeded with the prefetch so
-  // the first effect run does not refetch the page the server just rendered.
-  const loadedQueryRef = useRef<string | null>(seed ? JSON.stringify(seed.query) : null);
+  // The key whose results are already in state. Seeded with the prefetch so
+  // the first effect run does not refetch the page the server just rendered
+  // (the seed's locale already matches `locale`, so `fetchKey` is its key).
+  const loadedQueryRef = useRef<string | null>(seed ? fetchKey : null);
 
   // Preview: derive everything synchronously from the demo catalogue.
   const previewResult = useMemo(() => {
@@ -140,12 +152,12 @@ export function useShop(options?: {
   }, [isPreview, previewProducts, categorySlug, keyword, sort, page, perPage]);
 
   // Production: fetch the live catalogue.
-  const queryKey = JSON.stringify(query);
   useEffect(() => {
     if (isPreview) return undefined;
-    // Already showing this query — the server's prefetch, or a fetch that
-    // finished. (Clear any loading state a cancelled in-between query left.)
-    if (loadedQueryRef.current === queryKey) {
+    // Already showing this query in this locale — the server's prefetch, or
+    // a fetch that finished. (Clear any loading state a cancelled
+    // in-between query left.)
+    if (loadedQueryRef.current === fetchKey) {
       setIsLoading(false);
       return undefined;
     }
@@ -162,14 +174,14 @@ export function useShop(options?: {
       try {
         const response = await client.get<ApiResponse<unknown, Record<string, unknown>>>(
           '/products',
-          shopRequestParams(current),
+          withLocaleQuery(shopRequestParams(current), locale),
         );
         if (cancelled) return;
 
         const parsed = parseShopResponse(response, current);
         setPagination(parsed.pagination);
         setProducts(parsed.products);
-        loadedQueryRef.current = queryKey;
+        loadedQueryRef.current = fetchKey;
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -180,7 +192,7 @@ export function useShop(options?: {
     return () => {
       cancelled = true;
     };
-  }, [isPreview, vendor.slug, queryKey]);
+  }, [isPreview, vendor.slug, queryKey, fetchKey, locale]);
 
   if (isPreview && previewResult) {
     return { products: previewResult.products, isLoading: false, pagination: previewResult.pagination };

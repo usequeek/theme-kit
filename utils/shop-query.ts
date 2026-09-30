@@ -41,6 +41,13 @@ export interface ShopPrefetch {
   query: ShopQuery;
   products: Product[];
   pagination: ShopPagination;
+  /**
+   * Request locale the page was fetched in (null = primary). `useShop` only
+   * seeds from a prefetch whose locale matches its own, so two locales never
+   * share the seeded grid. Absent (older callers) means primary, exactly as
+   * before.
+   */
+  locale?: string | null;
 }
 
 export function normalizeShopQuery(input?: {

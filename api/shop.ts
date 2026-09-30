@@ -1,4 +1,4 @@
-import { createServerStoreClient, getRequestOrigin } from '../sdk/server-store-client';
+import { createServerStoreClient, getRequestOrigin, resolveRequestLocale } from '../sdk/server-store-client';
 import type { ApiResponse } from '../types/product';
 import { parseShopResponse, shopRequestParams, type ShopPrefetch, type ShopQuery } from '../utils/shop-query';
 
@@ -15,11 +15,15 @@ import { parseShopResponse, shopRequestParams, type ShopPrefetch, type ShopQuery
  * Returns null on ANY failure: the page must never break over a head start —
  * `useShop` then fetches in the browser exactly as it did before.
  */
-export async function fetchShopPrefetch(vendorSlug: string, query: ShopQuery): Promise<ShopPrefetch | null> {
+export async function fetchShopPrefetch(vendorSlug: string, query: ShopQuery, locale?: string): Promise<ShopPrefetch | null> {
   try {
     const client = createServerStoreClient(vendorSlug, await getRequestOrigin());
-    const response = await client.get<ApiResponse<unknown, Record<string, unknown>>>('/products', shopRequestParams(query));
-    return { query, ...parseShopResponse(response, query) };
+    // Explicit override wins; otherwise the request's `x-queek-locale`
+    // header decides (null on the primary) — resolved once here through the
+    // shared helper so the echoed `locale` below is exactly what was fetched.
+    const code = await resolveRequestLocale(locale);
+    const response = await client.get<ApiResponse<unknown, Record<string, unknown>>>('/products', shopRequestParams(query), code ?? undefined);
+    return { query, locale: code, ...parseShopResponse(response, query) };
   } catch {
     return null;
   }
