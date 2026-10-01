@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import type { CartShellProps } from '../../types/theme';
 import { useHref } from '../../hooks/use-href';
+import { useThemeStrings } from '../../provider';
 import { useCheckoutStore } from '../../stores/checkout-store';
 import { useRelatedProducts } from '../../hooks/use-related-products';
 import { useCart } from '../../hooks/use-cart';
@@ -27,6 +28,7 @@ export function DefaultCartShell({
   onRemove,
 }: CartShellProps): JSX.Element {
   const href = useHref();
+  const t = useThemeStrings();
   const { addProduct } = useCart();
   const vendorNote = useCheckoutStore((s) => s.vendorNote);
   const setVendorNote = useCheckoutStore((s) => s.setVendorNote);
@@ -48,10 +50,10 @@ export function DefaultCartShell({
   if (empty) {
     return (
       <div className="core-cart-page">
-        <h1 className="core-cart-page__title">Your cart</h1>
+        <h1 className="core-cart-page__title">{t('cart.title')}</h1>
         <div className="core-cart-page__empty">
-          <p>Your cart is empty.</p>
-          <Link href={href('/')} className="core-checkout__back-link">Browse products</Link>
+          <p>{t('cart.empty.message')}</p>
+          <Link href={href('/')} className="core-checkout__back-link">{t('cart.empty.browse')}</Link>
         </div>
       </div>
     );
@@ -59,7 +61,7 @@ export function DefaultCartShell({
 
   return (
     <div className="core-cart-page">
-      <h1 className="core-cart-page__title">Your cart</h1>
+      <h1 className="core-cart-page__title">{t('cart.title')}</h1>
 
       <div className="core-cart-page__grid">
         <div className="core-cart-page__main">
@@ -74,19 +76,19 @@ export function DefaultCartShell({
                   )}
                   <div className="core-cart-page__item-info">
                     <span className="core-cart-page__item-title">{item.title}</span>
-                    <span className="core-cart-page__item-price">{formatMoney(item.unit_price, currency)} each</span>
+                    <span className="core-cart-page__item-price">{t('cart.item.each', { price: formatMoney(item.unit_price, currency) })}</span>
                   </div>
                   <div className="core-cart-page__item-qty">
-                    <button type="button" onClick={() => onDecrease(item.id, item.shop_id)} aria-label={`Decrease ${item.title}`}>
+                    <button type="button" onClick={() => onDecrease(item.id, item.shop_id)} aria-label={t('cart.item.decrease', { title: item.title })}>
                       <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                     </button>
                     <span>{item.quantity}</span>
-                    <button type="button" onClick={() => onIncrease(item.id, item.shop_id)} aria-label={`Increase ${item.title}`}>
+                    <button type="button" onClick={() => onIncrease(item.id, item.shop_id)} aria-label={t('cart.item.increase', { title: item.title })}>
                       <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                     </button>
                   </div>
                   <span className="core-cart-page__item-total">{formatMoney(item.unit_price * item.quantity, currency)}</span>
-                  <button type="button" className="core-cart-page__item-remove" onClick={() => onRemove(item.id, item.shop_id)} aria-label={`Remove ${item.title}`}>
+                  <button type="button" className="core-cart-page__item-remove" onClick={() => onRemove(item.id, item.shop_id)} aria-label={t('cart.item.remove', { title: item.title })}>
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                       <path d="M4 6h12M8 6V4.5A1.5 1.5 0 019.5 3h1A1.5 1.5 0 0112 4.5V6m-6 0v9.5A1.5 1.5 0 007.5 17h5a1.5 1.5 0 001.5-1.5V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -99,12 +101,12 @@ export function DefaultCartShell({
           {related.length > 0 ? (
             <section className="core-cart-page__related">
               <div className="core-cart-page__related-head">
-                <h2>You may also like</h2>
+                <h2>{t('cart.related.title')}</h2>
                 <div className="core-cart-page__related-nav">
-                  <button type="button" onClick={() => scrollRelated(-1)} aria-label="Previous">
+                  <button type="button" onClick={() => scrollRelated(-1)} aria-label={t('cart.related.prev')}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 13L5 8l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </button>
-                  <button type="button" onClick={() => scrollRelated(1)} aria-label="Next">
+                  <button type="button" onClick={() => scrollRelated(1)} aria-label={t('cart.related.next')}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </button>
                 </div>
@@ -125,13 +127,13 @@ export function DefaultCartShell({
                     )}
                     <div className="core-cart-page__related-info">
                       <span className="core-cart-page__related-title">{product.title}</span>
-                      <span className="core-cart-page__related-price">{product.pricing.is_price_from ? 'From ' : ''}{formatMoney(product.pricing.sale_amount, currency)}</span>
+                      <span className="core-cart-page__related-price">{product.pricing.is_price_from ? t('cart.related.from', { price: formatMoney(product.pricing.sale_amount, currency) }) : formatMoney(product.pricing.sale_amount, currency)}</span>
                     </div>
                     {productRequiresVariant(product) ? (
                       <Link
                         className="core-cart-page__related-add"
                         href={href(`/products/${product.slug}`)}
-                        aria-label={`Choose options for ${product.title}`}
+                        aria-label={t('cart.related.choose', { title: product.title })}
                       >
                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                           <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -141,7 +143,7 @@ export function DefaultCartShell({
                     <button
                       type="button"
                       className="core-cart-page__related-add"
-                      aria-label={`Add ${product.title} to cart`}
+                      aria-label={t('cart.related.add', { title: product.title })}
                       onClick={() => addProduct(product)}
                     >
                       <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -160,10 +162,10 @@ export function DefaultCartShell({
 
         <div className="core-cart-page__summary">
           <div className="core-cart-page__summary-card">
-            <h2 className="core-cart-page__summary-title">Order summary</h2>
+            <h2 className="core-cart-page__summary-title">{t('cart.summary.title')}</h2>
 
             <button type="button" className="core-cart-page__note-toggle" onClick={() => setNoteOpen((v) => !v)}>
-              Add order note
+              {t('cart.note.toggle')}
               <span aria-hidden="true">{noteOpen ? '−' : '+'}</span>
             </button>
             {noteOpen ? (
@@ -172,18 +174,18 @@ export function DefaultCartShell({
                 rows={3}
                 value={vendorNote}
                 onChange={(event) => setVendorNote(event.target.value)}
-                placeholder="Order instructions (optional)"
+                placeholder={t('cart.note.placeholder')}
               />
             ) : null}
 
             <div className="core-cart-page__subtotal">
-              <span>Subtotal:</span>
+              <span>{t('cart.summary.subtotal')}</span>
               <strong>{formatMoney(total, currency)} {currency}</strong>
             </div>
 
             <label className="core-cart-page__terms">
               <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
-              <span>I agree to the <Link href={href('/policies')}>terms and refund policy</Link></span>
+              <span>{t('cart.terms.agree')}<Link href={href('/policies')}>{t('cart.terms.policy')}</Link></span>
             </label>
 
             <Link
@@ -197,9 +199,9 @@ export function DefaultCartShell({
                 <circle cx="8" cy="17" r="1" fill="currentColor" />
                 <circle cx="14" cy="17" r="1" fill="currentColor" />
               </svg>
-              Checkout
+              {t('cart.checkout.action')}
             </Link>
-            <Link href={href('/')} className="core-cart-page__continue-link">Continue shopping</Link>
+            <Link href={href('/')} className="core-cart-page__continue-link">{t('cart.summary.continue')}</Link>
           </div>
         </div>
       </div>

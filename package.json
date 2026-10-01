@@ -23,6 +23,7 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.css",
+    "locales/*.json",
     "README.md",
     "LICENSE"
   ],

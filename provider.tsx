@@ -9,6 +9,13 @@ import type { Product } from './types/product';
 import type { StorefrontConfig, VendorProfile } from './types/vendor';
 import { getBrandCssVariables } from './utils/brand';
 import { parseLocaleCode } from './utils/locale';
+import {
+  defaultThemeStrings,
+  t as translateThemeStrings,
+  type ThemeStringsDictionary,
+  type ThemeStringsFn,
+  type ThemeStringsVars,
+} from './strings/theme-strings';
 import { DesignTokenPreviewListener } from './design-token-preview';
 
 export interface StorefrontPreviewData {
@@ -40,6 +47,9 @@ interface StorefrontContextValue {
   /** Validated request locale (null = primary). Browser hooks read it via
    * `useStorefrontLocale()` and send `?locale=` when it is set. */
   locale: string | null;
+  /** Active locale's dictionaries (override, theme, core — the host merges and
+   * passes ONLY the active locale). Empty = English defaults only. */
+  strings: ThemeStringsDictionary[];
 }
 
 export const StorefrontContext = createContext<StorefrontContextValue | null>(null);
@@ -52,6 +62,7 @@ export function StorefrontProvider({
   basePath,
   pagesChrome,
   locale,
+  strings,
   children,
 }: {
   vendor: VendorProfile;
@@ -67,10 +78,27 @@ export function StorefrontProvider({
    * the host owns it, like `basePath`.
    */
   locale?: string | null;
+  /**
+   * Active locale's theme-string dictionaries (merchant override, theme
+   * locale, kit core locale — the host merges and passes ONLY the active
+   * locale, loaded per-locale so no other language ships to the client).
+   * Optional — absent means English defaults, and every kit component
+   * renders exactly as before. Existing props are untouched.
+   */
+  strings?: ThemeStringsDictionary | ThemeStringsDictionary[] | null;
   children: ReactNode;
 }): JSX.Element {
   const resolvedBasePath = basePath ?? `/${vendor.slug ?? ''}`;
   const resolvedLocale = parseLocaleCode(locale);
+  const resolvedStrings = useMemo(
+    () =>
+      !strings
+        ? []
+        : (Array.isArray(strings) ? strings : [strings]).filter(
+            (d): d is ThemeStringsDictionary => !!d,
+          ),
+    [strings],
+  );
   const value = useMemo(
     () => ({
       vendor,
@@ -80,8 +108,9 @@ export function StorefrontProvider({
       basePath: resolvedBasePath,
       pagesChrome: pagesChrome ?? {},
       locale: resolvedLocale,
+      strings: resolvedStrings,
     }),
-    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale],
+    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale, resolvedStrings],
   );
   const brandRootRef = useRef<HTMLDivElement>(null);
 
@@ -119,4 +148,32 @@ export function useStorefrontLocale(): string | null {
   }
 
   return context.locale ?? null;
+}
+
+/**
+ * The client theme-string surface: the bound `t` for the active locale
+ * (`strings` prop, then the English default — never the raw key). Works in
+ * themes mounted by `ThemeMount` (which renders inside the host's provider).
+ * No `strings` prop → the English defaults, so kit components render exactly
+ * as before and third-party themes keep working untranslated.
+ */
+export function useThemeStrings(): ThemeStringsFn {
+  const context = useContext(StorefrontContext);
+
+  if (!context) {
+    throw new Error('useThemeStrings must be used within StorefrontProvider');
+  }
+
+  const { strings, locale } = context;
+  return useMemo(
+    () =>
+      (key: string, vars?: ThemeStringsVars, overrideLocale?: string | null) =>
+        translateThemeStrings(
+          [...strings, defaultThemeStrings],
+          key,
+          vars,
+          overrideLocale ?? locale ?? undefined,
+        ),
+    [strings, locale],
+  );
 }

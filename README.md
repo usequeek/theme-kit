@@ -42,6 +42,47 @@ Theme CSS ships with the package: `@usequeek/theme-kit/shared-blocks/core-blocks
 (framework-owned blocks), plus per-component CSS next to its component
 (`components/variant-picker.css`, `apps/apps.css`).
 
+## Theme strings
+
+The kit's Shopify-shaped UI-string mechanism (`strings/theme-strings.ts`,
+pure: no `next/*`, no React). Additive and backward-compatible — a theme or
+provider that passes nothing renders exactly as today, in English.
+
+- **Authoring contract.** `t(dictionaries, key, vars?, locale?)`: dot-path
+  lookup (`cart.title`), `{var}` interpolation (`{{`/`}}` escape to literal
+  braces; a missing var keeps its `{placeholder}`), CLDR plurals via
+  `Intl.PluralRules` — a key holding `{ one, two, few, many, other }`
+  (nested, or flat `key.one` … `key.other` suffix keys) selects by
+  `vars.count`, defaulting to `other`. Locale-aware `formatThemeNumber`,
+  `formatThemeDate` and `formatThemeMoney` replace hardcoded `en-GB`
+  formatting; an unknown locale falls back to English. Keys are dotted
+  lowercase `scope.thing.state`, max **40 chars**; values max **1000 chars**:
+  the backend overlay stores `<theme-slug>.<key>` in a varchar(64), so the
+  key budget leaves 23 chars for the slug plus the dot.
+- **Two surfaces.** Server (provider-free): the host supplies per-locale
+  loaders and calls
+  `createThemeStrings({ locale, loaders })` — `{ override, theme, core }`,
+  each `(locale) => Promise<dict | null>` — usually a per-locale dynamic
+  `import()` with a try/catch returning null when the file is absent — then
+  passes the bound `t` via props/closure. A throwing loader simply drops
+  out of the chain.
+  Client: `<StorefrontProvider strings={…}>` (optional, no-op when absent)
+  plus `useThemeStrings()` returning the same bound `t`; works inside
+  `ThemeMount`. The kit ships `locales/en.default.json` (cart, checkout,
+  auth, blog) as the last-resort English default.
+- **Fallback.** Ordered dictionaries (override → theme → core → English
+  default); first hit wins. The last fallback is the English default
+  *value* — never the raw key, never "translation missing". Absent
+  everywhere renders `""` (and warns once per key in development only —
+  an empty string would otherwise leak internal key names into the UI).
+- **Per-locale loading.** `createThemeStrings` reads ONLY the active
+  locale's dictionaries, and the host passes ONLY that locale to the
+  provider — other `{lang}.json` files never enter the client bundle.
+  Only `locales/en.default.json` may be statically imported (by
+  `strings/theme-strings.ts` itself); every other locale arrives via the
+  host's dynamic `import()` per locale. `tests/theme-strings.test.tsx`
+  gates this: any other static locale import fails the suite.
+
 ## Consumers
 
 - **The Queek storefront** (`usequeek/queek-storefront`) installs this package
