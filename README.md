@@ -70,11 +70,21 @@ provider that passes nothing renders exactly as today, in English.
   plus `useThemeStrings()` returning the same bound `t`; works inside
   `ThemeMount`. The kit ships `locales/en.default.json` (cart, checkout,
   auth, blog) as the last-resort English default.
-- **Fallback.** Ordered dictionaries (override → theme → core → English
-  default); first hit wins. The last fallback is the English default
-  *value* — never the raw key, never "translation missing". Absent
-  everywhere renders `""` (and warns once per key in development only —
-  an empty string would otherwise leak internal key names into the UI).
+- **Fallback.** Ordered dictionaries (merchant override → host-loaded
+  locale dictionaries → `manifest.strings` → kit core English default);
+  first hit wins. The last fallback is the English default *value* —
+  never the raw key, never "translation missing". Absent everywhere
+  renders `""` (and warns once per key in development only — an empty
+  string would otherwise leak internal key names into the UI).
+- **Theme English travels with the theme.** A theme ships its own English
+  defaults in its manifest: `import strings from './locales/en.default.json'`
+  inside the theme, then `manifest: { …, strings }` (`ThemeManifest.strings`,
+  ENGLISH ONLY — never other locales). `useThemeStrings()` layers it
+  between the host's `strings` prop and the kit core English, so hosts that
+  mount a theme with no `strings` (e.g. theme previews) still render the
+  theme's English with zero host cooperation. Host dictionaries always win
+  where present; keys missing there fall back to manifest English, never
+  to `""`.
 - **Per-locale loading.** `createThemeStrings` reads ONLY the active
   locale's dictionaries, and the host passes ONLY that locale to the
   provider — other `{lang}.json` files never enter the client bundle.

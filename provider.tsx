@@ -17,6 +17,7 @@ import {
   type ThemeStringsVars,
 } from './strings/theme-strings';
 import { DesignTokenPreviewListener } from './design-token-preview';
+import { useOptionalTheme } from './theme-context';
 
 export interface StorefrontPreviewData {
   products?: Product[];
@@ -48,8 +49,10 @@ interface StorefrontContextValue {
    * `useStorefrontLocale()` and send `?locale=` when it is set. */
   locale: string | null;
   /** Active locale's dictionaries (override, theme, core — the host merges and
-   * passes ONLY the active locale). Empty = English defaults only. */
-  strings: ThemeStringsDictionary[];
+   * passes ONLY the active locale). Empty or omitted = English defaults only.
+   * Optional so hand-built context values (storefront scripts, tests) keep
+   * compiling without it. */
+  strings?: ThemeStringsDictionary[];
 }
 
 export const StorefrontContext = createContext<StorefrontContextValue | null>(null);
@@ -151,11 +154,15 @@ export function useStorefrontLocale(): string | null {
 }
 
 /**
- * The client theme-string surface: the bound `t` for the active locale
- * (`strings` prop, then the English default — never the raw key). Works in
- * themes mounted by `ThemeMount` (which renders inside the host's provider).
- * No `strings` prop → the English defaults, so kit components render exactly
- * as before and third-party themes keep working untranslated.
+ * The client theme-string surface: the bound `t` for the active locale.
+ * Chain order: merchant/host override dictionaries (`strings` prop), then
+ * the mounted theme's `manifest.strings` (theme English — travels WITH the
+ * theme, so preview hosts that pass no `strings` still render English),
+ * then the kit core English default — never the raw key. Works in themes
+ * mounted by `ThemeMount` and in hosts that provide the theme directly
+ * (both expose it through the theme context). No `strings` prop and no
+ * manifest → the English defaults, so kit components render exactly as
+ * before and third-party themes keep working untranslated.
  */
 export function useThemeStrings(): ThemeStringsFn {
   const context = useContext(StorefrontContext);
@@ -164,16 +171,18 @@ export function useThemeStrings(): ThemeStringsFn {
     throw new Error('useThemeStrings must be used within StorefrontProvider');
   }
 
+  const theme = useOptionalTheme();
+  const manifestStrings = theme?.manifest?.strings ?? null;
   const { strings, locale } = context;
   return useMemo(
     () =>
       (key: string, vars?: ThemeStringsVars, overrideLocale?: string | null) =>
         translateThemeStrings(
-          [...strings, defaultThemeStrings],
+          [...(strings ?? []), ...(manifestStrings ? [manifestStrings] : []), defaultThemeStrings],
           key,
           vars,
           overrideLocale ?? locale ?? undefined,
         ),
-    [strings, locale],
+    [strings, manifestStrings, locale],
   );
 }

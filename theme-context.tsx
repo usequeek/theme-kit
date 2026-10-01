@@ -27,3 +27,13 @@ export function useTheme(): ThemeModule {
 
   return theme;
 }
+
+/**
+ * Null outside a theme provider (kit chrome such as the cart shell renders
+ * under `StorefrontProvider` with no theme mounted). `useThemeStrings`
+ * reads the mounted theme's `manifest.strings` through this, so a missing
+ * theme simply contributes no dictionary instead of throwing.
+ */
+export function useOptionalTheme(): ThemeModule | null {
+  return useContext(ThemeContext);
+}

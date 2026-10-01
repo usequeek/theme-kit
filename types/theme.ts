@@ -6,6 +6,7 @@ import type { MenuItem } from './menu';
 import type { BlogCategory, Collection, Page, Pagination, Post } from './page';
 import type { MetaobjectEntry, Product } from './product';
 import type { DesignTokenAxisPath, DesignTokens, StorefrontConfig, VendorProfile } from './vendor';
+import type { ThemeStringsDictionary } from '../strings/theme-strings';
 
 export interface HomePageProps {
   blocks: Block[];
@@ -350,6 +351,26 @@ export interface ThemeManifest {
    * injector's own hardcoded defaults (`lib/core/utils/brand.ts`).
    */
   tokens?: DesignTokens;
+  /**
+   * The theme's English default dictionary — the theme's own English
+   * locale file (authored as `en.default.json` in the theme's `locales/`
+   * dir and imported as an object) referenced here.
+   * Same shape as the kit core English default
+   * (nested objects by dot-path, or flat dotted keys; CLDR plural maps
+   * allowed); keys follow the shared grammar (dotted lowercase, <= 40
+   * chars) because the backend overlay stores `<theme-slug>.<key>` in a
+   * varchar(64).
+   *
+   * The kit layers it between the host-loaded locale dictionaries and the
+   * kit core English, so ANY host that mounts the theme (vendor layout,
+   * theme preview, CLI dev preview) renders the theme's English with zero
+   * host cooperation — a host that passes nothing still shows English,
+   * never empty labels. ENGLISH ONLY: non-English packs stay host-loaded
+   * per locale and are never bundled into the theme. Optional during the
+   * migration — a manifest without it behaves exactly as before (kit core
+   * English, then `''` for unknown keys).
+   */
+  strings?: ThemeStringsDictionary;
 }
 
 /**
