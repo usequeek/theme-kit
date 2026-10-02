@@ -203,7 +203,10 @@ export default function Footer() {
   it — style the classes in your theme.
 - The href (`https://usequeek.com/business`), `target="_blank"` and
   `rel="noopener noreferrer"` are the contract — never re-implement the
-  markup by hand.
+  markup by hand. The href is tagged for attribution by `poweredByQueekUrl`
+  (`utm_source=powered_by&utm_medium=storefront&utm_campaign=<store slug>`,
+  campaign omitted when the store has no slug); the component reads the slug
+  from the storefront context, so themes pass nothing.
 - `hidden` (default false) takes the component's visibility from a prop as
   the seam for a possible future plan perk. There is no merchant-facing
   toggle for it in v1 — always render it visible.
