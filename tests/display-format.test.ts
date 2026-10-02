@@ -318,3 +318,54 @@ describe("no exported formatter lets an 'en*' tag reach Intl unmapped", () => {
     expect(source).toContain('date.toLocaleDateString(resolveIntlLocale(locale)');
   });
 });
+
+describe('English money before/after (S7 table, measured on old vs new code)', () => {
+  // BEFORE (f7ee395, scratch worktree run): formatMoney was hardcoded 'en-NG';
+  // formatThemeMoney used bare 'en' via canonicalThemeLocale. AFTER: both use
+  // en-NG. Decision: en-NG ('US$') wins because live English stores already
+  // render formatMoney — the only money helper any theme imports (atelier
+  // blocks/components import it; ZERO themes import formatThemeMoney, so the
+  // old bare-'en' '$5,000.00' never reached a live store). GBP/EUR symbols are
+  // identical under 'en' vs 'en-NG'; only the helper decimal contract differs
+  // (formatMoney: decimals only when present; formatThemeMoney: K0 2-decimals).
+  it.each([
+    ['NGN', '₦5,000', '₦5,000.00'],
+    ['USD', 'US$5,000', 'US$5,000.00'],
+    ['GBP', '£5,000', '£5,000.00'],
+    ['EUR', '€5,000', '€5,000.00'],
+  ])('%s renders the live-store English output', (currency, money, themeMoney) => {
+    expect(formatMoney(5000, currency)).toBe(money);
+    expect(formatMoney(5000, currency, 'en')).toBe(money);
+    expect(formatThemeMoney(5000, currency, 'en')).toBe(themeMoney);
+    expect(formatThemeMoney(5000, currency, undefined)).toBe(themeMoney);
+  });
+
+  it('September abbreviates as Intl prints it', () => {
+    expect(formatDisplayDate('2026-09-05T10:00:00Z')).toBe('5 Sept 2026');
+    expect(formatDisplayDate('2026-09-05T10:00:00Z', { day: 'numeric', month: 'short', year: 'numeric' }, 'en-US')).toBe('5 Sept 2026');
+  });
+});
+
+describe('malformed currency before/after (normalize-then-format is intended)', () => {
+  // BEFORE (f7ee395): formatMoney passed the raw value to Intl — an invalid
+  // code threw RangeError internally and the fallback echoed the RAW token
+  // (' ngn  5,000', 'null 5,000'). AFTER: normalizeCurrencyCode runs first, so
+  // fixable/invalid codes resolve to the platform default instead of echoing
+  // raw input into shopper-facing money. Already-valid inputs are unchanged:
+  // 'usd' (Intl is case-insensitive) and 'XXX' (real ISO 4217 code) render
+  // byte-identical to before. formatThemeMoney already normalized at base —
+  // its malformed handling is untouched by this slice.
+  it.each([
+    ['usd', 'US$5,000'],
+    [' ngn ', '₦5,000'],
+    ['', '₦5,000'],
+    ['XXX', '¤5,000'],
+    ['NGN ', '₦5,000'],
+  ])('%s normalizes before formatting', (input, expected) => {
+    expect(formatMoney(5000, input)).toBe(expected);
+  });
+
+  it('null resolves to the platform default instead of echoing', () => {
+    expect(formatMoney(5000, null as unknown as string)).toBe('₦5,000');
+  });
+});
