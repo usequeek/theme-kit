@@ -369,3 +369,43 @@ describe('malformed currency before/after (normalize-then-format is intended)', 
     expect(formatMoney(5000, null as unknown as string)).toBe('₦5,000');
   });
 });
+
+describe('canonicalThemeLocale is plural-selection only', () => {
+  // canonicalThemeLocale returns bare 'en' (a US-order Intl tag). If a future
+  // formatter routes through it, English stores regress to US order. t() is
+  // its only legitimate caller: plural selection needs the bare language tag,
+  // and Intl.PluralRules('en') vs ('en-NG') select identically for our rules.
+  it('t() still selects plurals through it', () => {
+    const source = readFileSync(resolve(__dirname, '..', 'strings', 'theme-strings.ts'), 'utf8');
+    expect(source).toContain('canonicalThemeLocale(locale)');
+  });
+
+  it('no date/number/money/relative-time formatter calls it', () => {
+    // Static source scan: every formatter body lives in its own
+    // `export function <name>` segment, so a future edit that routes a
+    // formatter through canonicalThemeLocale trips this test even though the
+    // compiled function source would not reveal the call.
+    const formatSource = readFileSync(resolve(__dirname, '..', 'utils', 'format.ts'), 'utf8');
+    expect(formatSource).not.toContain('canonicalThemeLocale');
+    const themeSource = readFileSync(resolve(__dirname, '..', 'strings', 'theme-strings.ts'), 'utf8');
+    const segments = themeSource.split(/\n(?:export )?function /);
+    const bodyOf = (name: string): string => {
+      const segment = segments.find((s) => s.startsWith(`${name}(`));
+      expect(segment, `${name} formatter source found`).toBeDefined();
+      return segment as string;
+    };
+    for (const name of ['formatThemeNumber', 'formatThemeDate', 'formatThemeMoney', 'formatThemeRelativeTime']) {
+      expect(bodyOf(name)).not.toContain('canonicalThemeLocale');
+    }
+    // The shared tag helper all four formatters use maps en* -> en-NG.
+    expect(bodyOf('themeFormatTag')).toContain('resolveIntlLocale');
+    expect(bodyOf('themeFormatTag')).not.toContain('canonicalThemeLocale');
+  });
+
+  it('the guard fires when a formatter body is mutated to call it', () => {
+    const mutated = `\nexport function formatThemeDate(\n  const tag = canonicalThemeLocale(locale);\n}`;
+    const segments = mutated.split(/\n(?:export )?function /);
+    const body = segments.find((s) => s.startsWith('formatThemeDate(')) as string;
+    expect(body).toContain('canonicalThemeLocale');
+  });
+});

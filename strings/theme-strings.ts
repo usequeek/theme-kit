@@ -78,10 +78,19 @@ export const THEME_STRING_VALUE_MAX_LENGTH = 1000;
 const PLURAL_FORMS = ['one', 'two', 'few', 'many', 'other'] as const;
 
 /**
- * Canonical locale for string selection. Unknown/unparseable codes become
- * English, mirroring `parseLocaleCode` (and the backend's unknown-locale
- * rule). A well-formed code the runtime's ICU does not know also becomes
- * English, so plural selection never silently follows the wrong language.
+ * Canonical locale for PLURAL SELECTION ONLY (used by `t()`).
+ *
+ * This returns a bare `'en'` tag for unknown codes, and bare `'en'` is a
+ * US-order Intl tag (`February 15, 2026`). NEVER pass its result to
+ * `Intl.DateTimeFormat` / `Intl.NumberFormat` / `Intl.RelativeTimeFormat`,
+ * `toLocale*`, or any date/number/money/relative-time formatter — that would
+ * reintroduce the US-order defect the founder banned for English stores.
+ * Formatters must route through `resolveIntlLocale` (en* → en-NG) instead.
+ *
+ * Unknown/unparseable codes become English, mirroring `parseLocaleCode` (and
+ * the backend's unknown-locale rule). A well-formed code the runtime's ICU
+ * does not know also becomes English, so plural selection never silently
+ * follows the wrong language.
  */
 export function canonicalThemeLocale(locale: string | null | undefined): string {
   const code = parseLocaleCode(locale) ?? 'en';
