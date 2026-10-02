@@ -239,9 +239,15 @@ describe('default English dictionary budget (backend varchar(64))', () => {
   const pairs: Array<[string, string]> = [];
   flatten(enDefault, '', pairs);
 
-  it('ships the ~75-string core skeleton', () => {
+  it('ships the ~107-string core dictionary (intentional growth, still budgeted)', () => {
+    // Dictionary budget: the checkout/auth/blog shopper-chrome slice grew the
+    // dictionary intentionally by 31 keys (76 -> 107, commit 5cb67dd) so French
+    // and other packs stop rendering English on checkout, sign-in and blog.
+    // The ceiling stays tight (+8 headroom): any further growth must bump it
+    // here deliberately with its own justification, which keeps guarding
+    // against uncontrolled growth (backend varchar(64) per-key budget below).
     expect(pairs.length).toBeGreaterThanOrEqual(70);
-    expect(pairs.length).toBeLessThan(100);
+    expect(pairs.length).toBeLessThanOrEqual(115);
   });
 
   it('every key fits the dotted-lowercase grammar and the 40-char budget', () => {
