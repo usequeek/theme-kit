@@ -27,6 +27,7 @@ import { RelatedPosts } from '../components/blog/related-posts';
 import { ShareButtons } from '../components/blog/share-buttons';
 import { PostMeta } from '../components/blog/post-meta';
 import type { Page } from '../types/page';
+import { t, defaultThemeStrings } from '../strings/theme-strings';
 
 vi.mock('../hooks/use-auth-flow', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../hooks/use-auth-flow')>();
@@ -260,4 +261,12 @@ describe('shopper chrome English safety (checkout/auth/blog)', () => {
       expect(renderState()).toBe(BASELINES[name]);
     });
   }
+
+  // S4 value guard: ShareButtons renders its copied branch only after a
+  // client-side clipboard write (internal useState, no prop), so no static
+  // baseline can capture it. Pin the English through the real `t` instead —
+  // any change to blog.share.copied fails here.
+  it("share.copied: English value pinned ('Copied')", () => {
+    expect(t(defaultThemeStrings, 'blog.share.copied')).toBe('Copied');
+  });
 });

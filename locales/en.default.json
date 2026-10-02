@@ -104,7 +104,6 @@
     },
     "code": {
       "title": "Enter code",
-      "sent": "{length}-digit code sent to {email}",
       "lead": "{length}-digit code sent to",
       "digit": "Digit {index}",
       "verifying": "Verifying…",

@@ -63,7 +63,7 @@ interface PasswordAuthData {
   };
 }
 
-function mapEmailError(err: unknown, t: (key: string) => string): string {
+export function mapEmailError(err: unknown, t: (key: string) => string): string {
   if (err instanceof QueekSdkError) {
     switch (err.code) {
       case 'invalid_credentials':
