@@ -92,6 +92,58 @@ provider that passes nothing renders exactly as today, in English.
   `strings/theme-strings.ts` itself); every other locale arrives via the
   host's dynamic `import()` per locale. `tests/theme-strings.test.tsx`
   gates this: any other static locale import fails the suite.
+- **Typed keys (optional, compile-time).** A theme opts in per call site —
+  existing untyped `t(key)` callers keep compiling unchanged.
+  `ThemeStringKey<typeof strings>` derives the key union from the theme's
+  English dictionary object (nested objects flatten to dotted keys, a
+  plural map counts as ONE key, flat literal dotted keys stay one key),
+  and `createThemeT` binds it to any `t`:
+
+  ```ts
+  import enDefault from './locales/en.default.json';
+  import { createThemeT } from '@usequeek/theme-kit/strings/theme-strings';
+
+  const { t } = await createThemeStrings({ locale });
+  const tt = createThemeT<typeof enDefault>(t); // server …
+  // … or client: const tt = createThemeT<typeof enDefault>(useThemeStrings());
+  tt('cart.title'); // ok
+  // tt('cart.titl'); // type error — typo keys fail, valid keys pass
+  ```
+
+  (`tests/theme-typed-keys.fixture.ts` proves this under
+  `npm run typecheck`: valid keys pass, typo/unknown/plural-form keys are
+  `@ts-expect-error` errors.)
+- **Pseudo-locale QA (dev/test only, never shipped).**
+  `pseudoLocalize(dictionary, options?)`
+  (`strings/pseudo-locale.ts`, pure: no `next/*`, no React) returns a
+  pseudo dictionary with identical keys and plural-map shape — every
+  value accent-mapped, ~30% longer, wrapped in `[!! … !!]` markers —
+  while `{placeholders}` and `{{`/`}}` escapes pass through and keys are
+  never touched. Use it two ways. As a dev-only locale, mount with the
+  pseudo dictionary as the `strings` prop: everything that went through
+  `t()` renders pseudo, so any text that remains plain English next to
+  pseudo text is a hard-coded (un-wrapped) string. In tests, render with
+  the pseudo dictionary and run the English-leak scan over the HTML —
+  the reusable primitive theme tests import (the storefront and
+  theme-tools import it from the same pure module):
+
+  ```tsx
+  import { pseudoLocalize, assertNoEnglishLeak } from '@usequeek/theme-kit/strings/pseudo-locale';
+
+  const pseudo = pseudoLocalize(enDefault, { rtl: true }); // spot-check RTL too
+  const html = renderToStaticMarkup(
+    <StorefrontProvider vendor={…} config={…} menus={[]} strings={pseudo}>
+      <MySection />
+    </StorefrontProvider>,
+  );
+  assertNoEnglishLeak(html, { allowlist: ['Queek'] }); // throws on any plain-English node
+  ```
+
+  `findEnglishLeaks(html, { allowlist, includeAttributes })` returns the
+  offending node texts instead of throwing; the scan covers visible text
+  nodes plus `aria-label`/`placeholder`/`title`/`alt` (opt out with
+  `includeAttributes: false`). Pseudo dictionaries are built on demand
+  in dev/test and never enter a client bundle.
 
 ## Consumers
 
