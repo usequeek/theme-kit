@@ -48,7 +48,13 @@ function displayTagFor(
   return resolveSupportedLocale(resolveIntlLocale(locale), supportedLocalesOf);
 }
 
-/** A date for display (default "14 Feb 2026"), identical on server and browser. '' if unparseable. */
+/**
+ * A date for display (default "14 Feb 2026"), identical on server and browser.
+ * '' if unparseable. The locale parameter is routed through the canonical
+ * mapping (founder 2/10/26: English is British/Nigerian order, never US
+ * order), so even an explicit 'en'/'en-US' renders "15 February 2026" — no
+ * exported formatter lets an 'en*' tag reach Intl unmapped.
+ */
 export function formatDisplayDate(
   value: string | number | Date,
   options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' },
@@ -56,7 +62,10 @@ export function formatDisplayDate(
 ): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString(locale, { ...options, timeZone: DISPLAY_TIME_ZONE });
+  return date.toLocaleDateString(resolveIntlLocale(locale), {
+    ...options,
+    timeZone: DISPLAY_TIME_ZONE,
+  });
 }
 
 /**

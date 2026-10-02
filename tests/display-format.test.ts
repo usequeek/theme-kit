@@ -25,7 +25,11 @@ describe('display formatting is the same on the server and in the browser', () =
     // browser (Lagos) used to print different days for this review.
     expect(formatDisplayDate('2026-02-14T23:30:00Z')).toBe('15 Feb 2026');
     expect(formatDisplayDate('2026-02-14', {})).toBe('14/02/2026');
-    expect(formatDisplayDate('2026-02-14T23:30:00Z', { year: 'numeric', month: 'long', day: 'numeric' }, 'en-US')).toBe('February 15, 2026');
+    // Founder 2/10/26: English is British/Nigerian order, never US order — the
+    // locale parameter is routed through resolveIntlLocale, so even an explicit
+    // 'en'/'en-US' renders "15 February 2026" (was "February 15, 2026" before).
+    expect(formatDisplayDate('2026-02-14T23:30:00Z', { year: 'numeric', month: 'long', day: 'numeric' }, 'en-US')).toBe('15 February 2026');
+    expect(formatDisplayDate('2026-02-14T23:30:00Z', { year: 'numeric', month: 'long', day: 'numeric' }, 'en')).toBe('15 February 2026');
     expect(formatDisplayDate('not a date')).toBe('');
   });
 
@@ -253,5 +257,64 @@ describe('no kit source hardcodes an English locale into a formatter', () => {
       return hits.length > 0 ? [`${relative(ROOT, file)}: ${hits.join(',')}`] : [];
     });
     expect(offenders).toEqual([]);
+  });
+});
+
+describe("no exported formatter lets an 'en*' tag reach Intl unmapped", () => {
+  const LONG_LAGOS: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Lagos' };
+
+  it("explicit 'en'/'en-US' renders British order through every formatter", () => {
+    for (const locale of ['en', 'en-US'] as const) {
+      expect(formatDisplayDate('2026-02-14T23:30:00Z', LONG_LAGOS, locale)).toBe('15 February 2026');
+      expect(formatShopperDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe('15 February 2026');
+      expect(formatCount(1234567, locale)).toBe('1,234,567');
+      expect(formatMoney(12500, 'NGN', locale)).toBe('₦12,500');
+      expect(formatRelativeTime(-1, 'day', locale)).toBe('yesterday');
+      expect(formatThemeNumber(1234567, locale)).toBe('1,234,567');
+      expect(formatThemeDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe('15 February 2026');
+      expect(formatThemeMoney(5000, 'NGN', locale)).toBe('₦5,000.00');
+      expect(formatThemeRelativeTime(-1, 'day', locale)).toBe('yesterday');
+    }
+  });
+
+  it("constructor call sites receive the mapped tag, never bare 'en'/'en-US'", () => {
+    // Date/Number.prototype.toLocale* use V8 intrinsics and bypass a patched
+    // global (verified live on this Node), so this spy covers only the
+    // `new Intl.*` call sites; the toLocale* sites are pinned behaviorally above.
+    const seen: string[] = [];
+    const originals = {
+      DateTimeFormat: Intl.DateTimeFormat,
+      NumberFormat: Intl.NumberFormat,
+      RelativeTimeFormat: Intl.RelativeTimeFormat,
+    };
+    const box = Intl as unknown as Record<string, unknown>;
+    const wrap = (kind: string, Orig: new (...args: never[]) => object) => {
+      box[kind] = function (this: unknown, ...args: unknown[]) {
+        seen.push(typeof args[0] === 'string' ? args[0] : JSON.stringify(args[0]));
+        return new Orig(...(args as never[]));
+      };
+    };
+    wrap('DateTimeFormat', originals.DateTimeFormat as new (...args: never[]) => object);
+    wrap('NumberFormat', originals.NumberFormat as new (...args: never[]) => object);
+    wrap('RelativeTimeFormat', originals.RelativeTimeFormat as new (...args: never[]) => object);
+    try {
+      formatThemeNumber(1234567, 'en-US');
+      formatThemeDate('2026-02-14T12:00:00Z', 'en-US');
+      formatThemeMoney(5000, 'NGN', 'en-US');
+      formatThemeRelativeTime(-1, 'day', 'en-US');
+      formatMoney(5000, 'NGN', 'en-US');
+      formatRelativeTime(-1, 'day', 'en-US');
+    } finally {
+      box.DateTimeFormat = originals.DateTimeFormat;
+      box.NumberFormat = originals.NumberFormat;
+      box.RelativeTimeFormat = originals.RelativeTimeFormat;
+    }
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen).toEqual(seen.map(() => 'en-NG'));
+  });
+
+  it('formatDisplayDate routes its locale parameter through resolveIntlLocale', () => {
+    const source = readFileSync(resolve(__dirname, '..', 'utils', 'format.ts'), 'utf8');
+    expect(source).toContain('date.toLocaleDateString(resolveIntlLocale(locale)');
   });
 });
