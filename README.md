@@ -124,6 +124,24 @@ never US `October 2, 2026` — so English stores look exactly as before.
   renders its byline through the provider locale.
 - **Fallbacks.** Unknown locale → English style; invalid date → `''`;
   minimal-ICU runtimes render English rather than throwing.
+- **Plural selection stays separate.** `canonicalThemeLocale`
+  (`strings/theme-strings.ts`) is for `t()` plural selection ONLY: it returns
+  a bare `'en'` tag, which is a US-order Intl tag. Never pass it to a date,
+  number, money or relative-time formatter — formatters use
+  `resolveIntlLocale` (en* → `en-NG`) instead. A test fails the suite if any
+  formatter body ever calls it.
+- **Shopify comparison.** Shopify's Liquid
+  [`date` filter](https://shopify.dev/docs/api/liquid/filters/date) formats
+  with explicit strftime strings, or locale-aware via named `format:` options
+  (`abbreviated_date`, `basic`, `date`, `date_at_time`, `default`, `on_date`)
+  whose patterns live in the theme's locale files (`date_formats`); the
+  [`money` filter](https://shopify.dev/docs/api/liquid/filters/money) renders
+  per the store's currency-formatting setting. This slice differs
+  intentionally: one code-level mapping (`resolveIntlLocale`) instead of
+  per-locale format files, every English variant pinned to `en-NG`
+  (British/Nigerian order, never US), and an English fallback when the
+  runtime's ICU lacks the locale. Number/relative-time have no Liquid
+  equivalent consulted — UNVERIFIED remainder, no parity claim made.
 
 ```tsx
 import { useStorefrontLocale } from '@usequeek/theme-kit/provider';
