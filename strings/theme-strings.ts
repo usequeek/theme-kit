@@ -26,7 +26,12 @@
  * the key leaves 23 for the slug plus the dot separator. Values <= 1000 chars.
  */
 
-import { parseLocaleCode } from '../utils/locale';
+import {
+  ENGLISH_DISPLAY_LOCALE,
+  parseLocaleCode,
+  resolveIntlLocale,
+  resolveSupportedLocale,
+} from '../utils/locale';
 import enDefault from '../locales/en.default.json';
 
 /** Interpolation variables: `{name}` in a value. `count` drives plurals. */
@@ -315,16 +320,48 @@ export async function createThemeStrings(options?: {
   };
 }
 
-/** Locale-aware number formatting keyed by the active locale (unknown → English). */
+/**
+ * Pick the Intl tag for one theme formatting call: the storefront locale
+ * through the single canonical mapping (`resolveIntlLocale` — English lands
+ * on `ENGLISH_DISPLAY_LOCALE`, never bare `en` with its US order), or
+ * English when the runtime's ICU lacks the locale. Never throws.
+ */
+function themeFormatTag(
+  locale: string | null | undefined,
+  supportedLocalesOf: (locales: string[]) => readonly string[],
+): string {
+  return resolveSupportedLocale(resolveIntlLocale(locale), supportedLocalesOf);
+}
+
+/** Locale-aware number formatting keyed by the active locale (unknown → English). Never throws. */
 export function formatThemeNumber(
   value: number,
   locale?: string | null,
   options?: Intl.NumberFormatOptions,
 ): string {
-  return new Intl.NumberFormat(canonicalThemeLocale(locale), options).format(value);
+  const tag = themeFormatTag(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
+  try {
+    return new Intl.NumberFormat(tag, options).format(value);
+  } catch {
+    try {
+      return new Intl.NumberFormat(ENGLISH_DISPLAY_LOCALE, options).format(value);
+    } catch {
+      return String(value);
+    }
+  }
 }
 
-/** Locale-aware date formatting keyed by the active locale (unknown → English). `''` if unparseable. */
+/**
+ * Locale-aware date formatting keyed by the active locale (unknown →
+ * English). `''` if unparseable. Never throws.
+ *
+ * THE helper themes call instead of hardcoding 'en-GB' in their own date
+ * formatting: pass the storefront locale (client: `useStorefrontLocale()`; server: the
+ * request locale the host already holds) and the same Intl options — English
+ * shoppers see the unchanged British/Nigerian order ("2 October 2026"),
+ * other shoppers see their own locale. A Node whose ICU lacks the locale
+ * falls back to English, never an exception.
+ */
 export function formatThemeDate(
   value: string | number | Date,
   locale?: string | null,
@@ -332,7 +369,16 @@ export function formatThemeDate(
 ): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(canonicalThemeLocale(locale), options).format(date);
+  const tag = themeFormatTag(locale, (l) => Intl.DateTimeFormat.supportedLocalesOf(l));
+  try {
+    return new Intl.DateTimeFormat(tag, options).format(date);
+  } catch {
+    try {
+      return new Intl.DateTimeFormat(ENGLISH_DISPLAY_LOCALE, options).format(date);
+    } catch {
+      return '';
+    }
+  }
 }
 
 function normalizeMoneyCurrency(value: unknown): string {
@@ -341,16 +387,58 @@ function normalizeMoneyCurrency(value: unknown): string {
     : 'NGN';
 }
 
-/** Locale-aware currency formatting keyed by the active locale (unknown → English). */
+/** Locale-aware currency formatting keyed by the active locale (unknown → English). Never throws. */
 export function formatThemeMoney(
   amount: number,
   currency: unknown,
   locale?: string | null,
   options?: Omit<Intl.NumberFormatOptions, 'style' | 'currency'>,
 ): string {
-  return new Intl.NumberFormat(canonicalThemeLocale(locale), {
-    ...options,
-    style: 'currency',
-    currency: normalizeMoneyCurrency(currency),
-  }).format(amount);
+  const code = normalizeMoneyCurrency(currency);
+  const tag = themeFormatTag(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
+  try {
+    return new Intl.NumberFormat(tag, {
+      ...options,
+      style: 'currency',
+      currency: code,
+    }).format(amount);
+  } catch {
+    try {
+      return new Intl.NumberFormat(ENGLISH_DISPLAY_LOCALE, {
+        ...options,
+        style: 'currency',
+        currency: code,
+      }).format(amount);
+    } catch {
+      return `${code} ${amount}`;
+    }
+  }
+}
+
+/**
+ * Locale-aware relative time keyed by the active locale (unknown → English):
+ * `formatThemeRelativeTime(-1, 'day', 'fr')` → `"hier"`. `numeric: 'auto'`
+ * by default so whole days read as words where the language has them. Never
+ * throws — a missing ICU locale falls back to English, a bad unit to
+ * `"<value> <unit>"`.
+ */
+export function formatThemeRelativeTime(
+  value: number,
+  unit: Intl.RelativeTimeFormatUnit = 'day',
+  locale?: string | null,
+  options?: Intl.RelativeTimeFormatOptions,
+): string {
+  const tag = themeFormatTag(locale, (l) => Intl.RelativeTimeFormat.supportedLocalesOf(l));
+  try {
+    return new Intl.RelativeTimeFormat(tag, { numeric: 'auto', ...options }).format(value, unit);
+  } catch {
+    try {
+      return new Intl.RelativeTimeFormat(ENGLISH_DISPLAY_LOCALE, {
+        numeric: 'auto',
+        ...options,
+      }).format(value, unit);
+    } catch {
+      return `${value} ${unit}`;
+    }
+  }
 }

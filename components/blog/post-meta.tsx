@@ -5,15 +5,21 @@ import type { Post } from '../../types/page';
 import { useStorefront } from '../../provider';
 import { Image } from '../image';
 import { formatDisplayDate } from '../../utils/format';
+import { resolveIntlLocale } from '../../utils/locale';
 
-function formatDate(value: string): string {
+function formatDate(value: string, locale: string | null): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return '';
   }
-  // en-US long form as before; the fixed zone keeps a post published near midnight
-  // UTC on the same day on the server and in the browser.
-  return formatDisplayDate(date, { year: 'numeric', month: 'long', day: 'numeric' }, 'en-US');
+  // Shopper's locale through the canonical mapping (English stays the
+  // British/Nigerian order, "15 February 2026"); the fixed zone keeps a post
+  // published near midnight UTC on the same day on the server and in the browser.
+  return formatDisplayDate(
+    date,
+    { year: 'numeric', month: 'long', day: 'numeric' },
+    resolveIntlLocale(locale),
+  );
 }
 
 /**
@@ -22,11 +28,11 @@ function formatDate(value: string): string {
  * style via `.core-post-meta*` selectors (colours inherit brand vars).
  */
 export function PostMeta({ post, className }: { post: Post; className?: string }): JSX.Element {
-  const { vendor } = useStorefront();
+  const { vendor, locale } = useStorefront();
 
   const authorName = post.author?.name ?? vendor.name ?? null;
   const authorAvatar = post.author?.avatar_url ?? vendor.logo ?? null;
-  const published = post.published_at ? formatDate(post.published_at) : '';
+  const published = post.published_at ? formatDate(post.published_at, locale) : '';
   const readingTime = post.reading_time && post.reading_time > 0 ? `${post.reading_time} min read` : '';
 
   return (
