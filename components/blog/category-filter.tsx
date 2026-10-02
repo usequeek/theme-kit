@@ -1,9 +1,9 @@
 'use client';
 
+import { useStorefront, useThemeStrings } from '../../provider';
 import type { JSX } from 'react';
 import Link from 'next/link';
 import type { BlogCategory } from '../../types/page';
-import { useStorefront } from '../../provider';
 
 /**
  * Shared blog category browse bar. Links to `${basePath}/blog?category=slug`.
@@ -28,6 +28,7 @@ export function CategoryFilter({
   className?: string;
 }): JSX.Element | null {
   const { basePath } = useStorefront();
+  const t = useThemeStrings();
 
   if (!categories || categories.length === 0) {
     return null;
@@ -37,14 +38,14 @@ export function CategoryFilter({
     return (
       <nav
         className={`core-cat-tabs${className ? ` ${className}` : ''}`}
-        aria-label="Blog categories"
+        aria-label={t('blog.filter.nav')}
       >
         <Link
           href={`${basePath}/blog`}
           className={`core-cat-tabs__item${!active ? ' is-active' : ''}`}
           aria-current={!active ? 'page' : undefined}
         >
-          <span className="core-cat-tabs__label">All</span>
+          <span className="core-cat-tabs__label">{t('blog.filter.all')}</span>
         </Link>
         {categories.map((category) => {
           const isActive = active === category.slug;
@@ -67,13 +68,13 @@ export function CategoryFilter({
   }
 
   return (
-    <nav className={`core-cat-filter${className ? ` ${className}` : ''}`} aria-label="Blog categories">
+    <nav className={`core-cat-filter${className ? ` ${className}` : ''}`} aria-label={t('blog.filter.nav')}>
       <Link
         href={`${basePath}/blog`}
         className={`core-cat-filter__item${!active ? ' is-active' : ''}`}
         aria-current={!active ? 'page' : undefined}
       >
-        All
+        {t('blog.filter.all')}
       </Link>
       {categories.map((category) => {
         const isActive = active === category.slug;

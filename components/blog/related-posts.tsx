@@ -1,9 +1,9 @@
 'use client';
 
+import { useStorefront, useThemeStrings } from '../../provider';
 import type { JSX } from 'react';
 import Link from 'next/link';
 import type { Post } from '../../types/page';
-import { useStorefront } from '../../provider';
 import { Image } from '../image';
 
 /**
@@ -13,13 +13,15 @@ import { Image } from '../image';
 export function RelatedPosts({
   posts,
   className,
-  heading = 'Related posts',
+  heading,
 }: {
   posts?: Post[] | null;
   className?: string;
   heading?: string;
 }): JSX.Element | null {
   const { basePath } = useStorefront();
+  const t = useThemeStrings();
+  const title = heading ?? t('blog.related.title');
 
   if (!posts || posts.length === 0) {
     return null;
@@ -27,7 +29,7 @@ export function RelatedPosts({
 
   return (
     <section className={`core-related${className ? ` ${className}` : ''}`}>
-      <h2 className="core-related__heading">{heading}</h2>
+      <h2 className="core-related__heading">{title}</h2>
       <div className="core-related__grid">
         {posts.map((post) => (
           <Link key={post.id ?? post.slug} href={`${basePath}/blog/${post.slug}`} className="core-related__card">

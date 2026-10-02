@@ -3,6 +3,7 @@
 import type { JSX } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/use-auth';
+import { useThemeStrings } from '../../provider';
 import { Image } from '../image';
 
 /**
@@ -13,6 +14,7 @@ import { Image } from '../image';
  */
 export function CheckoutContactSection(): JSX.Element {
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
+  const t = useThemeStrings();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -31,13 +33,13 @@ export function CheckoutContactSection(): JSX.Element {
     return (
       <section className="core-checkout__section core-checkout-contact">
         <div className="core-checkout-contact__row">
-          <span className="core-checkout-contact__label">Contact</span>
+          <span className="core-checkout-contact__label">{t('checkout.contact.label')}</span>
           <button
             type="button"
             className="core-checkout-contact__signin"
             onClick={() => openAuthModal('login')}
           >
-            Sign in
+            {t('checkout.contact.signin')}
           </button>
         </div>
       </section>
@@ -62,7 +64,7 @@ export function CheckoutContactSection(): JSX.Element {
           <button
             type="button"
             className="core-checkout-contact__menu-btn"
-            aria-label="Account options"
+            aria-label={t('checkout.contact.options')}
             onClick={() => setMenuOpen((v) => !v)}
           >
             <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -74,7 +76,7 @@ export function CheckoutContactSection(): JSX.Element {
           {menuOpen ? (
             <div className="core-checkout-contact__menu">
               <button type="button" onClick={() => { setMenuOpen(false); logout(); }}>
-                Sign out
+                {t('checkout.contact.signout')}
               </button>
             </div>
           ) : null}

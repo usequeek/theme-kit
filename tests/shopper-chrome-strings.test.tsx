@@ -124,7 +124,8 @@ function PICK({ label }: { label: string }): JSX.Element {
   return <span data-pick={label}>{label}</span>;
 }
 
-function shellProps(over: Record<string, unknown> = {}): Record<string, unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function shellProps(over: Record<string, unknown> = {}): any {
   return {
     cartItems: <PICK label="items" />,
     deliveryModes: <PICK label="modes" />,
@@ -186,13 +187,13 @@ const STATES: Record<string, () => string> = {
   'contact.in.initial': () => { signedIn(); return render(<CheckoutContactSection />); },
   'contact.in.avatar': () => { signedIn({ user: AVATAR_USER }); return render(<CheckoutContactSection />); },
 
-  'shell.page.empty': () => { signedOut(); return render(<DefaultCheckoutShell {...(shellProps({ totalCount: 0 }) as never)} />); },
-  'shell.page.full': () => { signedOut(); return render(<DefaultCheckoutShell {...(shellProps({ totalCount: 3, subtotal: 4500, policies: POLICIES }) as never)} />); },
-  'shell.page.minimal': () => { signedOut(); return render(<DefaultCheckoutShell {...(shellProps({ totalCount: 2, subtotal: 1000, addressPicker: null, shippingZonePicker: null, schedulePicker: null, deliveryMessage: { type: 'warning', message: 'Slow courier' } }) as never)} />); },
-  'shell.panel.summary.empty': () => { signedOut(); return render(<DefaultCheckoutShell {...(shellProps({ mode: 'panel', activeTab: 'summary', totalCount: 0 }) as never)} />); },
-  'shell.panel.summary.items3': () => { signedOut(); return render(<DefaultCheckoutShell {...(shellProps({ mode: 'panel', activeTab: 'summary', totalCount: 3, subtotal: 4500 }) as never)} />); },
-  'shell.panel.summary.items1': () => { signedOut(); return render(<DefaultCheckoutShell {...(shellProps({ mode: 'panel', activeTab: 'summary', totalCount: 1, subtotal: 1500 }) as never)} />); },
-  'shell.panel.checkout': () => { signedOut(); return render(<DefaultCheckoutShell {...(shellProps({ mode: 'panel', activeTab: 'checkout', totalCount: 2, subtotal: 2000 }) as never)} />); },
+  'shell.page.empty': () => { signedOut(); return render(<DefaultCheckoutShell {...shellProps({ totalCount: 0 })} />); },
+  'shell.page.full': () => { signedOut(); return render(<DefaultCheckoutShell {...shellProps({ totalCount: 3, subtotal: 4500, policies: POLICIES })} />); },
+  'shell.page.minimal': () => { signedOut(); return render(<DefaultCheckoutShell {...shellProps({ totalCount: 2, subtotal: 1000, addressPicker: null, shippingZonePicker: null, schedulePicker: null, deliveryMessage: { type: 'warning', message: 'Slow courier' } })} />); },
+  'shell.panel.summary.empty': () => { signedOut(); return render(<DefaultCheckoutShell {...shellProps({ mode: 'panel', activeTab: 'summary', totalCount: 0 })} />); },
+  'shell.panel.summary.items3': () => { signedOut(); return render(<DefaultCheckoutShell {...shellProps({ mode: 'panel', activeTab: 'summary', totalCount: 3, subtotal: 4500 })} />); },
+  'shell.panel.summary.items1': () => { signedOut(); return render(<DefaultCheckoutShell {...shellProps({ mode: 'panel', activeTab: 'summary', totalCount: 1, subtotal: 1500 })} />); },
+  'shell.panel.checkout': () => { signedOut(); return render(<DefaultCheckoutShell {...shellProps({ mode: 'panel', activeTab: 'checkout', totalCount: 2, subtotal: 2000 })} />); },
 
   'policies.empty': () => { signedOut(); return render(<PolicyLinks policies={[]} />); },
   'policies.list': () => { signedOut(); return render(<PolicyLinks policies={POLICIES} />); },

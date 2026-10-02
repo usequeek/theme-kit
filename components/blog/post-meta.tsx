@@ -1,8 +1,8 @@
 'use client';
 
+import { useStorefront, useThemeStrings } from '../../provider';
 import type { JSX } from 'react';
 import type { Post } from '../../types/page';
-import { useStorefront } from '../../provider';
 import { Image } from '../image';
 import { formatDisplayDate } from '../../utils/format';
 
@@ -23,11 +23,12 @@ function formatDate(value: string): string {
  */
 export function PostMeta({ post, className }: { post: Post; className?: string }): JSX.Element {
   const { vendor } = useStorefront();
+  const t = useThemeStrings();
 
   const authorName = post.author?.name ?? vendor.name ?? null;
   const authorAvatar = post.author?.avatar_url ?? vendor.logo ?? null;
   const published = post.published_at ? formatDate(post.published_at) : '';
-  const readingTime = post.reading_time && post.reading_time > 0 ? `${post.reading_time} min read` : '';
+  const readingTime = post.reading_time && post.reading_time > 0 ? t('blog.meta.reading', { count: post.reading_time }) : '';
 
   return (
     <div className={`core-post-meta${className ? ` ${className}` : ''}`}>

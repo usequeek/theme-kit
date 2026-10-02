@@ -1,18 +1,20 @@
 'use client';
 import type { JSX } from 'react';
 import { useAuthFlow } from '../../hooks/use-auth-flow';
+import { useThemeStrings } from '../../provider';
 
 export function AuthEmailLoginStep(): JSX.Element {
   const { email, setEmail, password, setPassword, submitEmailLogin, loading, error, goToEmailRegister, goToEmailOtp } = useAuthFlow();
+  const t = useThemeStrings();
 
   return (
     <div className="core-auth__step core-auth__step--email-login">
-      <h2 className="core-auth__title">Sign in</h2>
-      <p className="core-auth__sub">Enter your email and password</p>
+      <h2 className="core-auth__title">{t('auth.login.title')}</h2>
+      <p className="core-auth__sub">{t('auth.login.subtitle')}</p>
       <input
         type="email"
         className="core-input"
-        placeholder="Email address"
+        placeholder={t('auth.login.email')}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
@@ -21,7 +23,7 @@ export function AuthEmailLoginStep(): JSX.Element {
       <input
         type="password"
         className="core-input"
-        placeholder="Password"
+        placeholder={t('auth.login.password')}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') void submitEmailLogin(); }}
@@ -34,13 +36,13 @@ export function AuthEmailLoginStep(): JSX.Element {
         onClick={() => void submitEmailLogin()}
         disabled={loading || !email.trim() || !password}
       >
-        {loading ? 'Signing in…' : 'Sign in'}
+        {loading ? t('auth.login.signing') : t('auth.login.title')}
       </button>
       <button type="button" className="core-auth__link" onClick={goToEmailRegister}>
-        Don&apos;t have an account? Create one
+        {t('auth.login.create')}
       </button>
       <button type="button" className="core-auth__link" onClick={goToEmailOtp}>
-        Use an email code instead
+        {t('auth.login.code')}
       </button>
     </div>
   );

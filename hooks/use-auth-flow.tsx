@@ -3,7 +3,7 @@
 import type { JSX } from 'react';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { QueekSdkError, type EmailVerifyOtpResponse } from '@queekai/client-sdk';
-import { useStorefront } from '../provider';
+import { useStorefront, useThemeStrings } from '../provider';
 import { getQueekClient, setAuthTokens, QUEEK_AUTH_URL } from '../sdk/queek-client';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { useUserStore } from '../stores/user-store';
@@ -63,32 +63,33 @@ interface PasswordAuthData {
   };
 }
 
-function mapEmailError(err: unknown): string {
+function mapEmailError(err: unknown, t: (key: string) => string): string {
   if (err instanceof QueekSdkError) {
     switch (err.code) {
       case 'invalid_credentials':
-        return 'Wrong email or password. Please try again.';
+        return t('auth.error.credentials');
       case 'login_mode_mismatch':
-        return 'This account uses a different sign-in method (Google or phone).';
+        return t('auth.error.method');
       case 'account_already_exists':
-        return 'Email already registered. Please sign in instead.';
+        return t('auth.error.exists');
       case 'phone_already_exists':
-        return 'Phone number already in use.';
+        return t('auth.error.phone');
       case 'otp_resend_too_soon':
-        return 'Please wait before requesting another code.';
+        return t('auth.error.resend');
       case 'invalid_otp':
-        return 'Incorrect code. Please try again.';
+        return t('auth.error.code');
       default:
-        return err.message || 'Something went wrong. Please try again.';
+        return err.message || t('auth.error.generic');
     }
   }
-  return 'Something went wrong. Please try again.';
+  return t('auth.error.generic');
 }
 
 const AuthFlowContext = createContext<AuthFlowValue | null>(null);
 
 export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Element {
   const { vendor } = useStorefront();
+  const t = useThemeStrings();
   const closeModal = useAuthModalStore((s) => s.close);
   const setUser = useUserStore((s) => s.setUser);
 
@@ -131,7 +132,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
       setOtp('');
       setStep('email-otp-verify');
     } catch (err) {
-      setError(mapEmailError(err));
+      setError(mapEmailError(err, t));
     } finally {
       setLoading(false);
     }
@@ -156,7 +157,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
       applyUser(data.user);
       closeModal();
     } catch (err) {
-      setError(mapEmailError(err));
+      setError(mapEmailError(err, t));
       setOtp('');
     } finally {
       setLoading(false);
@@ -167,7 +168,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
 
   const submitRegister = async (): Promise<void> => {
     if (!firstName.trim()) {
-      setError('Please enter your first name.');
+      setError(t('auth.error.firstname'));
       return;
     }
     setError(null);
@@ -183,7 +184,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
       applyUser(res.user);
       closeModal();
     } catch (err) {
-      setError(err instanceof QueekSdkError ? err.message : 'Registration failed. Try again.');
+      setError(err instanceof QueekSdkError ? err.message : t('auth.error.register'));
     } finally {
       setLoading(false);
     }
@@ -206,7 +207,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
       applyUser(res.data.user);
       closeModal();
     } catch (err) {
-      setError(mapEmailError(err));
+      setError(mapEmailError(err, t));
     } finally {
       setLoading(false);
     }
@@ -230,7 +231,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
       applyUser(res.data.user);
       closeModal();
     } catch (err) {
-      setError(mapEmailError(err));
+      setError(mapEmailError(err, t));
     } finally {
       setLoading(false);
     }
@@ -272,7 +273,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('[google-auth] initiate failed', err);
-      setError('Could not connect to Google sign-in. Please try again.');
+      setError(t('auth.error.google'));
     } finally {
       setLoading(false);
     }
