@@ -3,11 +3,13 @@
 import type { JSX } from 'react';
 import { useRef } from 'react';
 import { useAuthFlow } from '../../hooks/use-auth-flow';
+import { useThemeStrings } from '../../provider';
 
 const OTP_LENGTH = 6;
 
 export function AuthEmailOtpVerifyStep(): JSX.Element {
   const { email, otp, setOtp, submitEmailVerifyOtp, submitEmailRequestOtp, goToEmailOtp, loading, error } = useAuthFlow();
+  const t = useThemeStrings();
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   const focus = (i: number): void => {
@@ -40,9 +42,9 @@ export function AuthEmailOtpVerifyStep(): JSX.Element {
 
   return (
     <div className="core-auth__step core-auth__step--email-otp-verify">
-      <h2 className="core-auth__title">Enter code</h2>
+      <h2 className="core-auth__title">{t('auth.code.title')}</h2>
       <p className="core-auth__sub">
-        {OTP_LENGTH}-digit code sent to <strong>{email}</strong>
+        {t('auth.code.lead', { length: OTP_LENGTH })} <strong>{email}</strong>
       </p>
       <div className="core-auth-otp">
         {Array.from({ length: OTP_LENGTH }).map((_, i) => (
@@ -59,7 +61,7 @@ export function AuthEmailOtpVerifyStep(): JSX.Element {
             onFocus={(e) => e.target.select()}
             disabled={loading}
             autoComplete={i === 0 ? 'one-time-code' : 'off'}
-            aria-label={`Digit ${i + 1}`}
+            aria-label={t('auth.code.digit', { index: i + 1 })}
           />
         ))}
       </div>
@@ -70,13 +72,13 @@ export function AuthEmailOtpVerifyStep(): JSX.Element {
         onClick={() => void submitEmailVerifyOtp()}
         disabled={loading || otp.length < OTP_LENGTH}
       >
-        {loading ? 'Verifying…' : 'Verify'}
+        {loading ? t('auth.code.verifying') : t('auth.code.verify')}
       </button>
       <button type="button" className="core-auth__link" onClick={() => void submitEmailRequestOtp()}>
-        Resend code
+        {t('auth.code.resend')}
       </button>
       <button type="button" className="core-auth__link" onClick={goToEmailOtp}>
-        ← Change email
+        {t('auth.code.change')}
       </button>
     </div>
   );

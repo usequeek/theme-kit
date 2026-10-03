@@ -1,18 +1,20 @@
 'use client';
 import type { JSX } from 'react';
 import { useAuthFlow } from '../../hooks/use-auth-flow';
+import { useThemeStrings } from '../../provider';
 
 export function AuthEmailRegisterStep(): JSX.Element {
   const { firstName, setFirstName, lastName, setLastName, email, setEmail, password, setPassword, submitEmailRegister, loading, error, goToEmailLogin } = useAuthFlow();
+  const t = useThemeStrings();
 
   return (
     <div className="core-auth__step core-auth__step--email-register">
-      <h2 className="core-auth__title">Create account</h2>
-      <p className="core-auth__sub">Fill in your details to get started</p>
+      <h2 className="core-auth__title">{t('auth.register.title')}</h2>
+      <p className="core-auth__sub">{t('auth.register.subtitle')}</p>
       <input
         type="text"
         className="core-input"
-        placeholder="First name"
+        placeholder={t('auth.register.first')}
         value={firstName}
         onChange={(e) => setFirstName(e.target.value)}
         autoComplete="given-name"
@@ -21,7 +23,7 @@ export function AuthEmailRegisterStep(): JSX.Element {
       <input
         type="text"
         className="core-input"
-        placeholder="Last name (optional)"
+        placeholder={t('auth.register.last')}
         value={lastName}
         onChange={(e) => setLastName(e.target.value)}
         autoComplete="family-name"
@@ -29,7 +31,7 @@ export function AuthEmailRegisterStep(): JSX.Element {
       <input
         type="email"
         className="core-input"
-        placeholder="Email address"
+        placeholder={t('auth.register.email')}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
@@ -37,7 +39,7 @@ export function AuthEmailRegisterStep(): JSX.Element {
       <input
         type="password"
         className="core-input"
-        placeholder="Password (min 8 characters)"
+        placeholder={t('auth.register.password')}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') void submitEmailRegister(); }}
@@ -50,10 +52,10 @@ export function AuthEmailRegisterStep(): JSX.Element {
         onClick={() => void submitEmailRegister()}
         disabled={loading || !firstName.trim() || !email.trim() || password.length < 8}
       >
-        {loading ? 'Creating account…' : 'Create account'}
+        {loading ? t('auth.register.creating') : t('auth.register.title')}
       </button>
       <button type="button" className="core-auth__link" onClick={goToEmailLogin}>
-        Already have an account? Sign in
+        {t('auth.register.signin')}
       </button>
     </div>
   );

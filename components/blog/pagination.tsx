@@ -1,9 +1,9 @@
 'use client';
 
+import { useStorefront, useThemeStrings } from '../../provider';
 import type { JSX } from 'react';
 import Link from 'next/link';
 import type { Pagination } from '../../types/page';
-import { useStorefront } from '../../provider';
 
 /**
  * Shared blog pagination (Prev / "Page N" / Next). SSR page-based navigation
@@ -21,6 +21,7 @@ export function BlogPagination({
   className?: string;
 }): JSX.Element | null {
   const { basePath } = useStorefront();
+  const t = useThemeStrings();
 
   if (!pagination) {
     return null;
@@ -47,24 +48,24 @@ export function BlogPagination({
   };
 
   return (
-    <nav className={`core-pagination${className ? ` ${className}` : ''}`} aria-label="Blog pagination">
+    <nav className={`core-pagination${className ? ` ${className}` : ''}`} aria-label={t('blog.pagination.nav')}>
       {hasPrev ? (
         <Link href={buildHref(current - 1)} className="core-pagination__link" rel="prev">
-          ← Previous
+          {t('blog.pagination.prev')}
         </Link>
       ) : (
         <span className="core-pagination__link is-disabled" aria-disabled="true">
-          ← Previous
+          {t('blog.pagination.prev')}
         </span>
       )}
-      <span className="core-pagination__status">{`Page ${current}`}</span>
+      <span className="core-pagination__status">{t('blog.pagination.page', { current })}</span>
       {hasNext ? (
         <Link href={buildHref(current + 1)} className="core-pagination__link" rel="next">
-          Next →
+          {t('blog.pagination.next')}
         </Link>
       ) : (
         <span className="core-pagination__link is-disabled" aria-disabled="true">
-          Next →
+          {t('blog.pagination.next')}
         </span>
       )}
     </nav>

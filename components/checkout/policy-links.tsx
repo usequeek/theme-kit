@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { Page } from '../../types/page';
 import { useHref } from '../../hooks/use-href';
+import { useThemeStrings } from '../../provider';
 import { usePolicyModalStore } from '../../stores/policy-modal-store';
 import { PageRenderer } from '../../page-renderer';
 
@@ -23,6 +24,7 @@ function subscribeNoop(): () => void {
 }
 
 export function PolicyLinks({ policies }: { policies: Page[] }): JSX.Element | null {
+  const t = useThemeStrings();
   const activeSlug = usePolicyModalStore((s) => s.activeSlug);
   const open = usePolicyModalStore((s) => s.open);
   const close = usePolicyModalStore((s) => s.close);
@@ -59,7 +61,7 @@ export function PolicyLinks({ policies }: { policies: Page[] }): JSX.Element | n
         >
           <div className="core-policy-modal__head">
             <h2 className="core-policy-modal__title">{active.title}</h2>
-            <button type="button" className="core-policy-modal__close" aria-label="Close" onClick={close}>
+            <button type="button" className="core-policy-modal__close" aria-label={t('checkout.policy.close')} onClick={close}>
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
               </svg>
@@ -70,7 +72,7 @@ export function PolicyLinks({ policies }: { policies: Page[] }): JSX.Element | n
           </div>
           <div className="core-policy-modal__foot">
             <Link href={href(`/${active.slug}`)} className="core-policy-modal__full-link" onClick={close}>
-              View full page
+              {t('checkout.policy.view')}
             </Link>
           </div>
         </div>
@@ -81,7 +83,7 @@ export function PolicyLinks({ policies }: { policies: Page[] }): JSX.Element | n
 
   return (
     <>
-      <nav className="core-checkout-policies" aria-label="Store policies">
+      <nav className="core-checkout-policies" aria-label={t('checkout.policy.list')}>
         {policies.map((policy) => (
           <button
             key={policy.id}

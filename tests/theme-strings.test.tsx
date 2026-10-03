@@ -239,9 +239,15 @@ describe('default English dictionary budget (backend varchar(64))', () => {
   const pairs: Array<[string, string]> = [];
   flatten(enDefault, '', pairs);
 
-  it('ships the ~75-string core skeleton', () => {
+  it('ships the ~106-string core dictionary (intentional growth, still budgeted)', () => {
+    // Dictionary budget: the checkout/auth/blog shopper-chrome slice added 31
+    // keys and removed 1 orphaned pre-existing key (auth.code.sent, 0 usages,
+    // superseded by auth.code.lead): 76 -> 106, commit 5cb67dd + orphan removal.
+    // The ceiling stays tight (+9 headroom): any further growth must bump it
+    // here deliberately with its own justification, which keeps guarding
+    // against uncontrolled growth (backend varchar(64) per-key budget below).
     expect(pairs.length).toBeGreaterThanOrEqual(70);
-    expect(pairs.length).toBeLessThan(100);
+    expect(pairs.length).toBeLessThanOrEqual(115);
   });
 
   it('every key fits the dotted-lowercase grammar and the 40-char budget', () => {

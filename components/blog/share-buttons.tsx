@@ -2,6 +2,7 @@
 
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { useThemeStrings } from '../../provider';
 
 interface ShareButtonsProps {
   title: string;
@@ -18,6 +19,7 @@ export function ShareButtons({ title, className }: ShareButtonsProps): JSX.Eleme
   const [url, setUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
+  const t = useThemeStrings();
 
   useEffect(() => {
     setUrl(window.location.href);
@@ -47,11 +49,11 @@ export function ShareButtons({ title, className }: ShareButtonsProps): JSX.Eleme
 
   return (
     <div className={`core-share${className ? ` ${className}` : ''}`}>
-      <span className="core-share__label">Share</span>
+      <span className="core-share__label">{t('blog.share.label')}</span>
       <div className="core-share__actions">
         {canNativeShare ? (
-          <button type="button" className="core-share__btn" onClick={nativeShare} aria-label="Share">
-            Share
+          <button type="button" className="core-share__btn" onClick={nativeShare} aria-label={t('blog.share.action')}>
+            {t('blog.share.action')}
           </button>
         ) : null}
         <a
@@ -59,7 +61,7 @@ export function ShareButtons({ title, className }: ShareButtonsProps): JSX.Eleme
           href={`https://x.com/intent/post?url=${encodedUrl}&text=${encodedTitle}`}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Share on X"
+          aria-label={t('blog.share.x')}
         >
           X
         </a>
@@ -68,7 +70,7 @@ export function ShareButtons({ title, className }: ShareButtonsProps): JSX.Eleme
           href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Share on Facebook"
+          aria-label={t('blog.share.facebook')}
         >
           Facebook
         </a>
@@ -77,12 +79,12 @@ export function ShareButtons({ title, className }: ShareButtonsProps): JSX.Eleme
           href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Share on WhatsApp"
+          aria-label={t('blog.share.whatsapp')}
         >
           WhatsApp
         </a>
-        <button type="button" className="core-share__btn" onClick={copyLink} aria-label="Copy link">
-          {copied ? 'Copied' : 'Copy link'}
+        <button type="button" className="core-share__btn" onClick={copyLink} aria-label={t('blog.share.copy')}>
+          {copied ? t('blog.share.copied') : t('blog.share.copy')}
         </button>
       </div>
     </div>

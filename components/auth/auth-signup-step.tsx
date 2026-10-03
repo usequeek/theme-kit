@@ -2,6 +2,7 @@
 
 import type { JSX } from 'react';
 import { useAuthFlow } from '../../hooks/use-auth-flow';
+import { useThemeStrings } from '../../provider';
 
 export function AuthSignupStep(): JSX.Element {
   const {
@@ -11,16 +12,17 @@ export function AuthSignupStep(): JSX.Element {
     loading, error,
     goToEmailOtp,
   } = useAuthFlow();
+  const t = useThemeStrings();
 
   return (
     <div className="core-auth__step core-auth__step--signup">
-      <h2 className="core-auth__title">Create your account</h2>
-      <p className="core-auth__sub">Just a few details to get you started</p>
+      <h2 className="core-auth__title">{t('auth.signup.title')}</h2>
+      <p className="core-auth__sub">{t('auth.signup.subtitle')}</p>
 
       <input
         type="text"
         className="core-input"
-        placeholder="First name"
+        placeholder={t('auth.signup.first')}
         value={firstName}
         onChange={(e) => setFirstName(e.target.value)}
         autoComplete="given-name"
@@ -29,7 +31,7 @@ export function AuthSignupStep(): JSX.Element {
       <input
         type="text"
         className="core-input"
-        placeholder="Last name (optional)"
+        placeholder={t('auth.signup.last')}
         value={lastName}
         onChange={(e) => setLastName(e.target.value)}
         autoComplete="family-name"
@@ -43,11 +45,11 @@ export function AuthSignupStep(): JSX.Element {
         onKeyDown={(e) => { if (e.key === 'Enter') void submitRegister(); }}
         disabled={loading || !firstName.trim()}
       >
-        {loading ? 'Creating account…' : 'Create account'}
+        {loading ? t('auth.signup.creating') : t('auth.signup.create')}
       </button>
 
       <button type="button" className="core-auth__link" onClick={goToEmailOtp}>
-        ← Use a different email
+        {t('auth.signup.different')}
       </button>
     </div>
   );
