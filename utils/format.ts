@@ -15,6 +15,12 @@
  * shows decimals only when the amount genuinely has them — ₦5,000 stays
  * ₦5,000, ₦0.28 now correctly shows as ₦0.28.
  */
+import {
+  ENGLISH_DISPLAY_LOCALE,
+  resolveIntlLocale,
+  resolveSupportedLocale,
+} from './locale';
+
 /**
  * The locale and zone every date/number the kit DISPLAYS is formatted in.
  * Fixed on purpose: storefront pages render on the server first, and a runtime
@@ -22,11 +28,33 @@
  * browser (Africa/Lagos, en-NG/en-GB) — "Feb 14, 2026" vs "14 Feb 2026". React
  * then fails hydration and re-renders the whole page on the client. Queek's
  * stores and shoppers are Nigerian, so that is the one answer both sides give.
+ *
+ * Aliases `ENGLISH_DISPLAY_LOCALE` (`utils/locale.ts`) — the value lives in
+ * exactly one place. `resolveIntlLocale` maps every English storefront code
+ * here, so English output is byte-identical with or without a locale.
  */
-export const DISPLAY_LOCALE = 'en-NG';
+export const DISPLAY_LOCALE: string = ENGLISH_DISPLAY_LOCALE;
 export const DISPLAY_TIME_ZONE = 'Africa/Lagos';
 
-/** A date for display (default "14 Feb 2026"), identical on server and browser. '' if unparseable. */
+/**
+ * Pick the Intl tag for one formatting call: the storefront locale through
+ * the canonical mapping, or English when the runtime's ICU lacks the locale.
+ * Never throws.
+ */
+function displayTagFor(
+  locale: string | null | undefined,
+  supportedLocalesOf: (locales: string[]) => readonly string[],
+): string {
+  return resolveSupportedLocale(resolveIntlLocale(locale), supportedLocalesOf);
+}
+
+/**
+ * A date for display (default "14 Feb 2026"), identical on server and browser.
+ * '' if unparseable. The locale parameter is routed through the canonical
+ * mapping (founder 2/10/26: English is British/Nigerian order, never US
+ * order), so even an explicit 'en'/'en-US' renders "15 February 2026" — no
+ * exported formatter lets an 'en*' tag reach Intl unmapped.
+ */
 export function formatDisplayDate(
   value: string | number | Date,
   options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' },
@@ -34,12 +62,66 @@ export function formatDisplayDate(
 ): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString(locale, { ...options, timeZone: DISPLAY_TIME_ZONE });
+  return date.toLocaleDateString(resolveIntlLocale(locale), {
+    ...options,
+    timeZone: DISPLAY_TIME_ZONE,
+  });
+}
+
+/**
+ * A date for display in the SHOPPER's locale: `formatDisplayDate` with the
+ * storefront locale (from `useStorefrontLocale()`) already resolved through
+ * the canonical mapping. English renders exactly as `formatDisplayDate`
+ * ("14 Feb 2026"); `fr` renders "14 févr. 2026", and so on. Time zone and
+ * invalid-date handling are `formatDisplayDate`'s. Never throws.
+ */
+export function formatShopperDate(
+  value: string | number | Date,
+  locale: string | null | undefined,
+  options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' },
+): string {
+  return formatDisplayDate(
+    value,
+    options,
+    displayTagFor(locale, (l) => Intl.DateTimeFormat.supportedLocalesOf(l)),
+  );
 }
 
 /** A count for display ("1,234"), identical on server and browser. */
-export function formatCount(value: number): string {
-  return value.toLocaleString(DISPLAY_LOCALE);
+export function formatCount(value: number, locale?: string | null): string {
+  const tag = displayTagFor(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
+  try {
+    return value.toLocaleString(tag);
+  } catch {
+    return value.toLocaleString(DISPLAY_LOCALE);
+  }
+}
+
+/**
+ * Relative time for display ("yesterday", "il y a 3 jours") in the shopper's
+ * locale — `numeric: 'auto'` so whole days read as words where the language
+ * has them. Falls back to English on a missing ICU locale or a bad unit;
+ * never throws.
+ */
+export function formatRelativeTime(
+  value: number,
+  unit: Intl.RelativeTimeFormatUnit = 'day',
+  locale?: string | null,
+  options?: Intl.RelativeTimeFormatOptions,
+): string {
+  const tag = displayTagFor(locale, (l) => Intl.RelativeTimeFormat.supportedLocalesOf(l));
+  try {
+    return new Intl.RelativeTimeFormat(tag, { numeric: 'auto', ...options }).format(value, unit);
+  } catch {
+    try {
+      return new Intl.RelativeTimeFormat(DISPLAY_LOCALE, { numeric: 'auto', ...options }).format(
+        value,
+        unit,
+      );
+    } catch {
+      return `${value} ${unit}`;
+    }
+  }
 }
 
 /**
@@ -64,16 +146,22 @@ export function normalizeCurrencyCode(value: unknown, fallback: string = PLATFOR
   return /^[A-Z]{3}$/.test(cleanFallback) ? cleanFallback : PLATFORM_DEFAULT_CURRENCY;
 }
 
-export function formatMoney(amount: number, currency = PLATFORM_DEFAULT_CURRENCY): string {
+export function formatMoney(
+  amount: number,
+  currency = PLATFORM_DEFAULT_CURRENCY,
+  locale?: string | null,
+): string {
+  const code = normalizeCurrencyCode(currency);
+  const tag = displayTagFor(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
   try {
-    return new Intl.NumberFormat('en-NG', {
+    return new Intl.NumberFormat(tag, {
       style: 'currency',
-      currency,
+      currency: code,
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
-    return `${currency} ${amount.toLocaleString(DISPLAY_LOCALE)}`;
+    return `${code} ${amount.toLocaleString(DISPLAY_LOCALE)}`;
   }
 }
 

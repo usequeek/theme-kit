@@ -145,6 +145,71 @@ provider that passes nothing renders exactly as today, in English.
   `includeAttributes: false`). Pseudo dictionaries are built on demand
   in dev/test and never enter a client bundle.
 
+## Locale-aware dates, numbers and relative time
+
+Dates, counts, money and relative time follow the SHOPPER's locale (founder
+2/10/26). English renders in the British/Nigerian style — `2 October 2026`,
+never US `October 2, 2026` — so English stores look exactly as before.
+
+- **One mapping.** `resolveIntlLocale(locale)` (`utils/locale.ts`, pure: no
+  `next/*`, no React) is the single canonical storefront-code → Intl-locale
+  mapping every formatter goes through. Missing/invalid codes and every
+  English variant (`en`, `en-GB`, `en-NG`, `en-US`, …) become `en-NG`;
+  everything else passes through (`fr`, `ar`, `pt-BR`, `zh-CN`, `yo`, `ha`,
+  `sw`, …). `en-NG` — not `en-GB` — because only it reproduces current
+  output byte for byte: both print `2 October 2026`, but `en-GB` renders NGN
+  as `NGN 12,500` where the stores show `₦12,500` (verified on Node 22, full
+  ICU). `resolveSupportedLocale` falls back to English when the runtime's
+  ICU lacks a locale — formatting never throws.
+- **What themes call.** `formatThemeDate(value, locale?, options?)`
+  (`strings/theme-strings.ts`) instead of a hardcoded-`'en-GB'`
+  `toLocaleDateString`: pass the storefront locale — client components via
+  `useStorefrontLocale()`, server components via the request locale the host
+  already holds. Siblings: `formatThemeNumber`, `formatThemeMoney`, and
+  `formatThemeRelativeTime(-1, 'day', locale)` (`hier`, `أمس`, `ontem`, …,
+  `numeric: 'auto'`). `formatThemeMoney` keeps the K0 currency-default
+  decimals (`₦5,000.00`); `formatMoney` shows decimals only when present
+  (`₦5,000`, `₦0.28`). The fixed-zone display path is `formatShopperDate`
+  (`utils/format.ts`, Africa/Lagos, `''` for invalid dates as before);
+  `formatCount`/`formatMoney` take an optional locale, defaulting to the
+  pinned English output. `PostMeta` (`components/blog/post-meta.tsx`) already
+  renders its byline through the provider locale.
+- **Fallbacks.** Unknown locale → English style; invalid date → `''`;
+  minimal-ICU runtimes render English rather than throwing.
+- **Plural selection stays separate.** `canonicalThemeLocale`
+  (`strings/theme-strings.ts`) is for `t()` plural selection ONLY: it returns
+  a bare `'en'` tag, which is a US-order Intl tag. Never pass it to a date,
+  number, money or relative-time formatter — formatters use
+  `resolveIntlLocale` (en* → `en-NG`) instead. A test fails the suite if any
+  formatter body ever calls it.
+- **Shopify comparison.** Shopify's Liquid
+  [`date` filter](https://shopify.dev/docs/api/liquid/filters/date) formats
+  with explicit strftime strings, or locale-aware via named `format:` options
+  (`abbreviated_date`, `basic`, `date`, `date_at_time`, `default`, `on_date`)
+  whose patterns live in the theme's locale files (`date_formats`); the
+  [`money` filter](https://shopify.dev/docs/api/liquid/filters/money) renders
+  per the store's currency-formatting setting. This slice differs
+  intentionally: one code-level mapping (`resolveIntlLocale`) instead of
+  per-locale format files, every English variant pinned to `en-NG`
+  (British/Nigerian order, never US), and an English fallback when the
+  runtime's ICU lacks the locale. Number/relative-time have no Liquid
+  equivalent consulted — UNVERIFIED remainder, no parity claim made.
+
+```tsx
+import { useStorefrontLocale } from '@usequeek/theme-kit/provider';
+import { formatThemeDate } from '@usequeek/theme-kit/strings/theme-strings';
+
+const locale = useStorefrontLocale(); // null on the primary (English) locale
+formatThemeDate(post.published_at, locale, { year: 'numeric', month: 'long', day: 'numeric' });
+// en → "2 October 2026" · fr → "2 octobre 2026" · ar → "2 أكتوبر 2026"
+```
+
+`tests/display-format.test.ts` pins this: every existing English string is
+byte-identical with or without a locale, `fr`/`ar`/`pt-BR`/`zh-CN`/`yo`/
+`ha`/`sw` outputs are asserted against real `Intl` output (with the
+English fallback when ICU lacks a locale), and a scan fails the suite if a
+hardcoded English locale ever reaches a formatter again.
+
 ## Consumers
 
 - **The Queek storefront** (`usequeek/queek-storefront`) installs this package

@@ -19,6 +19,58 @@
  * byte-identical to before.
  */
 
+/**
+ * English display locale — the ONE Intl tag every English shopper sees dates,
+ * numbers and money in. `en-NG`, not `en-GB`: both print dates identically
+ * ("2 October 2026", "14 Feb 2026"), but only `en-NG` renders NGN with the
+ * naira sign the stores already show (`₦12,500` vs `en-GB`'s `NGN 12,500` —
+ * verified on Node 22, full ICU, 2/10/26). `DISPLAY_LOCALE` in
+ * `utils/format.ts` aliases this, so the value lives in exactly one place.
+ */
+export const ENGLISH_DISPLAY_LOCALE = 'en-NG';
+
+/**
+ * THE single canonical mapping from a storefront locale code to the Intl
+ * locale dates/numbers/relative time are formatted in (founder 2/10/26:
+ * shopper's locale, English in the British/Nigerian style so English stores
+ * do not change visibly — "2 October 2026", never US "October 2, 2026").
+ *
+ * - Missing/invalid/unknown-structure codes and EVERY English variant (`en`,
+ *   `en-GB`, `en-NG`, `en-US`, …) become `ENGLISH_DISPLAY_LOCALE`. In
+ *   particular bare `en` must never reach Intl directly: `en` formats US
+ *   order ("October 2, 2026").
+ * - Every other well-formed code passes through unchanged (`fr`, `ar`,
+ *   `pt-BR`, `zh-CN`, `yo`, `ha`, `sw`, …).
+ *
+ * Pure (no `next/*`, no React) like the rest of this module. Never throws.
+ * Pair with `resolveSupportedLocale` when the runtime's ICU may lack the
+ * locale — this function maps, it does not probe.
+ */
+export function resolveIntlLocale(locale: string | null | undefined): string {
+  const code = parseLocaleCode(locale);
+  if (!code) return ENGLISH_DISPLAY_LOCALE;
+  if ((code.split('-')[0] ?? '').toLowerCase() === 'en') return ENGLISH_DISPLAY_LOCALE;
+  return code;
+}
+
+/**
+ * Graceful ICU fallback for one formatting call: the candidate when this
+ * Node's ICU formats it natively, `ENGLISH_DISPLAY_LOCALE` otherwise (a
+ * minimal-ICU build with no French data still renders English, never an
+ * exception). Never throws — pass any Intl constructor's
+ * `supportedLocalesOf`, e.g. `(l) => Intl.DateTimeFormat.supportedLocalesOf(l)`.
+ */
+export function resolveSupportedLocale(
+  candidate: string,
+  supportedLocalesOf: (locales: string[]) => readonly string[],
+): string {
+  try {
+    return supportedLocalesOf([candidate]).length > 0 ? candidate : ENGLISH_DISPLAY_LOCALE;
+  } catch {
+    return ENGLISH_DISPLAY_LOCALE;
+  }
+}
+
 /** Request header the proxy sets for published non-primary locales. */
 export const LOCALE_CODE_HEADER = 'x-queek-locale';
 
