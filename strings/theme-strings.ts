@@ -341,6 +341,72 @@ function normalizeMoneyCurrency(value: unknown): string {
     : 'NGN';
 }
 
+/**
+ * OPTIONAL typed keys (additive — the untyped `t(key: string, …)` above is
+ * untouched, so every existing caller keeps compiling).
+ *
+ * `ThemeStringKey<typeof strings>` derives the key union from a theme's
+ * English dictionary object: nested objects flatten to dotted keys
+ * (`{ cart: { title: '…' } }` → `'cart.title'`), a plural map
+ * (`{ one, …, other }`) counts as ONE key (`'items.count'`, never
+ * `'items.count.one'`), and a flat literal dotted key (`'a.b.c'`) stays one
+ * key. A broad `ThemeStringsDictionary` (index signature) collapses to
+ * `string` — i.e. untyped — by design.
+ *
+ * Pair with `createThemeT` for a drop-in typed binding:
+ *
+ * ```ts
+ * import enDefault from './locales/en.default.json';
+ * const { t } = await createThemeStrings({ locale });
+ * const tt = createThemeT<typeof enDefault>(t);
+ * tt('cart.title'); // ok
+ * // tt('cart.titl'); // type error: typo key fails
+ * ```
+ */
+export type ThemePluralForm = 'one' | 'two' | 'few' | 'many' | 'other';
+
+type IsThemePluralMap<V> = V extends { other: string }
+  ? Exclude<keyof V, ThemePluralForm> extends never
+    ? true
+    : false
+  : false;
+
+export type ThemeStringKey<T, Prefix extends string = ''> = string extends Extract<
+  keyof T,
+  string
+>
+  ? string
+  : {
+      [K in Extract<keyof T, string>]: T[K] extends string
+        ? `${Prefix}${K}`
+        : IsThemePluralMap<T[K]> extends true
+          ? `${Prefix}${K}`
+          : T[K] extends Record<string, unknown>
+            ? ThemeStringKey<T[K], `${Prefix}${K}.`>
+            : `${Prefix}${K}`;
+    }[Extract<keyof T, string>];
+
+/** The typed binding `createThemeT` hands out: same call shape as `t`. */
+export type TypedThemeStringsFn<TKey extends string = string> = (
+  key: TKey,
+  vars?: ThemeStringsVars,
+  locale?: string | null,
+) => string;
+
+/**
+ * Wrap any bound `t` (server `createThemeStrings` or client
+ * `useThemeStrings()`) so only keys of `TDictionary` compile. Pass the
+ * theme's English dictionary type explicitly:
+ * `createThemeT<typeof enDefault>(t)`. Pass a broad
+ * `ThemeStringsDictionary` and the result stays `(key: string, …)` — the
+ * untyped behaviour, unchanged.
+ */
+export function createThemeT<TDictionary>(
+  translate: ThemeStringsFn,
+): TypedThemeStringsFn<ThemeStringKey<TDictionary>> {
+  return translate as TypedThemeStringsFn<ThemeStringKey<TDictionary>>;
+}
+
 /** Locale-aware currency formatting keyed by the active locale (unknown → English). */
 export function formatThemeMoney(
   amount: number,

@@ -51,6 +51,9 @@ export * from './utils/announcement';
 
 // Theme strings — the pure/server-safe i18n core (no next/*, no React).
 export * from './strings/theme-strings';
+// Pseudo-locale QA — dev/test-only dictionary transform + English-leak scan
+// (pure/server-safe: no next/*, no React, so theme-check can import it too).
+export * from './strings/pseudo-locale';
 
 // Rendering a theme's own demo.json — what makes local preview possible.
 export * from './demo';
