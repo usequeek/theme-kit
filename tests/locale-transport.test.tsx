@@ -16,7 +16,7 @@ import { normalizeShopQuery, type ShopPrefetch } from '../utils/shop-query';
 import type { Product } from '../types/product';
 
 /**
- * Theme-kit locale transport (slice K1): the backend answers `?locale=<code>`
+ * Theme-kit locale transport: the API answers `?locale=<code>`
  * with translated text, the proxy sets `x-queek-locale` for published
  * non-primary locales only, and every kit transport forwards it additively —
  * no locale anywhere means byte-identical behaviour to before.
@@ -194,7 +194,7 @@ describe('server transport (sdk/server-store-client)', () => {
 });
 
 describe('fetchShopPrefetch (api/shop)', () => {
-  async function runPrefetch(vendorSlug = 'kili-foods', locale?: string) {
+  async function runPrefetch(vendorSlug = 'demo-store', locale?: string) {
     const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ data: [], has_more: false }) }));
     vi.stubGlobal('fetch', fetchMock);
     const { fetchShopPrefetch } = await import('../api/shop');
@@ -226,7 +226,7 @@ function product(id: string, title: string): Product {
 function render(children: ReactNode, locale?: string | null): string {
   return renderToStaticMarkup(
     <StorefrontProvider
-      vendor={{ id: 'v1', slug: 'kili-foods', name: 'Kili Foods' } as never}
+      vendor={{ id: 'v1', slug: 'demo-store', name: 'Demo Store' } as never}
       config={{} as never}
       menus={[]}
       {...(locale !== undefined ? { locale } : {})}

@@ -4,12 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { renderMarkdown } from '../utils/markdown';
 
 /**
- * Backend CT16 (queek_backend/.agent/frontend-chat/sessions/storefront-contact-block/chat.json):
- * a heading immediately followed by other content, with no blank line between them, gets
- * swallowed whole into the heading — `utils/markdown.tsx` used to treat an entire
- * blank-line-delimited block as heading text the moment it matched a heading prefix. Real
- * merchant copy (Jhema Wears' short_description) writes "### Our Offerings\n- item\n- item"
- * with no blank line, which is common, valid markdown — the list must not disappear into the h3.
+ * A heading immediately followed by other content, with no blank line between them, must
+ * not be swallowed whole into the heading — `utils/markdown.tsx` once treated an entire
+ * blank-line-delimited block as heading text the moment it matched a heading prefix.
+ * Merchant copy often writes "### Our Offerings\n- item\n- item" with no blank line, which
+ * is common, valid markdown — the list must not disappear into the h3.
  */
 
 function html(markdown: string): string {

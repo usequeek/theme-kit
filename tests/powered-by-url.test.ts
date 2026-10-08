@@ -7,13 +7,13 @@ function params(url: string): Record<string, string> {
 
 describe('poweredByQueekUrl', () => {
   it('keeps the business-page destination and adds source, medium and campaign', () => {
-    const url = poweredByQueekUrl('kili-foods');
+    const url = poweredByQueekUrl('demo-store');
 
     expect(url.startsWith(`${POWERED_BY_QUEEK_URL}?`)).toBe(true);
     expect(params(url)).toEqual({
       utm_source: 'powered_by',
       utm_medium: 'storefront',
-      utm_campaign: 'kili-foods',
+      utm_campaign: 'demo-store',
     });
   });
 

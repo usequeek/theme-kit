@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchOrders } from '../api/orders';
 
 /**
- * `GET store/orders` answers the ONE storefront list envelope (pagination
- * Slice 4b, founder 28/9/26): `has_more` + `next_cursor` top-level, no
- * `links`, no paginator `meta`. The kit reads the page it asked for.
+ * `GET store/orders` answers the ONE storefront list envelope: `has_more` +
+ * `next_cursor` top-level, no `links`, no paginator `meta`. The kit reads the
+ * page it asked for.
  */
 describe('fetchOrders walk state', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -23,7 +23,7 @@ describe('fetchOrders walk state', () => {
     }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const page = await fetchOrders('kili-foods', 2, 'ongoing');
+    const page = await fetchOrders('demo-store', 2, 'ongoing');
 
     const url = String((fetchMock.mock.calls[0] as unknown[])[0]);
     expect(url).toContain('/client/store/orders');
@@ -39,7 +39,7 @@ describe('fetchOrders walk state', () => {
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ data: [], has_more: false, next_cursor: null }) }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const page = await fetchOrders('kili-foods', 1, 'all');
+    const page = await fetchOrders('demo-store', 1, 'all');
 
     expect(String((fetchMock.mock.calls[0] as unknown[])[0])).not.toContain('status=');
     expect(page.has_more).toBe(false);

@@ -25,9 +25,9 @@ describe('display formatting is the same on the server and in the browser', () =
     // browser (Lagos) used to print different days for this review.
     expect(formatDisplayDate('2026-02-14T23:30:00Z')).toBe('15 Feb 2026');
     expect(formatDisplayDate('2026-02-14', {})).toBe('14/02/2026');
-    // Founder 2/10/26: English is British/Nigerian order, never US order — the
-    // locale parameter is routed through resolveIntlLocale, so even an explicit
-    // 'en'/'en-US' renders "15 February 2026" (was "February 15, 2026" before).
+    // English is British/Nigerian order, never US order — the locale parameter
+    // is routed through resolveIntlLocale, so even an explicit 'en'/'en-US'
+    // renders "15 February 2026", not "February 15, 2026".
     expect(formatDisplayDate('2026-02-14T23:30:00Z', { year: 'numeric', month: 'long', day: 'numeric' }, 'en-US')).toBe('15 February 2026');
     expect(formatDisplayDate('2026-02-14T23:30:00Z', { year: 'numeric', month: 'long', day: 'numeric' }, 'en')).toBe('15 February 2026');
     expect(formatDisplayDate('not a date')).toBe('');
@@ -55,9 +55,8 @@ describe('display formatting is the same on the server and in the browser', () =
 });
 
 /**
- * Founder 2/10/26: dates and numbers follow the SHOPPER's locale, with
- * English in the British/Nigerian style so English stores do not change
- * visibly ("2 October 2026", never US "October 2, 2026").
+ * Dates and numbers follow the SHOPPER's locale, with English in the
+ * British/Nigerian style ("2 October 2026", never US "October 2, 2026").
  */
 describe('canonical locale mapping (shopper locale -> Intl locale)', () => {
   const LONG_LAGOS = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Lagos' } as const;
@@ -147,7 +146,7 @@ describe('shopper locales format through real Intl output', () => {
     }
   };
 
-  // Observed on Node 22 (full ICU) 2/10/26; each row falls back to the
+  // Expected output on Node 22 with full ICU; each row falls back to the
   // English style when the runtime's ICU lacks the locale.
   it.each([
     ['fr', '15 février 2026'],
@@ -319,15 +318,11 @@ describe("no exported formatter lets an 'en*' tag reach Intl unmapped", () => {
   });
 });
 
-describe('English money before/after (S7 table, measured on old vs new code)', () => {
-  // BEFORE (f7ee395, scratch worktree run): formatMoney was hardcoded 'en-NG';
-  // formatThemeMoney used bare 'en' via canonicalThemeLocale. AFTER: both use
-  // en-NG. Decision: en-NG ('US$') wins because live English stores already
-  // render formatMoney — the only money helper any theme imports (atelier
-  // blocks/components import it; ZERO themes import formatThemeMoney, so the
-  // old bare-'en' '$5,000.00' never reached a live store). GBP/EUR symbols are
-  // identical under 'en' vs 'en-NG'; only the helper decimal contract differs
-  // (formatMoney: decimals only when present; formatThemeMoney: K0 2-decimals).
+describe('English money output', () => {
+  // formatMoney and formatThemeMoney both render English through en-NG, so USD
+  // prints 'US$'. GBP/EUR symbols are identical under 'en' and 'en-NG'; the
+  // helpers differ only in decimals (formatMoney: decimals only when present;
+  // formatThemeMoney: always the currency's default decimals).
   it.each([
     ['NGN', '₦5,000', '₦5,000.00'],
     ['USD', 'US$5,000', 'US$5,000.00'],
@@ -346,15 +341,12 @@ describe('English money before/after (S7 table, measured on old vs new code)', (
   });
 });
 
-describe('malformed currency before/after (normalize-then-format is intended)', () => {
-  // BEFORE (f7ee395): formatMoney passed the raw value to Intl — an invalid
-  // code threw RangeError internally and the fallback echoed the RAW token
-  // (' ngn  5,000', 'null 5,000'). AFTER: normalizeCurrencyCode runs first, so
-  // fixable/invalid codes resolve to the platform default instead of echoing
-  // raw input into shopper-facing money. Already-valid inputs are unchanged:
-  // 'usd' (Intl is case-insensitive) and 'XXX' (real ISO 4217 code) render
-  // byte-identical to before. formatThemeMoney already normalized at base —
-  // its malformed handling is untouched by this slice.
+describe('malformed currency (normalize-then-format)', () => {
+  // normalizeCurrencyCode runs first, so fixable/invalid codes resolve to the
+  // platform default instead of echoing raw input (' ngn  5,000', 'null 5,000')
+  // into shopper-facing money. Already-valid inputs render as Intl prints them:
+  // 'usd' (Intl is case-insensitive) and 'XXX' (a real ISO 4217 code).
+  // formatThemeMoney normalizes at its base as well.
   it.each([
     ['usd', 'US$5,000'],
     [' ngn ', '₦5,000'],

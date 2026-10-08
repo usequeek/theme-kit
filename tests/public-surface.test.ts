@@ -20,10 +20,7 @@ function barrelModules(file: string): Set<string> {
  * `index.ts` + `client.ts` declare the surface a theme may build against — the
  * set that ships as `@usequeek/theme-kit`.
  *
- * This is the kit-internal half of the contract: every module the barrels
- * declare must exist. (The storefront repo holds the other half —
- * `core-public-surface.test.ts` there asserts the barrels cover every module
- * the themes actually import.)
+ * Every module the barrels declare must exist.
  */
 describe('core public surface (kit-internal)', () => {
   const declared = new Set([...barrelModules('index.ts'), ...barrelModules('client.ts')]);

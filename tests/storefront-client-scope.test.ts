@@ -4,11 +4,11 @@ import { join } from 'node:path';
 import { request } from '../sdk/client';
 
 /**
- * The storefront must ONLY ever call the `/v1/client/*` backend scope. That scope's
- * ResolveClientContext middleware resolves the vendor AND forces the platform
- * (storefront/instore_qr) — so prices are always the storefront's, never the
- * marketplace commission-inclusive price. Legacy v1 routes (/products, /vendors/*,
- * /categories, ...) bypass that middleware → wrong platform → wrong price.
+ * The storefront must ONLY ever call the `/v1/client/*` API scope. That scope
+ * resolves the vendor AND forces the platform (storefront/instore_qr) — so prices
+ * are always the storefront's, never the marketplace commission-inclusive price.
+ * Legacy v1 routes (/products, /vendors/*, /categories, ...) skip that
+ * resolution → wrong platform → wrong price.
  *
  * This guard prevents that whole class of bug from ever returning.
  */

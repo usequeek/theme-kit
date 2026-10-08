@@ -1,10 +1,10 @@
 /**
- * Auth error English pins (checkout / auth slice) — S4 drift guard.
+ * Auth error English pins.
  *
  * `mapEmailError` maps SDK failure codes to `t('auth.error.*')` strings, and
  * three more error keys are set directly in the provider. Every English value
  * below is resolved through the REAL default dictionary, so renaming a key or
- * changing any English value fails here. S7 proof included.
+ * changing any English value fails here.
  */
 import { describe, expect, it } from 'vitest';
 import { QueekSdkError } from '@queekai/client-sdk';

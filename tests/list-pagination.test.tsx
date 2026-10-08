@@ -5,13 +5,13 @@ import { BlogPagination } from '../components/blog/pagination';
 import type { Pagination } from '../types/page';
 
 vi.mock('next/headers', () => ({
-  headers: async () => new Headers({ host: 'kili-foods.usequeek.com' }),
+  headers: async () => new Headers({ host: 'demo-store.usequeek.com' }),
 }));
 
 /**
  * Storefront lists answer `{data, has_more, next_cursor}` with no totals, page
- * counts or page URLs (founder 28/9/26: prev/next + "Page N", zero COUNT). The
- * kit's readers must walk on `has_more` alone and label the page they asked for.
+ * counts or page URLs (prev/next + "Page N", no COUNT query). The kit's
+ * readers must walk on `has_more` alone and label the page they asked for.
  */
 describe('storefront list walk state (has_more, no totals)', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -27,7 +27,7 @@ describe('storefront list walk state (has_more, no totals)', () => {
     vi.stubGlobal('fetch', fetchMock);
     const { fetchCollectionProducts } = await import('../api/collections');
 
-    const page3 = await fetchCollectionProducts('kili-foods', 'new-season', { page: 3, perPage: 20 });
+    const page3 = await fetchCollectionProducts('demo-store', 'new-season', { page: 3, perPage: 20 });
     expect(page3.pagination).toEqual({ current_page: 3, per_page: 20, has_more: true, next_cursor: 'eyJ2IjoxfQ' });
     const productsCall = fetchMock.mock.calls.map(([url]) => String(url)).find((url) => url.includes('/products'));
     expect(productsCall).toContain('page=3');
@@ -41,13 +41,13 @@ describe('storefront list walk state (has_more, no totals)', () => {
     })));
     const { fetchCollectionProducts } = await import('../api/collections');
 
-    const page = await fetchCollectionProducts('kili-foods', 'new-season');
+    const page = await fetchCollectionProducts('demo-store', 'new-season');
     expect(page.pagination).toEqual({ current_page: 1, per_page: undefined, has_more: false, next_cursor: null });
   });
 
   const renderPager = (pagination: Pagination, category?: string): string =>
     renderToStaticMarkup(
-      <StorefrontContext.Provider value={{ vendor: { id: 'v1', slug: 'kili-foods' }, basePath: '/kili-foods' } as never}>
+      <StorefrontContext.Provider value={{ vendor: { id: 'v1', slug: 'demo-store' }, basePath: '/demo-store' } as never}>
         <BlogPagination pagination={pagination} category={category} />
       </StorefrontContext.Provider>,
     );
@@ -56,8 +56,8 @@ describe('storefront list walk state (has_more, no totals)', () => {
     const html = renderPager({ current_page: 2, per_page: 12, has_more: true }, 'news');
     expect(html).toContain('Page 2');
     expect(html).not.toMatch(/Page 2 of/);
-    expect(html).toContain('rel="prev" href="/kili-foods/blog?category=news"');
-    expect(html).toContain('rel="next" href="/kili-foods/blog?category=news&amp;page=3"');
+    expect(html).toContain('rel="prev" href="/demo-store/blog?category=news"');
+    expect(html).toContain('rel="next" href="/demo-store/blog?category=news&amp;page=3"');
   });
 
   it('BlogPagination: last page disables Next; a lone first page renders nothing', () => {

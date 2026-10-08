@@ -27,9 +27,9 @@ describe('PoweredByQueek', () => {
   });
 
   it('tags the link with the store slug as utm_campaign', () => {
-    const html = render(undefined, { id: 'uuid-1', slug: 'kili-foods' });
+    const html = render(undefined, { id: 'uuid-1', slug: 'demo-store' });
 
-    expect(html).toContain(`href="${BASE}&amp;utm_campaign=kili-foods"`);
+    expect(html).toContain(`href="${BASE}&amp;utm_campaign=demo-store"`);
     expect(html).toContain('rel="noopener noreferrer"');
   });
 
@@ -60,6 +60,6 @@ describe('PoweredByQueek', () => {
 
   it('renders nothing when hidden', () => {
     expect(render({ hidden: true })).toBe('');
-    expect(render({ hidden: true }, { id: 'uuid-1', slug: 'kili-foods' })).toBe('');
+    expect(render({ hidden: true }, { id: 'uuid-1', slug: 'demo-store' })).toBe('');
   });
 });

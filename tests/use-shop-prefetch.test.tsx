@@ -34,7 +34,7 @@ function Grid(props: Parameters<typeof useShop>[0]): JSX.Element {
 
 function render(children: ReactNode, opts: { prefetch?: ShopPrefetch | null; preview?: Product[] } = {}): string {
   const store = {
-    vendor: { id: 'v1', slug: 'kili-foods', name: 'Kili Foods' },
+    vendor: { id: 'v1', slug: 'demo-store', name: 'Demo Store' },
     config: {},
     menus: [],
     previewData: opts.preview ? { products: opts.preview } : undefined,

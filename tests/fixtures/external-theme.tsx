@@ -1,5 +1,5 @@
 // A real theme, written the way an external developer would, against the
-// PUBLISHED package only — no access to the storefront repo.
+// PUBLISHED package only — no access to any host app.
 import type { JSX } from 'react';
 import type { ThemeModule, HeaderProps, FooterProps } from '@usequeek/theme-kit/types/theme';
 import type { Product } from '@usequeek/theme-kit/types/product';

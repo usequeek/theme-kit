@@ -79,7 +79,7 @@ describe('typed keys: createThemeT (additive, opt-in)', () => {
   });
 
   it('drifts with the dictionary: the union is exactly the flattened keys', () => {
-    // Compile-time proof (positive direction; the negative direction — typos
+    // Compile-time check (positive direction; the negative direction — typos
     // fail — lives in tests/theme-typed-keys.fixture.ts via @ts-expect-error
     // so `npm run typecheck` stays green).
     const keys: Array<ThemeStringKey<typeof THEME_EN>> = [

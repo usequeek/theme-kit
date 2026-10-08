@@ -23,7 +23,7 @@ function render(
 ): string {
   return renderToStaticMarkup(
     <StorefrontProvider
-      vendor={{ id: 'v1', slug: 'kili-foods', name: 'Kili Foods' } as never}
+      vendor={{ id: 'v1', slug: 'demo-store', name: 'Demo Store' } as never}
       config={{} as never}
       menus={[]}
       {...(options?.locale !== undefined ? { locale: options.locale } : {})}
@@ -39,7 +39,7 @@ function Title(): JSX.Element {
   return <h1>{t('cart.title')}</h1>;
 }
 
-describe('client surface: StorefrontProvider strings + useThemeStrings (decision 4b)', () => {
+describe('client surface: StorefrontProvider strings + useThemeStrings', () => {
   it('renders the active locale through the hook', () => {
     expect(render(<Title />, { locale: 'fr', strings: FR_STRINGS })).toContain('<h1>Votre panier</h1>');
   });
@@ -105,7 +105,7 @@ describe('client surface through ThemeMount', () => {
   });
 });
 
-describe('manifest.strings travels with the theme (decision 15)', () => {
+describe('manifest.strings travels with the theme', () => {
   const MANIFEST_EN: ThemeStringsDictionary = {
     theme: {
       hero: { title: 'Fresh from the farm' },
@@ -216,10 +216,10 @@ describe('manifest.strings travels with the theme (decision 15)', () => {
     // No `strings` key at all: this literal must satisfy StorefrontContextValue
     // (it failed to compile while the field was required in 0.1.18).
     const value = {
-      vendor: { id: 'v1', slug: 'kili-foods', name: 'Kili Foods', logo: null } as VendorProfile,
+      vendor: { id: 'v1', slug: 'demo-store', name: 'Demo Store', logo: null } as VendorProfile,
       config: { theme: 'stub', brand: {} } as StorefrontConfig,
       menus: [],
-      basePath: '/kili-foods',
+      basePath: '/demo-store',
       pagesChrome: {},
       locale: null,
     };

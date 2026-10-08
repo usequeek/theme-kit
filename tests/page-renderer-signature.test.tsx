@@ -27,7 +27,7 @@ describe('PageRenderer', () => {
       { type: 'content', data: { markdown: 'Fresh meals, delivered' }, productsPromise: circularThenable(), metaobjectsPromise: circularThenable() },
     ] as unknown as Block[];
     const theme = { getBlock: () => () => null } as unknown as ThemeModule;
-    const store = { vendor: { id: 'v1', slug: 'kili-foods' }, config: {}, menus: [], basePath: '', pagesChrome: {} };
+    const store = { vendor: { id: 'v1', slug: 'demo-store' }, config: {}, menus: [], basePath: '', pagesChrome: {} };
 
     const html = renderToStaticMarkup(
       <StorefrontContext.Provider value={store as never}>

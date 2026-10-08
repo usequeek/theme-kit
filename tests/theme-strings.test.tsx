@@ -43,7 +43,7 @@ const FR_THEME = {
   'cart.empty.browse': 'Voir les produits',
 } as unknown as ThemeStringsDictionary;
 
-describe('t() fallback order (decision 3)', () => {
+describe('t() fallback order', () => {
   it('returns the first hit across override, theme, core, default', async () => {
     const bound = await createThemeStrings({
       locale: 'fr',
@@ -223,7 +223,7 @@ describe('RTL dir (locale catalogue)', () => {
   });
 });
 
-describe('default English dictionary budget (backend varchar(64))', () => {
+describe('default English dictionary budget (64-character stored key)', () => {
   function flatten(node: unknown, prefix: string, out: Array<[string, string]>): void {
     if (typeof node === 'string') {
       out.push([prefix, node]);
@@ -240,12 +240,9 @@ describe('default English dictionary budget (backend varchar(64))', () => {
   flatten(enDefault, '', pairs);
 
   it('ships the ~106-string core dictionary (intentional growth, still budgeted)', () => {
-    // Dictionary budget: the checkout/auth/blog shopper-chrome slice added 31
-    // keys and removed 1 orphaned pre-existing key (auth.code.sent, 0 usages,
-    // superseded by auth.code.lead): 76 -> 106, commit 5cb67dd + orphan removal.
-    // The ceiling stays tight (+9 headroom): any further growth must bump it
-    // here deliberately with its own justification, which keeps guarding
-    // against uncontrolled growth (backend varchar(64) per-key budget below).
+    // Dictionary budget: the ceiling stays tight (+9 headroom): any further
+    // growth must bump it here deliberately with its own justification, which
+    // guards against uncontrolled growth (64-character stored-key budget below).
     expect(pairs.length).toBeGreaterThanOrEqual(70);
     expect(pairs.length).toBeLessThanOrEqual(115);
   });
@@ -257,7 +254,7 @@ describe('default English dictionary budget (backend varchar(64))', () => {
       expect(key, `grammar: ${key}`).toMatch(/^[a-z0-9]+(\.[a-z0-9]+)*$/);
       expect(key.length, `budget: ${key}`).toBeLessThanOrEqual(THEME_STRING_KEY_MAX_LENGTH);
     }
-    // `<theme-slug>.<key>` must fit varchar(64): 40 + 1 + 23.
+    // `<theme-slug>.<key>` must fit the 64-character stored key: 40 + 1 + 23.
     expect(Math.max(...pairs.map(([k]) => k.length))).toBeLessThanOrEqual(40);
   });
 
@@ -272,7 +269,7 @@ describe('default English dictionary budget (backend varchar(64))', () => {
   });
 });
 
-describe('per-locale loading gate (decision 5)', () => {
+describe('per-locale loading gate', () => {
   function sourceFiles(dir: string, out: string[] = []): string[] {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (entry.name === 'node_modules') continue;
@@ -335,7 +332,7 @@ describe('per-locale loading gate (decision 5)', () => {
   });
 });
 
-describe('server surface: bound t with NO provider (decision 4a)', () => {
+describe('server surface: bound t with NO provider', () => {
   function Greeting({ bound, name }: { bound: BoundThemeStrings; name: string }): JSX.Element {
     return (
       <main>

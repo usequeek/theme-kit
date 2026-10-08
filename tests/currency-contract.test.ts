@@ -6,13 +6,12 @@ import { extractProducts, normalizeProduct } from '../utils/product-normalizer';
 import { useCartStore } from '../stores/cart-store';
 
 /**
- * Slice 2 of api-currency-contract-fix: client readers off `meta.currency`.
- * List-level `meta.currency` stamps the PLATFORM default (NGN) even on
+ * Client readers do not use `meta.currency`. List-level `meta.currency` stamps the PLATFORM default (NGN) even on
  * non-NGN stores, so the item's own `currency` code is the source and the
  * vendor's currency is the store-wide source. Missing codes fall back to the
  * platform default as a LAST resort, in exactly one place.
  */
-describe('currency contract (Slice 2)', () => {
+describe('currency resolution', () => {
   it('exposes NGN as the platform default last resort', () => {
     expect(PLATFORM_DEFAULT_CURRENCY).toBe('NGN');
   });

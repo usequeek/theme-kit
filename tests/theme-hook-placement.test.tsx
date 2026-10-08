@@ -1,5 +1,5 @@
 /**
- * Hook-placement rule (checkout / auth / blog slice) — S2 enforcement.
+ * Hook-placement rule for the checkout / auth / blog components.
  *
  * Rule: every `useThemeStrings()` call must sit at the top level of a
  * PascalCase component or a `use*` hook: no enclosing if / ternary / loop /
@@ -15,7 +15,7 @@ import ts from 'typescript';
 
 const kitRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Files this slice migrated: each must call useThemeStrings() exactly once.
+// Files that use theme strings: each must call useThemeStrings() exactly once.
 const EXPECTED_FILES = [
   'components/checkout/checkout-contact.tsx',
   'components/checkout/default-checkout-shell.tsx',

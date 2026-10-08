@@ -17,7 +17,7 @@ const EN = enDefault as unknown as ThemeStringsDictionary;
 function render(children: ReactNode, strings: ThemeStringsDictionary | null): string {
   return renderToStaticMarkup(
     <StorefrontProvider
-      vendor={{ id: 'v1', slug: 'kili-foods', name: 'Kili Foods' } as never}
+      vendor={{ id: 'v1', slug: 'demo-store', name: 'Demo Store' } as never}
       config={{} as never}
       menus={[]}
       {...(strings ? { strings } : {})}

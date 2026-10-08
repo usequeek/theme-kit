@@ -1,10 +1,9 @@
 /**
  * Shopper-chrome theme strings (checkout / auth / blog) — English-safety guard.
  *
- * Stage A: every state below was rendered against the PRE-migration code and
- * stored in `tests/fixtures/shopper-chrome-baseline.json`. Each case asserts
- * `.toBe` equality against that stored OLD markup, so ANY English change
- * (value, markup, attribute, plural) fails here. S4 drift guard + S7 proof.
+ * Each state below is rendered and compared with the markup stored in
+ * `tests/fixtures/shopper-chrome-baseline.json` (`.toBe` equality), so ANY
+ * English change (value, markup, attribute, plural) fails here.
  */
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -112,7 +111,7 @@ const AVATAR_USER = {
 function render(children: ReactNode): string {
   return renderToStaticMarkup(
     <StorefrontProvider
-      vendor={{ id: 'v1', slug: 'kili-foods', name: 'Kili Foods' } as never}
+      vendor={{ id: 'v1', slug: 'demo-store', name: 'Demo Store' } as never}
       config={{} as never}
       menus={[]}
     >
@@ -262,7 +261,7 @@ describe('shopper chrome English safety (checkout/auth/blog)', () => {
     });
   }
 
-  // S4 value guard: ShareButtons renders its copied branch only after a
+  // Value guard: ShareButtons renders its copied branch only after a
   // client-side clipboard write (internal useState, no prop), so no static
   // baseline can capture it. Pin the English through the real `t` instead —
   // any change to blog.share.copied fails here.
