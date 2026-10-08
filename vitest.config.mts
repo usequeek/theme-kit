@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   /**
@@ -12,5 +12,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // The public-text guard's own tests run under `node --test` (see `npm test`).
+    exclude: [...configDefaults.exclude, 'scripts/check-public-text.test.mjs'],
   },
 });

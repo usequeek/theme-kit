@@ -1,0 +1,2 @@
+# path | rule-id | reason
+utils/vendor-host.ts | internal-host | RESERVED_VENDOR_SLUGS is a runtime list of hostname labels that may never be a store slug, and it includes a hosting-panel label; the entry is a value, so removing it would change behaviour.

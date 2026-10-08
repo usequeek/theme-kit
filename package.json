@@ -52,7 +52,7 @@
     "vitest": "^3.2.4"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "node scripts/check-public-text.mjs && node --test scripts/check-public-text.test.mjs && vitest run",
     "typecheck": "tsc --noEmit",
     "verify-package": "tsx scripts/verify-package.ts"
   }
