@@ -1,10 +1,9 @@
 /**
- * Storefront locale transport — the kit side of the translations plan.
+ * Storefront locale transport.
  *
- * Contract (translations-core.md, decisions closed): the backend accepts
- * `?locale=<code>` on every customer-facing read and answers translated text
- * (unknown/unpublished locale → source text, no error). The storefront proxy
- * sets `x-queek-locale` on the incoming request for published NON-primary
+ * The API accepts `?locale=<code>` on every customer-facing read and answers
+ * translated text (unknown/unpublished locale → source text, no error). The
+ * storefront proxy sets `x-queek-locale` on the incoming request for published NON-primary
  * locales only — the header is ABSENT on the primary locale — and suffixes
  * revalidation tags as `<tag>:locale:<code>`.
  *
@@ -23,17 +22,17 @@
  * English display locale — the ONE Intl tag every English shopper sees dates,
  * numbers and money in. `en-NG`, not `en-GB`: both print dates identically
  * ("2 October 2026", "14 Feb 2026"), but only `en-NG` renders NGN with the
- * naira sign the stores already show (`₦12,500` vs `en-GB`'s `NGN 12,500` —
- * verified on Node 22, full ICU, 2/10/26). `DISPLAY_LOCALE` in
- * `utils/format.ts` aliases this, so the value lives in exactly one place.
+ * naira sign the stores already show (`₦12,500` vs `en-GB`'s `NGN 12,500`, on
+ * Node 22 with full ICU). `DISPLAY_LOCALE` in `utils/format.ts` aliases this, so
+ * the value lives in exactly one place.
  */
 export const ENGLISH_DISPLAY_LOCALE = 'en-NG';
 
 /**
  * THE single canonical mapping from a storefront locale code to the Intl
- * locale dates/numbers/relative time are formatted in (founder 2/10/26:
- * shopper's locale, English in the British/Nigerian style so English stores
- * do not change visibly — "2 October 2026", never US "October 2, 2026").
+ * locale dates/numbers/relative time are formatted in: the shopper's locale,
+ * with English in the British/Nigerian style ("2 October 2026", never US
+ * "October 2, 2026").
  *
  * - Missing/invalid/unknown-structure codes and EVERY English variant (`en`,
  *   `en-GB`, `en-NG`, `en-US`, …) become `ENGLISH_DISPLAY_LOCALE`. In

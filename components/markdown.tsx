@@ -16,7 +16,7 @@ import { Image } from './image';
  * Inline markdown images are routed through the core <Image> component so the
  * Smart Placeholder / fallback system applies (never a bare, unoptimized
  * <img>). Short-form snippets (footers, product blurbs) keep using the
- * lightweight `renderMarkdown` helper in `lib/core/utils/markdown`.
+ * lightweight `renderMarkdown` helper in `utils/markdown`.
  */
 function MarkdownImage({ src, alt }: ComponentPropsWithoutRef<'img'>): JSX.Element | null {
   if (!src || typeof src !== 'string') {

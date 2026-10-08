@@ -6,7 +6,7 @@ import { parseShopResponse, shopRequestParams, type ShopPrefetch, type ShopQuery
  * The shop page's first page of products, fetched while the server renders
  * `/shop`, for `ShopPrefetchProvider` to hand to `useShop` — so the product grid
  * is in the HTML instead of appearing after the browser has run the JS and
- * fetched it (kili-foods' `/shop` main content landed at 2.8 s that way).
+ * fetched it.
  *
  * Same request and the same parsing as the browser's `useShop` (both come from
  * utils/shop-query). Reads go through `/client/store/*` like every SSR read, so

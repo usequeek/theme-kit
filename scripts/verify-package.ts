@@ -8,12 +8,12 @@
  *     error TS2503: Cannot find namespace 'JSX'.
  *
  * 42 modules annotated returns as `JSX.Element`, relying on a GLOBAL JSX
- * namespace that came from the storefront app's `next-env.d.ts` — not from
- * React. Inside the storefront repo the kit free-rode on that file, so tsc,
- * the tests, the build and the render smoke were ALL green. The workspace
- * supplies exactly the file whose absence is the bug, which is why no in-repo
- * check could ever have found it. (Every module now does
- * `import type { JSX } from 'react'`, and this script proves it.)
+ * namespace that came from a host app's `next-env.d.ts` — not from React.
+ * Inside a host app the kit free-rode on that file, so tsc, the tests, the
+ * build and the render smoke were ALL green. The workspace supplies exactly the
+ * file whose absence is the bug, which is why no in-repo check could ever have
+ * found it. (Every module now does `import type { JSX } from 'react'`, and this
+ * script proves it.)
  *
  * It packs the CURRENT SOURCE rather than installing the published version, so
  * it fails before a broken version ships instead of after. Installing from the
@@ -26,8 +26,6 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // The kit package is `"type": "module"`, so `__dirname` does not exist here.
-// (The storefront copy of this script could use it only because that package
-// is CJS.)
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KIT = ROOT;
 

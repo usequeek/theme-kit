@@ -1,14 +1,11 @@
 /**
  * Vendor resolution from a hostname: which store is this request for?
  *
- * Lived at `app/middleware.ts` until core needed it — `lib/core/api/products.ts`
- * and `lib/core/sdk/server-store-client.ts` both import from here, which meant
- * core depended on the app. Nothing here is app-specific: it reads env and
- * resolves a slug. (The actual Next middleware is `proxy.ts`; the old filename
- * suggested otherwise and was never that.)
+ * Nothing here is app-specific: it reads env and resolves a slug, so the kit's
+ * server fetchers and a host app's proxy can both import it.
  */
 
-// Mirrors backend config/storefront.php `reserved_slugs`. Keep in sync.
+// Mirrors the API's reserved store slugs. Keep in sync.
 // These are subdomains the storefront proxy must NOT treat as vendor slugs.
 export const RESERVED_VENDOR_SLUGS = new Set([
   // Live platform subdomains
@@ -24,11 +21,10 @@ export const RESERVED_VENDOR_SLUGS = new Set([
   'staff', 'team', 'queek', 'merchant', 'vendor', 'rider', 'customer',
 ]);
 
-// Every sluggable backend model (Vendor, Product, Category, Region, Service —
-// app/Models/*.php `getSlugOptions()`) is Spatie Sluggable output: lowercase
-// alphanumeric, optionally hyphen-separated, never a dot/underscore/uppercase.
-// Anything else cannot be a real slug of any kind, so reject it before any
-// backend round-trip instead of burning calls that all 404. This is what stops
+// Every sluggable API model (Vendor, Product, Category, Region, Service)
+// produces lowercase alphanumeric slugs, optionally hyphen-separated, never a
+// dot/underscore/uppercase. Anything else cannot be a real slug of any kind, so
+// reject it before any API round-trip instead of burning calls that all 404. This is what stops
 // scanners probing `.env`, `.ssh`, `docker-compose.yaml`, `*.php` etc —
 // RESERVED_VENDOR_SLUGS alone only covers known words, not the infinite space
 // of file-extension guesses.

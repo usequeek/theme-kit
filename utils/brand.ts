@@ -20,10 +20,8 @@ import type {
 
 /**
  * Storefront design-token injector — turns the resolved semantic `tokens`
- * object (design-token-contract.md, queek_backend `.agent/.tmp/`) into the
- * full CSS custom-property set every theme reads. Replaces the old
- * `getBrandCssVariables`, which only ever emitted ~12 of the 24 color roles
- * (the bug this fixes).
+ * object into the full CSS custom-property set every theme reads, covering
+ * all 24 color roles.
  *
  * `expandDesignTokens` is the pure, unit-tested core: given ANY partial (or
  * absent) token object it fills every gap with a sane default and always
@@ -34,7 +32,7 @@ import type {
  * legacy `config.colors` / `brand.colors` / `brand.font` ← defaults) and
  * hands them to `expandDesignTokens`, then layers on the handful of
  * chrome vars (`--brand-footer-*`, explicit legacy button overrides) that
- * live outside the token contract so existing stores render identically.
+ * live outside the token set so existing stores render identically.
  */
 
 const DEFAULT_COLOR: Required<DesignTokenColor> = {
@@ -120,7 +118,7 @@ const CASE_MAP: Record<DesignHeadingCase, string> = {
 
 /**
  * Deliberately its OWN fixed scale, not a reference into RADIUS_SCALE/
- * shape.radius. Live-caught (15/8/26): when `--image-radius` pointed at
+ * shape.radius. When `--image-radius` pointed at
  * `var(--radius-sm/md/lg)`, a vendor on the (very common) 'sharp' global
  * Shape preset saw EVERY image-radius choice — sharp, soft, AND rounded —
  * collapse to the same 0px, since 'sharp' flattens the whole sm/md/lg
@@ -215,8 +213,7 @@ function contrastRatio(hexA: string, hexB: string): number | null {
 }
 
 /** WCAG AA body-text minimum. Below this, `accent`/`on_accent` reads as
- *  the same color rather than text-on-a-surface (the Taylor/glow incident:
- *  a vendor's legacy `colors.accent` override went to near-black while
+ *  the same color rather than text-on-a-surface (for example, a vendor's legacy `colors.accent` override went to near-black while
  *  `on_accent` silently kept the theme's own default — also near-black,
  *  since it was tuned to pair with THAT theme's accent, not the vendor's). */
 const MIN_ON_ACCENT_CONTRAST = 4.5;
@@ -474,7 +471,7 @@ function legacyTokensFromConfig(brand?: Brand | null, config?: StorefrontConfig 
 }
 
 /**
- * Resolution order per the contract: `config.tokens` (per-group) ←
+ * Resolution order: `config.tokens` (per-group) ←
  * legacy fields ← (handled by `expandDesignTokens`'s own defaults).
  */
 function resolveEffectiveTokens(brand?: Brand | null, config?: StorefrontConfig | null): DesignTokens {
@@ -497,7 +494,7 @@ function resolveEffectiveTokens(brand?: Brand | null, config?: StorefrontConfig 
 /**
  * Resolve brand CSS variables for the `provider.tsx` wrapper. Emits the
  * full token-derived var set (see `expandDesignTokens`), then layers on
- * the legacy chrome/override vars that sit outside the token contract:
+ * the legacy chrome/override vars that sit outside the token set:
  * footer colors and an explicit `config.colors.button(_text)` override
  * (pre-tokens stores could set a button color independent of `primary`).
  */

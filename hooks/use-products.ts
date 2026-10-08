@@ -102,7 +102,7 @@ export function useProducts(options?: ProductQuery & {
           if (options?.sort) query.sort = options.sort;
           if (options?.limit) query.per_page = options.limit;
           if (options?.hasVideo) query.has_video = 1;
-          // Ask the backend for exactly these products (whereIn) instead of
+          // Ask the API for exactly these products (by id) instead of
           // fetching an arbitrary `per_page`-sized page of the default listing
           // and hoping the requested ids happen to land in it — with a small
           // limit (bundle/shop-the-look/featured's 1-3) they almost never did,
@@ -149,13 +149,10 @@ export function useProducts(options?: ProductQuery & {
 /**
  * Full product detail (the same `/products/{slug}` request the PDP itself
  * uses), including the full ordered detail `media.images` list — the
- * list/collection endpoints `useProducts` calls only ever return the capped
- * `media.images` list (`media.listing.images_limit`, config/media.php:15)
- * plus `media.{image,thumbnail}` (see
- * Customer\ProductResource::buildBaseMediaPayload vs buildDetailMediaPayload
- * in queek_backend). Single-product spotlight blocks (e.g. glow's `featured`
- * variant) need this instead of substituting image/thumbnail as a fake
- * 2-image list.
+ * list/collection endpoints `useProducts` calls only ever return a capped
+ * `media.images` list plus `media.{image,thumbnail}`. Single-product spotlight
+ * blocks (e.g. a `featured` variant) need this instead of substituting
+ * image/thumbnail as a fake 2-image list.
  */
 /**
  * Fetch one product by SLUG.

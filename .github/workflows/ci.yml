@@ -36,6 +36,6 @@ jobs:
       # Packs the CURRENT SOURCE and consumes it from a sandbox, so a broken
       # kit fails here instead of after publishing. This is the step that would
       # have caught 0.1.0 (`Cannot find namespace 'JSX'` for every external
-      # consumer while the storefront's own checks were all green).
+      # consumer while every in-repo check was green).
       - name: Package is consumable from outside this repo
         run: npm run verify-package

@@ -1,12 +1,13 @@
 /**
- * Theme strings — the kit's Shopify-shaped UI-string mechanism (slice K0).
+ * Theme strings — the kit's UI-string mechanism: dotted keys, `{var}`
+ * interpolation, CLDR plurals and per-locale dictionaries.
  *
  * PURE AND SERVER-SAFE: this module imports nothing from `next/*` and nothing
  * from React, so server components, Node tooling and the browser all share it
  * (precedent: `utils/locale.ts`). Keep it that way — `tests/theme-strings*`
  * fails a build that adds either import here.
  *
- * Two surfaces (plan decision 4):
+ * Two surfaces:
  *  - Server: `createThemeStrings({ locale, loaders })` returns a bound `t`
  *    that a server component receives via props/closure. NO provider in the
  *    tree. The host supplies the loaders (per-locale dynamic imports) so the
@@ -15,15 +16,16 @@
  *    `useThemeStrings()` returns the same bound `t`. Absent prop = English
  *    defaults, byte-identical to the old hardcoded literals.
  *
- * Fallback (plan decision 3): the caller supplies an ordered list of
+ * Fallback: the caller supplies an ordered list of
  * dictionaries (merchant override, theme locale, kit core locale) and `t`
  * returns the FIRST hit. The LAST entry is always the English default value —
  * never the raw dotted key, never "translation missing". A key absent
  * everywhere returns `''` (and warns once per key in development only).
  *
  * Key budget: dotted lowercase `scope.thing.state`, total length <= 40 chars.
- * The backend overlay stores `<theme-slug>.<key>` in a varchar(64), so 40 for
- * the key leaves 23 for the slug plus the dot separator. Values <= 1000 chars.
+ * Merchant overrides are stored as `<theme-slug>.<key>` in a 64-character
+ * field, so 40 for the key leaves 23 for the slug plus the dot separator.
+ * Values <= 1000 chars.
  */
 
 import {
@@ -84,11 +86,11 @@ const PLURAL_FORMS = ['one', 'two', 'few', 'many', 'other'] as const;
  * US-order Intl tag (`February 15, 2026`). NEVER pass its result to
  * `Intl.DateTimeFormat` / `Intl.NumberFormat` / `Intl.RelativeTimeFormat`,
  * `toLocale*`, or any date/number/money/relative-time formatter — that would
- * reintroduce the US-order defect the founder banned for English stores.
+ * reintroduce US date order (`February 15, 2026`) for English stores.
  * Formatters must route through `resolveIntlLocale` (en* → en-NG) instead.
  *
  * Unknown/unparseable codes become English, mirroring `parseLocaleCode` (and
- * the backend's unknown-locale rule). A well-formed code the runtime's ICU
+ * the API's unknown-locale rule). A well-formed code the runtime's ICU
  * does not know also becomes English, so plural selection never silently
  * follows the wrong language.
  */

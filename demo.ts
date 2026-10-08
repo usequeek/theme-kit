@@ -1,16 +1,13 @@
 /**
  * Turns a theme's `demo.json` into the props its components expect.
  *
- * SHIPPED WITH THE KIT because without it a theme developer has demo data and
- * no way to render it. THEME.md already requires every theme to carry a
- * demo.json; these are the functions that resolve its block references into
- * real products, categories, posts and collections. They lived in the
- * storefront's own preview routes, so they existed only here — a theme could be
- * written outside this repo and never shown running against its own data.
+ * Shipped with the kit so a theme developer can render the demo data every
+ * theme carries in its `demo.json`: these are the functions that resolve its
+ * block references into real products, categories, posts and collections, so a
+ * theme can be previewed running against its own data.
  *
- * Pure and type-only by construction: no `fs`, no `next`, no app imports. That
- * is what made moving it a rename rather than a rewrite, and it is why these
- * work identically in a developer's preview and in this repo's preview routes.
+ * Pure and type-only by construction: no `fs`, no `next`, no app imports, so
+ * these work identically in any preview.
  */
 import type { Block, ReviewItem } from './types/block';
 import type { Menu } from './types/menu';
@@ -81,11 +78,10 @@ export function getEnrichedPage<T extends Page>(page: T, demo: PreviewDemoData):
 }
 
 /**
- * `demo.json`'s `posts` array is the documented, spec-correct source (see
- * `themes/THEME.md` — "must mirror the vendor bootstrap shape") — a few
- * themes authored it before the `content: Block[]` / `cover_image_url`
- * convention settled, so this tolerates the older shapes instead of
- * assuming every theme's data is current.
+ * `demo.json`'s `posts` array must mirror the shape of a store's blog posts
+ * (`content: Block[]`, `cover_image_url`). Some themes authored it before that
+ * convention settled, so this tolerates the older shapes instead of assuming
+ * every theme's data is current.
  */
 function normalizePost(raw: Record<string, unknown>): Post {
   const legacyMedia = raw.media as { image?: string; thumbnail?: string } | undefined;

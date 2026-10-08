@@ -11,7 +11,7 @@ import { withLocaleQuery } from '../utils/locale';
  * Client-side blog-post listing, for blocks embedded on an arbitrary page
  * (e.g. the 'blog' home-page block) — mirrors useProducts' shape/pattern.
  * The blog LISTING page itself (pages/blog.tsx) gets its posts via SSR props
- * instead (fetchPosts in lib/core/api/pages.ts); this hook is for anywhere
+ * instead (`fetchPosts` in the host's page loader); this hook is for anywhere
  * else a theme needs a live post list without page-level SSR data.
  */
 export function usePosts(options?: { category?: string | null; limit?: number }): { posts: Post[]; isLoading: boolean } {

@@ -58,8 +58,6 @@ export function attachDesignTokenPreviewListener(target: StylableTarget): () => 
  * onto the brand-root element's inline style, overlaying (not replacing)
  * the SSR vars from `getBrandCssVariables`. Never persisted — a normal
  * navigation/refresh reloads the real config.
- *
- * Frozen protocol: queek_backend `.agent/.tmp/live-preview-protocol.md`.
  */
 export function DesignTokenPreviewListener({
   targetRef,

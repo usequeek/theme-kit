@@ -21,15 +21,14 @@ interface EditPreviewState {
  * Draft page content streamed live from the merchant editor, so a section edit
  * renders immediately instead of waiting for a network round trip.
  *
- * Before this, every field change took the long way: 900ms debounce → PUT the
- * draft → postMessage 'refresh' → router.refresh() → RSC fetch → backend
- * render, and the preview showed the OLD content the whole time. The merchant
+ * Without it, every field change would take the long way: 900ms debounce → PUT
+ * the draft → postMessage 'refresh' → router.refresh() → RSC fetch → API render,
+ * and the preview would show the OLD content the whole time. The merchant
  * already holds the edited section in its own state; sending it costs nothing
  * and removes both network hops from the interactive path.
  *
- * Design tokens have worked this way all along (design-token-preview.tsx) — this
- * is the same idea applied to section content, which is the thing merchants
- * actually spend their time editing.
+ * Design tokens work the same way (design-token-preview.tsx) — this applies the
+ * idea to section content, which is what merchants spend their time editing.
  *
  * The server stays authoritative: PageRenderer drops this override the moment a
  * fresh server payload arrives, so the debounced save still reconciles and a

@@ -59,8 +59,8 @@ export const useCartStore = create<CartState>()(
       },
       addItemWithAddons: (product, quantity = 1, addons = [], variant = null) => {
         // A variant-enabled product has no valid "no selection" line: the cart
-        // save fails server-side (DiscountService's VariantSelectionException),
-        // so persisting one only moves the failure to checkout. Themes gate
+        // save fails server-side, so persisting one only moves the failure to
+        // checkout. Themes gate
         // their add button too, but a theme is presentation — correctness
         // cannot depend on all seven, or on the next one, getting it right.
         if (!variant && productRequiresVariant(product)) {

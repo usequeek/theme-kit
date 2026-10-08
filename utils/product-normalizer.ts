@@ -37,8 +37,8 @@ function toBool(value: unknown, fallback = false): boolean {
 
 /**
  * Same base/sale/compare-at shape as normalizePricing(), but a variant's own price lives on
- * FLAT fields (price/discount_price/compare_at_price/discount_amount — see
- * ProductResource::resolveShopVariants on the backend), never nested under a `pricing` key.
+ * FLAT fields (price/discount_price/compare_at_price/discount_amount), never nested
+ * under a `pricing` key.
  * Reading `variant.pricing?.sale_amount` (as this used to) is always undefined, so every
  * variant silently fell back to the base product's price — picking Denim vs Taupe never
  * changed what was shown, even though the backend had already computed the right number.

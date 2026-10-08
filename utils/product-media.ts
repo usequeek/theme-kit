@@ -14,7 +14,7 @@ export interface MediaFrame {
 
 /**
  * Picks the largest tier a PDP hero should ever request. `view` is capped at
- * 1600px (queek_backend config/media.php) which covers every theme's hero box
+ * 1600px, which covers every theme's hero box
  * at DPR2 — the raw `original` is uncapped and unoptimized.
  */
 function heroUrl(variants: ImageVariants | null | undefined): string | null {

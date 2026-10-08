@@ -4,11 +4,10 @@
  * down to 0, so it silently truncated EVERY fractional-naira amount to a
  * whole number, everywhere in the storefront. A ₦0.28 balance (e.g. a tiny
  * residual left after a near-100% discount) displayed as "₦0" — the customer
- * saw a free checkout, then got asked to actually pay something. POS already
- * shows real money correctly (lib/currency.ts: minimumFractionDigits: 2,
- * maximumFractionDigits: 2, always).
+ * saw a free checkout, then got asked to actually pay something. The POS
+ * always shows two decimals.
  *
- * Deliberately NOT matching POS's always-2-decimals contract here: the
+ * Deliberately NOT matching the POS's always-2-decimals format here: the
  * overwhelming majority of storefront prices are whole naira, and putting
  * ".00" on every single one would be a large, unrequested visual change
  * across every theme. `minimumFractionDigits: 0, maximumFractionDigits: 2`
@@ -51,8 +50,7 @@ function displayTagFor(
 /**
  * A date for display (default "14 Feb 2026"), identical on server and browser.
  * '' if unparseable. The locale parameter is routed through the canonical
- * mapping (founder 2/10/26: English is British/Nigerian order, never US
- * order), so even an explicit 'en'/'en-US' renders "15 February 2026" — no
+ * mapping (English is British/Nigerian order, never US order), so even an explicit 'en'/'en-US' renders "15 February 2026" — no
  * exported formatter lets an 'en*' tag reach Intl unmapped.
  */
 export function formatDisplayDate(
@@ -137,7 +135,7 @@ export const PLATFORM_DEFAULT_CURRENCY = 'NGN';
  * The ONE currency-code resolver: trims/uppercases the item or vendor code,
  * accepts it when it is a 3-letter code, and returns the platform default
  * otherwise. List-level `meta.currency` is never consulted — it stamps the
- * platform default even on non-NGN stores (api-currency-contract-fix).
+ * platform default even on non-NGN stores.
  */
 export function normalizeCurrencyCode(value: unknown, fallback: string = PLATFORM_DEFAULT_CURRENCY): string {
   const code = typeof value === 'string' ? value.trim().toUpperCase() : '';

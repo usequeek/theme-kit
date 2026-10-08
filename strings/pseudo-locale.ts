@@ -1,8 +1,8 @@
 /**
- * Pseudo-locale QA (slice: typed keys + pseudo-locale QA helper).
+ * Pseudo-locale QA helper.
  *
  * PURE AND SERVER-SAFE: this module imports nothing from `next/*` and nothing
- * from React, so server components, Node tooling (theme-check), tests and the
+ * from React, so server components, Node tooling (such as the theme check), tests and the
  * browser all share it (precedent: `utils/locale.ts`, `strings/theme-strings.ts`).
  * Keep it that way.
  *
@@ -19,8 +19,7 @@
  *    (un-wrapped) string. Never ship pseudo to shoppers.
  *  - Tests: render a component with the pseudo dictionary, then run the
  *    English-leak scan (`findEnglishLeaks` / `assertNoEnglishLeak`) over the
- *    HTML. That scan is the reusable primitive theme tests (and the
- *    storefront, and theme-tools) import.
+ *    HTML. That scan is the reusable primitive theme tests import.
  *
  * English safety: this module never changes an English value — pseudo
  * dictionaries are built on demand in dev/test and never enter a bundle.

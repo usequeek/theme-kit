@@ -5,8 +5,9 @@ import { getActivePlatform } from './platform';
 export const API_BASE_URL = process.env.QUEEK_API_URL ?? process.env.NEXT_PUBLIC_QUEEK_API_URL ?? 'http://127.0.0.1:8000/api/v1';
 // BROWSER-side only (createBrowserClient below, "for client components/hooks").
 // Hardcoded relative on purpose, same reasoning as queek-client.ts's
-// API_BASE_URL: next.config.ts's rewrite already proxies /api/v1/client/:path*
-// to the backend server-side, so the browser never needs the real host. This
+// API_BASE_URL: the host app's `next.config` rewrite already proxies
+// /api/v1/client/:path* to the API server-side, so the browser never needs the
+// real host. This
 // used to read NEXT_PUBLIC_QUEEK_API_URL directly — when that's set to the
 // same absolute value as the server-side QUEEK_API_URL, every hook built on
 // createBrowserClient (products, shop, categories, reviews, related products,
@@ -35,7 +36,7 @@ export interface RequestCachePolicy {
  * eventually releases, not to enforce an SLA on a shopper's mobile connection.
  *
  * A write gets far more room than a read, and `request()` NEVER retries: an
- * aborted POST may already have reached the backend, so re-sending it could
+ * aborted POST may already have reached the API, so re-sending it could
  * duplicate an order or a payment.
  */
 const BROWSER_GET_TIMEOUT_MS = 15_000;
@@ -44,8 +45,8 @@ const BROWSER_POST_TIMEOUT_MS = 25_000;
 /**
  * Carries the HTTP status so callers can tell a genuine "this does not exist"
  * (404) apart from an infrastructure failure (5xx, timeout, network). That
- * distinction is load-bearing in `app/[vendor]/layout.tsx`: 404 must render
- * not-found, while a backend blip must NOT — a 404 on every URL of a live store
+ * distinction is load-bearing in a host's vendor layout: 404 must render
+ * not-found, while an API blip must NOT — a 404 on every URL of a live store
  * is how storefronts get deindexed.
  */
 export class ApiRequestError extends Error {
@@ -85,7 +86,7 @@ export class ApiTimeoutError extends Error {
  * For fetchers whose caller renders not-found on a null result.
  *
  * Returns null ONLY for a real 404 and rethrows everything else. A bare
- * `catch { return null }` there turns a backend timeout or 5xx into a 404 for a
+ * `catch { return null }` there turns an API timeout or 5xx into a 404 for a
  * product/page that exists — which is what deindexes a store's highest-value
  * URLs during a blip, and became far more likely once SSR fetches gained an
  * abort budget.
@@ -114,7 +115,7 @@ function withQuery(path: string, query?: RequestOptions['query']): string {
       continue;
     }
 
-    // Laravel's query parser only builds a real array from bracket notation
+    // The API's query parser only builds a real array from bracket notation
     // (`key[]=a&key[]=b`) — a plain comma-joined `key=a,b` (URLSearchParams'
     // default for an array via String()) arrives server-side as a single
     // string, failing an `array` validation rule outright.
@@ -134,11 +135,11 @@ function withQuery(path: string, query?: RequestOptions['query']): string {
 }
 
 export async function request<T>(baseUrl: string, path: string, options: RequestOptions & { credentials?: RequestCredentials } = {}, extraHeaders?: Record<string, string>): Promise<T> {
-  // HARD RULE: the storefront only ever calls the `/v1/client/*` scope. That scope's
-  // ResolveClientContext middleware resolves the vendor AND forces the platform
-  // (storefront/instore_qr), so prices are always the storefront's (no marketplace
-  // commission). Legacy v1 routes (/products, /vendors/*, /categories) bypass that
-  // middleware → wrong platform → wrong price. Never call them from here.
+  // HARD RULE: the storefront only ever calls the `/v1/client/*` scope. That scope
+  // resolves the vendor AND forces the platform (storefront/instore_qr), so prices
+  // are always the storefront's (no marketplace commission). Legacy v1 routes
+  // (/products, /vendors/*, /categories) skip that resolution → wrong platform →
+  // wrong price. Never call them from here.
   if (!path.startsWith('/client/')) {
     throw new Error(`Storefront may only call /v1/client/* routes — got "${path}". Use createServerStoreClient / createBrowserClient (which prefix /client/store).`);
   }

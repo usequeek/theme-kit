@@ -121,11 +121,10 @@ export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
     // help regardless of where the section's own text ends up. Forcing
     // `color: #fff` alongside it is deliberate, not decorative — the same
     // "on_accent independently defaulting to something unrelated" trap that
-    // broke Taylor's checkout (2026-08-21, see brand.ts's
-    // ensureReadableOnAccent) applies here too: a theme's own default text
-    // color was never chosen with an arbitrary vendor photo behind it, so
-    // legibility can't be left to inherit from wherever the theme happens to
-    // default to. `!important`-equivalent isn't needed — this is the
+    // brand.ts's ensureReadableOnAccent guards against applies here too: a
+    // theme's own default text color was never chosen with an arbitrary vendor
+    // photo behind it, so legibility can't be left to inherit from wherever the
+    // theme happens to default to. `!important`-equivalent isn't needed — this is the
     // closest ancestor rule, and CSS3 UI text is dark by default in every
     // theme (see brand.ts's own comment on directly-matched rules winning
     // over inherited ones for exactly the fix this exists to preempt).
@@ -167,7 +166,7 @@ export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
             // a sensible default for a plain content page's paragraphs/
             // images, but for a colored band it leaves a seam of the page's
             // own background between adjacent sections, breaking the "solid
-            // band" look (confirmed live: 16px, exactly the default gap).
+            // band" look (the seam measures 16px, exactly the default gap).
             // Pull this section half a gap into the space above/below it;
             // when the neighbor is ALSO a bg_color band doing the same, the
             // two halves meet and the seam closes to zero. Derives from the

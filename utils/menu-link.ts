@@ -17,7 +17,7 @@ export function menuItemToHref(item: MenuItem, basePath: string = ''): string {
       const href = `${basePath}/${item.ref}`;
       const anchor = item.meta?.anchor;
       // href may already end in "/" (the home page's ref is normalized to
-      // "/" — see MenuResource::normalizeHomeRefs) — never emit a doubled
+      // "/") — never emit a doubled
       // slash before the fragment.
       return anchor ? `${href.replace(/\/$/, '')}#${anchor}` : href;
     }

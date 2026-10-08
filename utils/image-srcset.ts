@@ -22,10 +22,10 @@ export interface ResolvedImageSources {
 
 const NONE: ResolvedImageSources = { src: undefined, srcSet: undefined, sizes: undefined };
 
-/** Ascending by cap. `thumb` is excluded by contract rule 5; `original` is
+/** Ascending by cap. `thumb` is excluded because it has no width; `original` is
  *  excluded on purpose — it is uncapped and unoptimized (raw jpg/png, possibly
  *  6000px), so letting a browser pick it off a srcset is the exact regression
- *  this whole effort exists to remove. `original` survives only as a last-resort
+ *  the tier map exists to prevent. `original` survives only as a last-resort
  *  `src` for the `raw` intent and as the onError step-2 retry. */
 const SRCSET_TIERS = ['card', 'card2x', 'view'] as const;
 type SrcSetTier = (typeof SRCSET_TIERS)[number];

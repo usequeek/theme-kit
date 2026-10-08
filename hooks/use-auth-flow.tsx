@@ -255,7 +255,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
         console.warn('[google-auth] redirect endpoint returned non-2xx', res.status, text);
         throw new Error(`Failed to initiate Google auth (HTTP ${res.status}).`);
       }
-      // Laravel envelope: { status, message, data: { url } }
+      // Response envelope: { status, message, data: { url } }
       const body = (await res.json()) as {
         data?: { url?: string; redirect_url?: string };
         url?: string;

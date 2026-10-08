@@ -15,7 +15,7 @@ export interface CoreMetaobjectsBlockProps extends MetaobjectsResolved {
  * `EntryCard` a product's linked-entry metafields render. Renders nothing
  * when the type is unknown, hidden, or has no active entries (the server
  * seeds `entries: []` for all three cases — see `hydrateProductBlocks` in
- * the storefront). Each card links to `/{type}/{handle}` only when the
+ * the host app). Each card links to `/{type}/{handle}` only when the
  * definition opted into entry pages (`has_pages`); otherwise it's inert.
  */
 export function CoreMetaobjectsBlock({

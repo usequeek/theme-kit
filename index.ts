@@ -1,15 +1,12 @@
 /**
  * The public surface a theme is allowed to build against.
  *
- * The package is `@usequeek/theme-kit`: what a theme is built AGAINST, named for
- * the job rather than for our internals — "storefront core" describes where the
- * code lives here, which is meaningless to someone who has never seen this repo.
+ * The package is `@usequeek/theme-kit`: what a theme is built AGAINST.
  *
- * Themes currently import core through deep paths (`@/lib/core/hooks/use-cart`).
- * These two barrels name which of those paths are API — the set that would ship
- * as `@usequeek/theme-kit` — so the boundary is written down before it is
- * published and frozen. Anything NOT re-exported here is core's own plumbing and
- * may change without notice.
+ * Themes import the kit through deep paths (`@usequeek/theme-kit/hooks/use-cart`).
+ * These two barrels name which of those paths are API, so the boundary is written
+ * down. Anything NOT re-exported here is the kit's own plumbing and may change
+ * without notice.
  *
  * Two entries because the split is real, not cosmetic: this one is types and
  * pure functions, importable from anywhere including node tooling; `client.ts`
@@ -18,16 +15,15 @@
  * deliberately unreachable from both.
  *
  * THESE ARE A DECLARATION, NOT AN IMPORT PATH. Do not migrate themes onto them.
- * Measured 9/9/26: pointing one theme's 28 files at `client.ts` fails the build
- * outright — `theme:generate-registry` imports theme components under tsx, and
- * through the barrel a gallery block transitively pulls the SDK, which does not
- * resolve outside a bundler. It is the same reason a barrel would bloat every
+ * Pointing a theme's files at `client.ts` fails the build outright: tooling that
+ * imports theme components under tsx (a theme registry generator, for example)
+ * would reach a gallery block through the barrel, which transitively pulls the
+ * SDK, and the SDK does not resolve outside a bundler. It is the same reason a barrel would bloat every
  * theme chunk: the stores call `create()` at import time and package.json
  * declares no `sideEffects`, so webpack must treat every re-export as live and
  * cannot drop the unused ones. Themes keep importing the exact module they use;
- * when core is published it should expose SUBPATH exports
- * (`@usequeek/theme-kit/hooks/use-cart`) and these barrels stay the
- * machine-checkable statement of what is in the contract.
+ * these barrels stay the machine-checkable statement of what is in the public
+ * surface.
  */
 
 export * from './types/theme';
@@ -53,7 +49,7 @@ export * from './utils/locale';
 // Theme strings — the pure/server-safe i18n core (no next/*, no React).
 export * from './strings/theme-strings';
 // Pseudo-locale QA — dev/test-only dictionary transform + English-leak scan
-// (pure/server-safe: no next/*, no React, so theme-check can import it too).
+// (pure/server-safe: no next/*, no React, so Node tooling can import it too).
 export * from './strings/pseudo-locale';
 
 // Rendering a theme's own demo.json — what makes local preview possible.

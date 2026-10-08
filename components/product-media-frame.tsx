@@ -41,7 +41,7 @@ export function ProductMediaFrame({
   }
 
   // Thumbnail strips render at ~64-90px across every theme — the `thumb` tier
-  // (a fixed-src, never-in-a-srcset tier by contract) is exactly right there.
+  // (a fixed-src tier that is never part of a srcset) is exactly right there.
   const resolvedIntent: ImageIntent = intent ?? (variant === 'thumbnail' ? 'avatar' : 'hero');
 
   return (

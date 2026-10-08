@@ -8,8 +8,8 @@ export interface PoweredByQueekProps {
   /** Extra class so a footer can position the link — styling stays theme-owned. */
   className?: string;
   /**
-   * Reserved for a future plan perk (paid removal). Defaults to false and is
-   * always rendered in v1 — there is no merchant-facing toggle for it.
+   * Lets a caller hide the link from a prop. Defaults to false; themes always
+   * render it visible — there is no merchant-facing toggle for it.
    */
   hidden?: boolean;
 }
@@ -18,8 +18,8 @@ export interface PoweredByQueekProps {
  * Core-owned storefront attribution — the `ProductMetafields` pattern: themes
  * import-and-place it, never re-implement it.
  *
- * Required on every footer variant of every theme (enforced by `theme-check`
- * rule `theme/footer-shows-powered-by` in the storefront repo). The link
+ * Required on every footer variant of every theme (enforced by the
+ * `theme/footer-shows-powered-by` rule of the theme check). The link
  * target (`https://usequeek.com/business`) and `rel` are the contract —
  * do not change them. The href is tagged `utm_source=powered_by`,
  * `utm_medium=storefront`, `utm_campaign=<store slug>` via `poweredByQueekUrl`

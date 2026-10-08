@@ -23,8 +23,7 @@ export interface ProductMetafieldsProps {
  * Renders the product's presented metafields (all types), with linked
  * metaobject entries as cards. Renders nothing when there are no visible
  * values. Markup carries `core-metafields*` classes so each theme styles it
- * in its own `theme.css` (framework-owned styling contract) — no theme CSS
- * lives in core.
+ * in its own `theme.css` — no theme CSS ships in the kit.
  */
 
 function isEntry(value: unknown): value is MetaobjectEntry {
@@ -95,7 +94,7 @@ function renderScalar(value: MetafieldScalar, key: string, label: string, type: 
 
   if (type === 'media_id') {
     return /^https?:\/\//i.test(text) ? (
-      // Media values arrive as resolved URLs (media contract) — plain <img>:
+      // Media values arrive as resolved URLs — plain <img>:
       // this is core, not a theme, so the themes' <Image> rule doesn't apply.
       <img className="core-metafields__image" src={text} alt={label} loading="lazy" />
     ) : (

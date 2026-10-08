@@ -14,17 +14,14 @@ interface VariantPickerProps {
 /**
  * Renders a product's option groups as color swatch / image swatch / text
  * buttons — standard e-commerce priority: color_code first, else a
- * representative image, else plain text. Extracted from quick-add-page.tsx
- * (the channel/chat add-to-cart flow, the one place that already got this
- * right) so the other two surfaces missing a picker entirely — the QR
- * ordering sheet and the default theme's quick-view modal — can reuse it
- * instead of a third reimplementation. Pair with `matchVariant()`
- * (lib/core/utils/match-variant.ts) to resolve `selectedOptions` into a real
+ * representative image, else plain text. Shared by every surface that needs
+ * an option picker (quick-add, the QR ordering sheet, a theme's quick-view
+ * modal) instead of each re-implementing it. Pair with `matchVariant()`
+ * (utils/match-variant.ts) to resolve `selectedOptions` into a real
  * `ProductVariant`, and gate the add action on that being non-null before
  * calling `addProduct`/`addItemWithAddons` — a variant-enabled product added
- * without one fails the cart save server-side (DiscountService's
- * VariantSelectionException) rather than merely being "no variant"; there
- * is no valid no-selection state to fall back to.
+ * without one fails the cart save server-side rather than merely being "no
+ * variant"; there is no valid no-selection state to fall back to.
  */
 export function VariantPicker({ product, selectedOptions, onSelect, className }: VariantPickerProps): JSX.Element | null {
   if (product.options.length === 0) return null;

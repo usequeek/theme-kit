@@ -11,7 +11,7 @@ export interface StorefrontUser {
   email: string | null;
   phone: string;
   avatar: string | null;
-  /** Backend flag: false for social/email signups that still lack a real phone. */
+  /** API flag: false for social/email signups that still lack a real phone. */
   profile_complete?: boolean;
   delivery_info?: {
     map_lat: number;
@@ -22,10 +22,9 @@ export interface StorefrontUser {
 
 /**
  * A signed-in customer whose account is missing the details we require to
- * fulfil an order. The backend's `profile_complete` is itself derived purely
- * from phone+name presence (`ClientAuthUserResource`: `phone !== null && name
- * !== ''`), so both it and the raw `!user.phone` check are gated by
- * `requiresPhone` together — there's no case where one applies without the
+ * fulfil an order. The API's `profile_complete` is itself derived purely from
+ * phone+name presence (`phone !== null && name !== ''`), so both it and the raw
+ * `!user.phone` check are gated by `requiresPhone` together — there's no case where one applies without the
  * other.
  *
  * `requiresPhone` — defaults true (delivery/pickup orders need a real number

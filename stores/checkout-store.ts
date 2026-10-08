@@ -66,7 +66,7 @@ interface CheckoutState {
   isEditingAddress: boolean;
   /** The customer's saved address (CustomerAddress uuid) currently selected for
    *  delivery, when they picked one from their address book instead of
-   *  searching a fresh address. Lets the backend reuse the cached courier
+   *  searching a fresh address. Lets the API reuse the cached courier
    *  geocode. Null whenever the address came from a fresh Google search. */
   savedAddressId: string | null;
 

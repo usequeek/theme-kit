@@ -7,13 +7,11 @@ export interface BrandFont {
 }
 
 /**
- * Semantic design-token shapes — the FROZEN contract
- * (`.agent/.tmp/design-token-contract.md` in queek_backend). Backend resolves
- * theme defaults ← legacy vendor fields ← vendor `tokens` overrides and
- * returns this object under `StorefrontConfig.tokens`. Every field is
- * optional: during the transition many vendors have no `tokens` at all, and
- * the storefront injector (`lib/core/utils/brand.ts`) fills every gap with a
- * sane default so it can never crash or omit a CSS var.
+ * Semantic design-token shapes. The API resolves theme defaults ← legacy
+ * vendor fields ← vendor `tokens` overrides and returns this object under
+ * `StorefrontConfig.tokens`. Every field is optional: many vendors have no
+ * `tokens` at all, and the token injector (`utils/brand.ts`) fills every gap
+ * with a sane default so it can never crash or omit a CSS var.
  */
 export type DesignColorScheme = 'light' | 'dark';
 export type DesignScaleRatio = 1.125 | 1.2 | 1.25 | 1.333;
@@ -94,9 +92,9 @@ export type DesignTokenAxis = keyof DesignTokens;
  * container's radius is a hardcoded literal, or a button's border reads
  * `--border-weight` while its radius doesn't. Declaring only the dimension name
  * (e.g. `'shape'`) would show a dead sub-dial next to a live one — this is the
- * exact 2026-08-03 gap found in Allure's products/carousel section (Image radius
- * and Corner radius dead, Image fit/filter and Border weight live, all under the
- * same 'shape'/'image' bundle). `type`/`elevation`/`motion` have no UI sub-controls
+ * exact gap of a products/carousel section whose Image radius and Corner radius
+ * were dead while Image fit/filter and Border weight were live, all under the
+ * same 'shape'/'image' bundle. `type`/`elevation`/`motion` have no UI sub-controls
  * today, so they stay bare (no `.field` suffix) — add one here the day a sub-dial
  * is added for them.
  */
@@ -185,7 +183,7 @@ export interface StorefrontConfig {
     heading?: string;
     body?: string;
   };
-  /** Resolved semantic design tokens (see design-token-contract.md). Absent for stores not yet migrated. */
+  /** Resolved semantic design tokens. Absent for stores that have none. */
   tokens?: DesignTokens | null;
   menus?: {
     header?: Menu;
@@ -235,7 +233,7 @@ export interface StorefrontConfig {
       heading?: string;
       tagline?: string;
       cta?: string;
-      /** `modal` variant only — when it should pop up. Backend field pending; defaults to 'scroll' when unset. */
+      /** `modal` variant only — when it should pop up. Defaults to 'scroll' when unset. */
       trigger?: 'immediate' | 'delay' | 'scroll';
     };
   };

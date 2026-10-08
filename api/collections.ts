@@ -4,8 +4,8 @@ import type { Collection, Pagination } from '../types/page';
 import type { ApiResponse } from '../types/product';
 import { extractProducts, normalizeProduct } from '../utils/product-normalizer';
 
-/** Matches `VendorCollectionProductsRequest`'s validated `sort` values exactly
- *  (queek_backend) — a value outside this list gets a 422 from the backend. */
+/** The `sort` values the collection-products endpoint accepts; any other value
+ *  gets a 422 from the API. */
 export type CollectionSort = 'newest' | 'popular' | 'price_low' | 'price_high';
 
 export interface FetchCollectionProductsOptions {
@@ -17,9 +17,9 @@ export interface FetchCollectionProductsOptions {
   locale?: string;
 }
 
-// SSR collection reads go through `/client/store/*` so ResolveClientContext forces
-// X-Platform=storefront (base prices, no marketplace commission) — never the
-// legacy v1 routes shared with the commission-bearing marketplace.
+// SSR collection reads go through `/client/store/*`, which resolves the store and
+// forces X-Platform=storefront (base prices, no marketplace commission) — never
+// the legacy v1 routes shared with the marketplace.
 export async function fetchCollections(vendorSlug: string, storefrontOnly = true, locale?: string): Promise<Collection[]> {
   const client = createServerStoreClient(vendorSlug, await getRequestOrigin());
 

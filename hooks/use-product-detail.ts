@@ -15,8 +15,7 @@ interface UseProductDetailResult {
 
 /**
  * The product LIST/collection endpoint never returns `addons`, `options`, or
- * `variants` — those only exist on the single-product "view" response
- * (`ProductResource::buildBasePayload` vs `buildViewPayload`, queek_backend).
+ * `variants` — those only exist on the single-product "view" response.
  * Any quick-view/quick-add modal opened from a product card only has the
  * list-shaped object, so it must re-fetch full detail before it can render
  * or select an addon/option — rendering `listProduct.addons` directly always

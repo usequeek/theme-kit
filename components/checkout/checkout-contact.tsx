@@ -8,9 +8,9 @@ import { Image } from '../image';
 
 /**
  * First section of the checkout form — shows who's checking out. Ordering
- * requires auth (`canCheckout` in checkout-controller.tsx), so unlike
- * Shopify's guest-friendly email field this is purely an identity
- * confirmation: avatar + email when signed in, a sign-in prompt otherwise.
+ * requires auth (`canCheckout` in checkout-controller.tsx), so this is purely
+ * an identity confirmation, not an email field: avatar + email when signed in,
+ * a sign-in prompt otherwise.
  */
 export function CheckoutContactSection(): JSX.Element {
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();

@@ -35,11 +35,11 @@ type ImageProps = ImgHTMLAttributes<HTMLImageElement> & {
   fallback?: string;
   placeholder?: PlaceholderProp;
   /**
-   * The backend's srcset-ready tier map (product.media.image_variants,
+   * The API's srcset-ready tier map (product.media.image_variants,
    * vendor.logo_variants, collection.image_variants, mediaIndex[url], …).
-   * Purely additive: when absent — as it is at every call site that hasn't been
-   * migrated, and whenever the backend legitimately sends null (off-host image,
-   * SVG, legacy upload) — this component behaves exactly as it did before.
+   * Purely additive: when absent — and whenever the API legitimately sends null
+   * (off-host image, SVG, legacy upload) — this component renders the plain
+   * image URL.
    */
   variants?: ImageVariants | null;
   /**
@@ -133,7 +133,7 @@ export function Image({ fallback, placeholder, variants, intent = 'raw', onError
   // image is invisible until hover. Eager, a server-rendered grid of 24 cards
   // made React preload the first ~10 (also into the 103 Early Hints header) and
   // fetch every image at once, racing the page's render-blocking CSS: /shop's
-  // first paint went 1.8 s → 2.9 s on Slow 4G (24/9/26). Lazy is next/image's
+  // first paint went from 1.8 s to 2.9 s on Slow 4G. Lazy is next/image's
   // default as well. A theme whose card IS the page's main image passes
   // loading="eager" or fetchPriority="high".
   const lazyByDefault = (intent === 'card' || intent === 'card2x') && props.fetchPriority !== 'high';

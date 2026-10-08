@@ -42,7 +42,7 @@ export interface GalleryBlockData {
   heading?: string | null;
   description?: string | null;
   /** Block-level (not per-slide) hero display controls — currently only
-   *  glow's 'slider'/'thumb-rail' variants read these; harmless no-op
+   *  some themes' 'slider'/'thumb-rail' variants read these; harmless no-op
    *  elsewhere. */
   zoom_effect?: boolean | null;
   overlay?: 'none' | 'light' | 'medium' | 'strong' | null;
@@ -62,7 +62,7 @@ export interface GalleryBlockData {
     /** YouTube/Vimeo/direct file URL — takes over from `url` as the slide's
      * media when set, with `url` still used as the poster/fallback. Only
      * takes effect on themes/variants that render a single full-bleed slide
-     * (e.g. glow's `slider`/`thumb-rail` with exactly 1 image) — a
+     * (e.g. a `slider`/`thumb-rail` variant with exactly 1 image) — a
      * multi-slide carousel would autoplay every slide's video concurrently
      * since inactive slides stay mounted, not unmounted. */
     video?: string | null;
@@ -258,7 +258,7 @@ export interface MetaobjectsBlockData {
  * Server-seeded resolution for a `metaobjects` block — the entries of
  * `data.type` plus the definition meta needed to decide whether each card
  * links out (`definition.has_pages`). Mirrors `MetaobjectsResolved` shape
- * used by `hydrateProductBlocks` in the storefront.
+ * used by `hydrateProductBlocks` in the host app.
  */
 export interface MetaobjectsResolved {
   entries: MetaobjectEntry[];
@@ -293,17 +293,17 @@ export type Block<T extends BlockType = BlockType> = {
   /**
    * Section-scoped design-token overrides — only the keys set here are
    * applied; everything else inherits the global tokens via the CSS
-   * cascade. See `expandDesignTokensPartial` in `lib/core/utils/brand.ts`.
+   * cascade. See `expandDesignTokensPartial` in `utils/brand.ts`.
    */
   tokens?: Partial<DesignTokens>;
   /**
    * Stable in-page-scroll target — a menu item's `meta.anchor` links here.
-   * Lowercase-kebab, enforced by the backend (ValidStorefrontBlocks).
+   * Lowercase-kebab, enforced by the API.
    */
   anchor_id?: string;
   /**
    * Server-seeded product data for `products` blocks — set by
-   * `hydrateProductBlocks` (lib/core/api/products.ts) before blocks reach
+   * the host's `hydrateProductBlocks` before blocks reach
    * `PageRenderer`, which awaits it via `use()` inside a per-block
    * `<Suspense>` boundary. Lives on the block, not inside `data`, so it never
    * gets spread into theme components as a prop. Absent for every other
@@ -312,7 +312,7 @@ export type Block<T extends BlockType = BlockType> = {
   productsPromise?: Promise<Product[]>;
   /**
    * Server-seeded entries + definition meta for `metaobjects` blocks — set
-   * by `hydrateProductBlocks` alongside `productsPromise`. Same contract:
+   * by the host's `hydrateProductBlocks` alongside `productsPromise`. Same rule:
    * absent for every other block type and for any route that hasn't been
    * wired to hydrate; the renderer falls back to rendering nothing (themes
    * never fetch metaobjects client-side).

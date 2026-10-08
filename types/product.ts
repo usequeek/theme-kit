@@ -29,8 +29,7 @@ export interface ProductShop {
 }
 
 /**
- * One entry of the ordered `images` list (backend
- * `CustomerProductMedia::orderedImages()`): primary first,
+ * One entry of the ordered `images` list: primary first,
  * `{id, url, alt, variants}`. The listing payload caps the list
  * (`media.listing.images_limit`); detail/PDP carries the full list.
  */
@@ -53,11 +52,9 @@ export interface ProductMedia {
   primary_variant_image?: string | null;
   video_url?: string | null;
   /** Falls back to `image` server-side when the vendor hasn't set an explicit
-   *  poster (ProductResource::resolveVideoPosterUrl) — always a usable value
-   *  whenever video_url is set. */
+   *  poster — always a usable value whenever video_url is set. */
   video_poster_url?: string | null;
-  /** Srcset tier map for `image` (ProductResource::buildBaseMediaPayload /
-   *  buildDetailMediaPayload — present on BOTH list and detail responses).
+  /** Srcset tier map for `image` (present on BOTH list and detail responses).
    *  null when the primary image isn't Media-backed. */
   image_variants?: ImageVariants | null;
   /** Sibling to `primary_variant_image`, same contract. */
@@ -268,9 +265,8 @@ export interface LegacyProductLike {
   vendor_id?: string;
   thumbnail?: string | null;
   image?: string | null;
-  // Sibling top-level fields on the real backend payload (ProductResource::
-  // buildBasePayload) — NOT nested under `media` server-side, unlike
-  // image/thumbnail which are sent in both places.
+  // Sibling top-level fields on the real API payload — NOT nested under
+  // `media` server-side, unlike image/thumbnail which are sent in both places.
   video_url?: string | null;
   video_poster_url?: string | null;
   stock?: number;
@@ -296,9 +292,9 @@ export interface LegacyProductLike {
       // also send it as a {optionName: value} map (normalizeVariantOptionValues handles both) —
       // intersecting the two types directly collapses to an unsatisfiable type, hence the Omit.
       option_values?: ProductVariantOptionValue[] | Record<string, string>;
-      // The backend sends a variant's own price/stock as FLAT fields (see
-      // ProductResource::resolveShopVariants), never nested under pricing/inventory —
-      // those nested keys only exist if some other caller pre-shapes the payload.
+      // The API sends a variant's own price/stock as FLAT fields, never nested
+      // under pricing/inventory — those nested keys only exist if some other
+      // caller pre-shapes the payload.
       price?: number;
       discount_price?: number;
       compare_at_price?: number | null;

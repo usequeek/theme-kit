@@ -5,13 +5,13 @@ import { triggerReauth } from './error-handler';
 import { getActivePlatform } from './platform';
 
 // This file is 'use client' — every export here only ever runs in the browser.
-// ALWAYS same-origin-relative, on purpose: next.config.ts's rewrite already
-// proxies /api/v1/client/:path* to the real backend server-side, so the
-// browser never needs (or should have) the backend's actual host. Reading
+// ALWAYS same-origin-relative, on purpose: the host app's `next.config` rewrite
+// already proxies /api/v1/client/:path* to the real API server-side, so the
+// browser never needs (or should have) the API's actual host. Reading
 // NEXT_PUBLIC_QUEEK_API_URL here would let a misconfigured env var (e.g. the
 // same absolute value used for the SERVER-side QUEEK_API_URL) leak
-// api.usequeek.com straight into every client-side request — confirmed live,
-// visible in the browser Network tab for autocomplete/resolve/fees/couriers/
+// api.usequeek.com straight into every client-side request, visible in the
+// browser Network tab for autocomplete/resolve/fees/couriers/
 // addresses. No such var read = structurally impossible to leak it from here.
 export const API_BASE_URL = '/api/v1';
 export const QUEEK_AUTH_URL = process.env.NEXT_PUBLIC_QUEEK_AUTH_URL ?? 'https://auth.usequeek.com';
@@ -45,12 +45,11 @@ const platformFetch: typeof fetch = (input, init) => {
 };
 
 /**
- * Every API response carries a backend request id. The SDK's `request()` returns
- * only the parsed body, so this wrapper — the one place every SDK call's raw
- * Response passes through — is where it can be read at all. Kept as the last-seen
- * value: the storefront has no error-reporting integration (no Sentry), so the
- * only consumer today is the checkout failure log, which is exactly the report a
- * customer support ticket needs to be traceable to a backend request.
+ * Every API response carries a request id. The SDK's `request()` returns only
+ * the parsed body, so this wrapper — the one place every SDK call's raw Response
+ * passes through — is where it can be read at all. Kept as the last-seen value:
+ * the only consumer is the checkout failure log, which is exactly the report a
+ * customer support ticket needs to be traceable to an API request.
  */
 const REQUEST_ID_HEADERS = ['x-request-id', 'x-correlation-id', 'request-id'];
 
@@ -68,7 +67,7 @@ function captureRequestId(response: Response): Response {
   return response;
 }
 
-/** The backend request id of the most recent SDK call, when it sent one. */
+/** The API request id of the most recent SDK call, when it sent one. */
 export function getLastRequestId(): string | null {
   return lastRequestId;
 }

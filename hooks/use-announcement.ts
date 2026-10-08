@@ -8,7 +8,7 @@ const ROTATE_EVERY_MS = 6000;
  * Turns the stored announcement into the rotating one every header receives:
  * `text` is the message currently showing (so a header that only ever read
  * `text` rotates with no change), `messages`/`index`/`next`/`prev` let a
- * header draw its own pager (roast). Auto-advances while there is more than
+ * header draw its own pager. Auto-advances while there is more than
  * one message; a manual step restarts the clock so the message just chosen
  * gets its full turn.
  */

@@ -1,13 +1,12 @@
 import type { JSX } from 'react';
 /**
- * Shared icon-keyword vocabulary for "benefit row" content blocks (glow's
- * `trust-badges`, any theme's `features-columns`, and similar icon+title+text
- * item lists). qee generates a short keyword per item (e.g. "star", "truck"),
+ * Shared icon-keyword vocabulary for "benefit row" content blocks (a theme's
+ * `trust-badges` or `features-columns`, and similar icon+title+text item
+ * lists). Qee generates a short keyword per item (e.g. "star", "truck"),
  * never raw SVG markup — themes render that keyword through this resolver
- * instead of each theme re-declaring its own switch (glow and allure both
- * had one, independently, before this was extracted) or a theme trying to
- * `dangerouslySetInnerHTML` the keyword directly (renders as literal text,
- * not an icon — the bug that prompted this).
+ * instead of each theme re-declaring its own switch, or trying to
+ * `dangerouslySetInnerHTML` the keyword directly (that renders as literal
+ * text, not an icon).
  *
  * `currentColor` throughout — the caller controls color via CSS `color` on
  * an ancestor, same convention every existing usage already followed.
@@ -88,8 +87,8 @@ const PATHS: Record<BenefitIconKey, JSX.Element> = {
   ),
 };
 
-// Synonyms qee has actually generated in practice for a key in BENEFIT_ICON_KEYS
-// (confirmed live: "truck" for a shipping/delivery benefit) — the AI is given
+// Synonyms Qee is known to generate for a key in BENEFIT_ICON_KEYS (for example
+// "truck" for a shipping/delivery benefit) — the AI is given
 // the canonical keyword list in the manifest/prompt, but a close synonym
 // should still resolve to the right icon instead of silently falling back.
 const ALIASES: Record<string, BenefitIconKey> = {
@@ -103,8 +102,7 @@ const ALIASES: Record<string, BenefitIconKey> = {
   quality: 'star',
   payment: 'wallet',
   price: 'wallet',
-  // Carried over from glow's pre-shared TrustIcon switch — real demo data
-  // and, presumably, real qee-generated pages already use this word.
+  // Already used by existing demo data and generated pages.
   sustainability: 'leaf',
 };
 

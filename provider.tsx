@@ -43,7 +43,7 @@ interface StorefrontContextValue {
   previewData?: StorefrontPreviewData;
   basePath: string;
   /** slug => 'full' | 'bare', for ShellInner to decide the CURRENT page's
-   * header/footer without a per-navigation fetch. See VendorShell. */
+   * header/footer without a per-navigation fetch. */
   pagesChrome: Record<string, 'full' | 'bare'>;
   /** Validated request locale (null = primary). Browser hooks read it via
    * `useStorefrontLocale()` and send `?locale=` when it is set. */

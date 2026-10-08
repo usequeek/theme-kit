@@ -11,9 +11,8 @@ const MESSAGE_SOURCE = 'queek-storefront';
 const MESSAGE_SOURCE_PARENT = 'queek-merchant';
 
 // Longest edge of the captured JPEG, in CSS px. Keeps the resulting
-// data-URI small (~50-150KB) so it can ride the qee chat POST body inline.
-// TODO: upload the capture to media (media.usequeek.com) and send a URL
-// instead of a data-URI once resume-persistence of attachments is needed.
+// data-URI small (~50-150KB) so it can ride a Qee chat request body inline
+// instead of being uploaded and referenced by URL.
 const CAPTURE_MAX_EDGE = 1000;
 
 async function captureBlock(el: HTMLElement): Promise<string> {
@@ -146,7 +145,7 @@ export function ActiveBlock({
 
   // Screenshot THIS section locally (edit mode only — the whole component tree
   // only renders inside the editor iframe) and hand the JPEG data-URI to the
-  // merchant, which turns it into a pending qee-chat attachment.
+  // merchant, which attaches it to a Qee chat message.
   const captureToQee = async (): Promise<void> => {
     const el = elRef.current;
     if (!el || capturing) return;

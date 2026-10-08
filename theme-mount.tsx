@@ -7,18 +7,13 @@ import { ThemeProvider } from './theme-context';
 /**
  * Renders a theme. THE MINIMUM A THEME NEEDS TO BE SEEN.
  *
- * Without this, installing `@usequeek/theme-kit` gave a developer every hook,
- * store, type and shared block — and no way to actually mount what they built.
- * The component that does it, `VendorShell`, lives in the storefront app, so it
- * was never part of what shipped. A theme could be written and typechecked from
- * outside this repo but never rendered.
+ * It mounts a theme's header, page and footer inside the kit's provider, so a
+ * theme written and typechecked outside a Queek storefront can still be rendered.
  *
- * DELIBERATELY SMALLER THAN VendorShell. That composes the same three pieces and
- * then layers on the Queek storefront's own chrome — checkout header, cart and
- * auth modals, toasts, WhatsApp chat, analytics, the merchant edit-mode bridge.
- * None of that is a theme's concern, and pulling it in would drag the whole app
- * into the package. What is left is the actual contract: a Layout wrapping a
- * header, the page, and a footer.
+ * DELIBERATELY SMALL. It leaves out the Queek storefront's own chrome — checkout
+ * header, cart and auth modals, toasts, WhatsApp chat, analytics, the merchant
+ * edit-mode bridge. None of that is a theme's concern. What is left is the
+ * actual contract: a Layout wrapping a header, the page, and a footer.
  *
  * Themes render inside a boundary because a theme's header and footer are
  * SIBLINGS of the page, so a crash in either escapes any boundary the page sets

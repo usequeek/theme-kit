@@ -254,9 +254,8 @@ export interface ThemeManifestVariant {
    * in vendor.ts) this variant's rendered markup actually consumes via CSS
    * vars, i.e. which controls a per-section `block.tokens` override on THIS
    * variant will visibly change. Authored next to the component/CSS that
-   * consumes the vars so it can't drift — flows verbatim through
-   * generate-theme-registry.ts → registry.json → Laravel's Theme.variants →
-   * ThemeManifestService (mirrors `fields`).
+   * consumes the vars so it can't drift — flows verbatim from the manifest
+   * through the theme registry to the API (mirrors `fields`).
    *
    * Granular per sub-control, NOT per parent dimension — `'shape'` is not a
    * valid entry; declare `'shape.radius'` and/or `'shape.border_weight'`
@@ -269,19 +268,17 @@ export interface ThemeManifestVariant {
    *
    * No back-compat default: an omitted `editable` (or an omitted leaf) means
    * NOT stylable for that control — every variant in every theme has an
-   * explicit, audited array as of the 2026-08-03 granular pass.
+   * explicit, audited array.
    */
   editable?: DesignTokenAxisPath[];
   /**
-   * Business buckets this variant is a strong fit for, as
-   * `config/category_packs.php` keys ONLY (queek_backend): food | supermarket |
-   * product | pharmacy | laundry | delivery | service | gas-refill |
-   * local_market. Omitted = universal. Authored next to the component (same
-   * anti-drift placement as `fields`/`editable`) and flows verbatim through
-   * generate-theme-registry.ts -> registry.json -> Laravel's Theme.variants ->
-   * ThemeManifestService, where BuildHomepageTool's scored resolver boosts a
-   * bucket match when auto-building a store. The backend matches buckets with
-   * `_`/`-` treated as equivalent.
+   * Business buckets this variant is a strong fit for, as category-pack keys
+   * ONLY: food | supermarket | product | pharmacy | laundry | delivery |
+   * service | gas-refill | local_market. Omitted = universal. Authored next to
+   * the component (same anti-drift placement as `fields`/`editable`) and flows
+   * verbatim through the theme registry to the API, where the AI store builder
+   * boosts a bucket match when auto-building a store. The API matches buckets
+   * with `_`/`-` treated as equivalent.
    */
   best_for?: string[];
   /**
@@ -342,13 +339,11 @@ export interface ThemeManifest {
   features?: string[];
   images?: Record<string, ThemeImageSpec>;
   /**
-   * Theme's default semantic design-token set (design-token-contract.md,
-   * queek_backend `.agent/.tmp/`) — the theme's current look expressed as
-   * tokens. Surfaced via `ThemeManifestService`/registry.json as the
-   * baseline the backend resolver layers vendor `tokens` overrides onto
-   * (theme defaults ← legacy fields ← vendor overrides). Optional during
-   * the pilot rollout — themes without it fall back to the storefront
-   * injector's own hardcoded defaults (`lib/core/utils/brand.ts`).
+   * Theme's default semantic design-token set — the theme's current look
+   * expressed as tokens. Surfaced through the theme registry as the baseline
+   * the API resolver layers vendor `tokens` overrides onto (theme defaults ←
+   * legacy fields ← vendor overrides). Optional — themes without it fall back
+   * to the token injector's own hardcoded defaults (`utils/brand.ts`).
    */
   tokens?: DesignTokens;
   /**
@@ -358,17 +353,16 @@ export interface ThemeManifest {
    * Same shape as the kit core English default
    * (nested objects by dot-path, or flat dotted keys; CLDR plural maps
    * allowed); keys follow the shared grammar (dotted lowercase, <= 40
-   * chars) because the backend overlay stores `<theme-slug>.<key>` in a
-   * varchar(64).
+   * chars) because merchant overrides are stored as `<theme-slug>.<key>` in a
+   * 64-character field.
    *
    * The kit layers it between the host-loaded locale dictionaries and the
    * kit core English, so ANY host that mounts the theme (vendor layout,
    * theme preview, CLI dev preview) renders the theme's English with zero
    * host cooperation — a host that passes nothing still shows English,
    * never empty labels. ENGLISH ONLY: non-English packs stay host-loaded
-   * per locale and are never bundled into the theme. Optional during the
-   * migration — a manifest without it behaves exactly as before (kit core
-   * English, then `''` for unknown keys).
+   * per locale and are never bundled into the theme. Optional — a manifest
+   * without it falls back to the kit core English, then `''` for unknown keys.
    */
   strings?: ThemeStringsDictionary;
 }

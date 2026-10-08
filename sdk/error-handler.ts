@@ -7,7 +7,7 @@ import { isReauthSuppressed } from './reauth-guard';
 
 /**
  * Returns true if the caught error is an unauthenticated (401) error
- * from the backend or SDK token layer.
+ * from the API or SDK token layer.
  */
 export function isUnauthenticatedError(err: unknown): boolean {
   if (err instanceof QueekSdkError) {

@@ -2,7 +2,7 @@
  * Active API platform holder.
  *
  * Every API request the storefront makes carries an `X-Platform` header so the
- * backend can resolve the right config + fees. Most of the site runs on the
+ * API can resolve the right config + fees. Most of the site runs on the
  * `storefront` channel; the in-core QR ordering page (`/qr`) runs on `instore_qr`.
  *
  * The two client factories (`createBrowserClient`, `getQueekClient`) and the
@@ -18,8 +18,8 @@
  * `server-store-client`'s `X-Platform` header non-deterministic.
  *
  * SSR therefore always reads `storefront`, which is correct: server-side fetches
- * only ever load storefront-channel content, and the backend's
- * ResolveClientContext re-derives and forces the platform regardless.
+ * only ever load storefront-channel content, and the API re-derives and forces
+ * the platform regardless.
  */
 export type Platform = 'storefront' | 'instore_qr';
 
@@ -46,11 +46,9 @@ export function setActivePlatform(platform: Platform): void {
  * simply invisible to `/qr` and vice versa — no in-memory state to keep in
  * sync, no risk of one flow reading the other's leftovers.
  *
- * This is what a stale, non-QR `deliveryMode` (e.g. "pickup", picked earlier
- * on the ordinary storefront) reaching a `/qr` dine-in checkout and getting
- * its packaging wrongly enforced would have been caught by (production
- * incident 30/8/26 — Kili Foods "Nkwobi"; see DeliveryModePicker's own fix
- * for that specific symptom). Apply this to every persisted store/key a `/qr`
+ * Without it, a stale non-QR `deliveryMode` (e.g. "pickup", picked earlier on
+ * the ordinary storefront) could reach a `/qr` dine-in checkout and have its
+ * packaging wrongly enforced. Apply this to every persisted store/key a `/qr`
  * flow touches EXCEPT auth (`queek-storefront-user`, the access/refresh
  * tokens in `queek-client.ts`) — a signed-in customer must stay signed in
  * across both.

@@ -5,7 +5,7 @@ import { API_BASE_URL, request, type RequestCachePolicy, type RequestOptions } f
 import { getActivePlatform } from './platform';
 
 /**
- * Origin of the incoming storefront request, forwarded to the backend so it
+ * Origin of the incoming storefront request, forwarded to the API so it
  * resolves the vendor exactly as it does for a real browser request (subdomain,
  * apex/path and custom-domain storefronts all work with zero configuration).
  *
@@ -26,9 +26,7 @@ export async function getRequestOrigin(): Promise<string | undefined> {
  * for the subdomain-vs-path `basePath` resolution (subdomain/custom-domain
  * storefronts serve at the bare origin; path-based access serves under
  * `/vendor-slug`). Every canonical URL, sitemap entry, and JSON-LD `url` field
- * must derive from this instead of re-deriving `basePath` inline — see
- * `app/[vendor]/layout.tsx` and `app/[vendor]/products/[slug]/page.tsx`, which
- * used to duplicate this logic before it was extracted here.
+ * must derive from this instead of re-deriving `basePath` inline.
  */
 export async function resolveStoreBaseUrl(vendor: string): Promise<string | null> {
   const origin = await getRequestOrigin();
@@ -56,7 +54,7 @@ export async function resolveStoreBaseUrl(vendor: string): Promise<string | null
  * Abort budget for SSR reads. Sized above the observed p99 of the slowest
  * bootstrap call (`/theme`, ~4.4s) with headroom, so it never fails a legitimate
  * slow response — its job is to stop in-flight renders accumulating without
- * bound when the backend hangs, not to enforce an SLA.
+ * bound when the API hangs, not to enforce an SLA.
  */
 const SSR_TIMEOUT_MS = 8_000;
 
@@ -70,7 +68,7 @@ const SSR_TIMEOUT_MS = 8_000;
  *
  * Tags are per vendor so one store's edit never flushes another's. The TTL is a
  * safety net, not the primary mechanism — `POST /api/revalidate?tag=…` from the
- * backend is what makes an edit show up immediately.
+ * API is what makes an edit show up immediately.
  */
 function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolicy | null {
   const vendor = `v:${vendorSlug}`;
@@ -80,15 +78,13 @@ function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolic
   });
 
   // `/config` is deliberately NOT here: nothing fetches it server-side today, and
-  // its response varies by platform (VendorConfigRequest), so allowlisting it
+  // its response varies by platform, so allowlisting it
   // would let a future SSR caller that omits `platform` collapse two platforms
   // onto one cached entry.
   if (path === '/info') return policy(300, 'profile');
-  // Combines /theme + /menus + /pages-chrome into one backend round trip (see
-  // StoreContentController::bootstrapForClient). Tagged with all three resource
-  // suffixes so a merchant edit to any one of them busts this entry — the
-  // existing observers (MenuObserver, PostObserver, VendorConfigObserver)
-  // already emit exactly these suffixes, no backend change needed.
+  // Combines /theme + /menus + /pages-chrome into one API round trip. Tagged
+  // with all three resource suffixes so a merchant edit to any one of them busts
+  // this entry.
   if (path === '/bootstrap') return { revalidate: 300, tags: [vendor, `${vendor}:theme`, `${vendor}:menus`, `${vendor}:pages`] };
   if (path === '/blog-categories') return policy(300, 'posts');
   if (/^\/pages(\/[^/]+)?$/.test(path)) return policy(300, 'pages');
@@ -99,7 +95,7 @@ function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolic
   if (/^\/collections(\/[^/]+\/products)?$/.test(path)) return policy(300, 'collections');
 
   // Shorter, because price and stock live here: a stale card that a shopper then
-  // cannot buy at the shown price is a trust problem, even though the backend
+  // cannot buy at the shown price is a trust problem, even though the API
   // recomputes both at order time.
   if (path === '/products') return policy(60, 'products');
 
@@ -127,14 +123,14 @@ function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolic
  * storefront with `?preview=true&id=<vendorId>`. Set by `proxy.ts`, which is the only
  * place that can see query params before the fetch layer runs.
  *
- * A preview render MUST bypass the cache outright rather than rely on the backend's
+ * A preview render MUST bypass the cache outright rather than rely on the API's
  * invalidation call. Invalidation is a distributed handshake — it needs two env vars
- * to match across two repos and a live HTTP round trip — and when any part of that
+ * to match across two services and a live HTTP round trip — and when any part of that
  * is wrong it fails SILENTLY, leaving a merchant staring at an unchanged store for
  * the full TTL. The editor is the one surface where "eventually" is not acceptable,
  * and it already knows it is the editor, so it should not have to ask anyone.
  *
- * The backend still flushes tags on save; that is what keeps the PUBLIC store fresh.
+ * The API still flushes tags on save; that is what keeps the PUBLIC store fresh.
  * This just removes the editor's dependence on it.
  */
 async function isPreviewRender(): Promise<boolean> {
@@ -147,7 +143,7 @@ async function isPreviewRender(): Promise<boolean> {
  * Validated locale of the incoming storefront request, or null for the
  * primary rendering. The proxy sets `x-queek-locale` for published
  * non-primary locales ONLY (absent on the primary); anything else is
- * ignored, mirroring the backend's unknown-locale → source-text rule.
+ * ignored, mirroring the API's unknown-locale → source-text rule.
  *
  * THE single header-parsing site — every server fetcher resolves its locale
  * through here (directly or via `resolveRequestLocale`), never by reading

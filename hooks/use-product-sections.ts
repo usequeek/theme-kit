@@ -31,8 +31,7 @@ export interface MenuGroupItem {
  * smart collection whose rule DOES reference other collections — a browsing
  * umbrella, not a product filter) offers those referenced collections as
  * tiles first. Every id here is already present in this same response's
- * flat product pool, so resolving a tap is a pure client-side lookup — see
- * VendorProductController::resolveQrTabGroups (queek_backend). */
+ * flat product pool, so resolving a tap is a pure client-side lookup. */
 export type MenuGroup =
   | { id: string; name: string; type: 'products'; product_ids: string[] }
   | { id: string; name: string; type: 'collections'; items: MenuGroupItem[] };
@@ -118,10 +117,9 @@ export function useProductSections(): {
         .get<ApiResponse<unknown>>('/products', withLocaleQuery(undefined, locale))
         .then((response) => {
           const data = response.data;
-          // instore_qr only — backend attaches this under meta.groups, never
-          // inside `data` (see resolveQrTabGroups): sectioned/menu-mode `data`
-          // is shared with the mobile app's response shape, so groups had to
-          // land somewhere additive instead.
+          // instore_qr only — the API attaches this under meta.groups, never
+          // inside `data`: sectioned/menu-mode `data` is shared with the mobile
+          // app's response shape, so groups land somewhere additive instead.
           const rawGroups = (response.meta as { groups?: MenuGroup[] } | undefined)?.groups;
           const groups = Array.isArray(rawGroups) ? rawGroups : [];
 
