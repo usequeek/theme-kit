@@ -172,5 +172,9 @@
         "other": "{count} min read"
       }
     }
+  },
+  "language": {
+    "label": "Language",
+    "named": "Language: {name}"
   }
 }

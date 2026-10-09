@@ -9,6 +9,9 @@ import { useStorefront } from '@usequeek/theme-kit/provider';
 import { useHref } from '@usequeek/theme-kit/hooks/use-href';
 import { formatMoney } from '@usequeek/theme-kit/utils/format';
 import { Image } from '@usequeek/theme-kit/components/image';
+import { LanguageSwitcher } from '@usequeek/theme-kit/components/language-switcher';
+import { useLocales } from '@usequeek/theme-kit/hooks/use-locales';
+import type { StoreLocale } from '@usequeek/theme-kit/utils/locale-switch';
 import { ThemeMount } from '@usequeek/theme-kit/theme-mount';
 
 export function Header({ menu, showCart }: HeaderProps): JSX.Element {
@@ -21,12 +24,25 @@ export function Header({ menu, showCart }: HeaderProps): JSX.Element {
       <a href={href('/')}>{vendor?.name}</a>
       {menu.map((item) => <a key={item.label} href={item.ref ?? '#'}>{item.label}</a>)}
       {showCart ? <span>{items.length}</span> : null}
+      <LanguageSwitcher className="header-language" />
     </header>
   );
 }
 
 export function Footer({ copyright }: FooterProps): JSX.Element {
-  return <footer>{copyright}</footer>;
+  const { hasMultiple, locales, hrefFor } = useLocales();
+  const label = (l: StoreLocale): string => l.native_name;
+
+  return (
+    <footer>
+      {copyright}
+      <LanguageSwitcher variant="inline-list" showCode />
+      <LanguageSwitcher>
+        {({ active, displayName }) => <span>{displayName(active)}</span>}
+      </LanguageSwitcher>
+      {hasMultiple ? locales.map((l) => <a key={l.locale} href={hrefFor(l)}>{label(l)}</a>) : null}
+    </footer>
+  );
 }
 
 export function ProductCard({ product }: { product: Product }): JSX.Element {

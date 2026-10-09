@@ -45,6 +45,7 @@ export * from './utils/video-embed';
 export * from './utils/match-variant';
 export * from './utils/announcement';
 export * from './utils/locale';
+export * from './utils/locale-switch';
 
 // Theme strings — the pure/server-safe i18n core (no next/*, no React).
 export * from './strings/theme-strings';

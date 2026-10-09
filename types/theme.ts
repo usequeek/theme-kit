@@ -365,6 +365,13 @@ export interface ThemeManifest {
    * without it falls back to the kit core English, then `''` for unknown keys.
    */
   strings?: ThemeStringsDictionary;
+  /**
+   * Set to `'theme'` when the theme places the kit's `LanguageSwitcher`
+   * itself. The storefront then does not render its own floating language
+   * control, so the shopper sees exactly one. Optional — a manifest without
+   * it keeps the storefront's control for multi-language stores.
+   */
+  languageSwitcher?: 'theme';
 }
 
 /**

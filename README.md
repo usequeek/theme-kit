@@ -329,11 +329,96 @@ request locale on every catalogue/content transport, server and browser:
   `useProductQuestions` and `useProductDetail` send `?locale=` when it is set
   and key their client caches by it. No prop → unchanged.
 
-What this means for themes: nothing to handle. Never read the header, never
-append `locale` yourself, and never build a language switcher — locale
-routing, `basePath` prefixing and the switcher are core-owned in the
-storefront. Links built from `basePath` keep their locale prefix with zero
-theme changes.
+What this means for themes: nothing to handle for the content itself. Never
+read the header and never append `locale` yourself — locale routing and
+`basePath` prefixing are core-owned in the storefront, and links built from
+`basePath` keep their locale prefix with zero theme changes. To let shoppers
+change language, place the kit's `LanguageSwitcher` (next section); do not
+build your own URL logic.
+
+## Language switcher
+
+A store can serve several languages. Its default language lives at the store
+root; every other language, English included when it is not the default, lives
+under its bare lower-case code (`/fr`, `/en`, `/zh-cn`). Changing language
+keeps the page, the query string and the hash.
+
+```tsx
+import { LanguageSwitcher } from '@usequeek/theme-kit/components/language-switcher';
+
+<LanguageSwitcher />                        // native <select> (default)
+<LanguageSwitcher variant="inline-list" />  // every language as a link
+```
+
+Place it unconditionally, in the header or the footer: it renders nothing on a
+single-language store, outside a storefront, and until the host passes the
+store's languages.
+
+| Prop | Default | |
+| --- | --- | --- |
+| `className` | | Extra class on the root, to position or restyle it. |
+| `variant` | `'select'` | `'select'`: one native dropdown (best keyboard, touch and screen-reader behaviour). `'inline-list'`: a link per language that wraps on narrow screens; suits a footer. |
+| `showNativeName` | `true` | Label languages in their own language (`Français`) instead of English (`French`). |
+| `showCode` | `false` | Append the code: `Français · FR`. |
+| `children` | | Render-prop `(state) => ReactNode`: replaces the default control entirely (never called on a single-language store). `state` is `useLocales()` plus `label`, `labelFor(locale)` and `displayName(locale)`. |
+
+**Tell the storefront the theme places it.** Set `languageSwitcher: 'theme'` in
+the theme manifest. Without it the storefront keeps rendering its own floating
+language control next to yours; with it the storefront renders none and the
+shopper sees exactly one.
+
+```ts
+// in the theme module
+manifest: { /* … */ languageSwitcher: 'theme' }   // ThemeManifest.languageSwitcher
+```
+
+**Fully custom markup.** `useLocales()` (from
+`@usequeek/theme-kit/hooks/use-locales`) returns:
+
+| Field | |
+| --- | --- |
+| `locales` | The store's languages, default first. One entry, or none, on a single-language store. |
+| `active` | The language the page renders in. |
+| `defaultLocale` | The language served at the store root. |
+| `hasMultiple` | `locales.length > 1`. |
+| `hrefFor(locale)` | The current page in another language (takes a row or a code), e.g. `/fr/shop?sort=new`. The first render carries no query string or hash, so server and client markup match; they are added right after mount. |
+| `switchTo(locale)` | Navigate to it, reading the live query string and hash. Use it for `onClick`/`onChange`. |
+
+Each language is `{ locale, name, native_name, is_primary, is_default,
+path_prefix, hreflang, html_lang, dir }`. Use `lang={l.html_lang}` and
+`dir={l.dir}` on a label written in that language. The pure URL rules are also
+exported (`localeHref`, `normalizeStoreLocales`, `defaultStoreLocale`,
+`resolveActiveLocale` from `@usequeek/theme-kit/utils/locale-switch`).
+
+**Strings.** `language.label` ("Language") names the control and
+`language.named` ("Language: {name}") names the select and the current
+language. Both are kit core strings with English defaults; a theme can
+override them in its manifest `strings`, and merchants and translators in
+their locale packs.
+
+**Styling.** The default control reads only these tokens, each with a neutral
+fallback, and uses logical properties, so it mirrors in right-to-left
+storefronts and sits in a header or footer unstyled:
+
+| Token | Used for | Fallback |
+| --- | --- | --- |
+| `--qn-text` | text and icon colour | inherited |
+| `--qn-border` | select border | 22% of the text colour |
+| `--qn-border-strong` | select border on hover | the text colour |
+| `--qn-surface` | select background | transparent |
+| `--qn-radius-sm` | corner radius | `6px` |
+| `--qn-focus` | focus ring | the text colour |
+
+Class names for deeper overrides: `qn-lang`, `qn-lang--select`,
+`qn-lang--inline-list`, `qn-lang__select`, `qn-lang__list`, `qn-lang__link`.
+Targets are at least 44px. The root carries `data-qn-language-switcher`.
+
+**Host side.** The host passes the store's languages to
+`StorefrontProvider` as the optional `locales` prop (the rows as it already
+holds them; extra fields are ignored, and a row without `is_default` falls
+back to `is_primary`). `basePath` must already carry the active language
+prefix, as in the Locales section. No prop, or one language: no switcher, and
+everything behaves as before.
 
 ## Links and navigation
 

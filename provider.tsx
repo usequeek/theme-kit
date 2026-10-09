@@ -9,6 +9,7 @@ import type { Product } from './types/product';
 import type { StorefrontConfig, VendorProfile } from './types/vendor';
 import { getBrandCssVariables } from './utils/brand';
 import { parseLocaleCode } from './utils/locale';
+import { normalizeStoreLocales, type StoreLocale, type StoreLocaleInput } from './utils/locale-switch';
 import {
   defaultThemeStrings,
   t as translateThemeStrings,
@@ -53,6 +54,11 @@ interface StorefrontContextValue {
    * Optional so hand-built context values (storefront scripts, tests) keep
    * compiling without it. */
   strings?: ThemeStringsDictionary[];
+  /** The store's languages (default first), normalised. Empty or omitted =
+   * a single-language store: `useLocales()` reports one language and the
+   * `LanguageSwitcher` renders nothing. Optional so hand-built context values
+   * keep compiling without it. */
+  locales?: StoreLocale[];
 }
 
 export const StorefrontContext = createContext<StorefrontContextValue | null>(null);
@@ -66,6 +72,7 @@ export function StorefrontProvider({
   pagesChrome,
   locale,
   strings,
+  locales,
   children,
 }: {
   vendor: VendorProfile;
@@ -89,6 +96,17 @@ export function StorefrontProvider({
    * renders exactly as before. Existing props are untouched.
    */
   strings?: ThemeStringsDictionary | ThemeStringsDictionary[] | null;
+  /**
+   * The store's languages, resolved by the host (no request from the kit).
+   * Pass the host's list as it is — rows follow the locales endpoint shape
+   * (`locale`, `name`, `native_name`, `is_primary`, `is_default`,
+   * `path_prefix`, …); extra fields are ignored and a missing `is_default`
+   * falls back to `is_primary`. Optional — absent or a single language
+   * means no language choice: `LanguageSwitcher` renders nothing and
+   * `useLocales()` reports one language. Themes never set this; the host
+   * owns it, like `basePath`.
+   */
+  locales?: readonly StoreLocaleInput[] | null;
   children: ReactNode;
 }): JSX.Element {
   const resolvedBasePath = basePath ?? `/${vendor.slug ?? ''}`;
@@ -102,6 +120,7 @@ export function StorefrontProvider({
           ),
     [strings],
   );
+  const resolvedLocales = useMemo(() => normalizeStoreLocales(locales), [locales]);
   const value = useMemo(
     () => ({
       vendor,
@@ -112,8 +131,9 @@ export function StorefrontProvider({
       pagesChrome: pagesChrome ?? {},
       locale: resolvedLocale,
       strings: resolvedStrings,
+      locales: resolvedLocales,
     }),
-    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale, resolvedStrings],
+    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale, resolvedStrings, resolvedLocales],
   );
   const brandRootRef = useRef<HTMLDivElement>(null);
 

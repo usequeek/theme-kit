@@ -1,0 +1,131 @@
+/* ============================================================
+   LanguageSwitcher — the kit's language control. Prefix: qn-lang.
+   Colours, radius and type come from the --qn-* tokens, each with a
+   neutral fallback, so it sits in a header or a footer without theme
+   CSS. Logical properties only: it mirrors itself in RTL storefronts.
+   ============================================================ */
+
+.qn-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-inline-size: 100%;
+  color: var(--qn-text, inherit);
+  font: inherit;
+}
+
+.qn-lang__icon {
+  inline-size: 18px;
+  block-size: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  opacity: 0.75;
+}
+
+/* ── select ─────────────────────────────────────────────── */
+
+.qn-lang__field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-inline-size: 0;
+}
+
+.qn-lang__select {
+  appearance: none;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  max-inline-size: min(100%, 16rem);
+  padding-block: 8px;
+  padding-inline: 12px 34px;
+  border: 1px solid var(--qn-border, color-mix(in srgb, currentColor 22%, transparent));
+  border-radius: var(--qn-radius-sm, 6px);
+  background-color: var(--qn-surface, transparent);
+  color: inherit;
+  font: inherit;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+/* The chevron is an element, not a background, so it follows the inline-end
+   edge in both directions. */
+.qn-lang__chevron {
+  position: absolute;
+  inset-inline-end: 12px;
+  inline-size: 10px;
+  block-size: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  pointer-events: none;
+}
+
+.qn-lang__select:hover {
+  border-color: var(--qn-border-strong, currentColor);
+}
+
+.qn-lang__select:focus-visible {
+  outline: 2px solid var(--qn-focus, currentColor);
+  outline-offset: 2px;
+}
+
+.qn-lang__select option {
+  color: initial;
+  background: initial;
+}
+
+/* ── inline-list ────────────────────────────────────────── */
+
+.qn-lang--inline-list {
+  display: block;
+}
+
+.qn-lang__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qn-lang__link {
+  display: inline-flex;
+  align-items: center;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding-inline: 10px;
+  border-radius: var(--qn-radius-sm, 6px);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  text-decoration: none;
+  justify-content: center;
+}
+
+.qn-lang__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.qn-lang__link[aria-current='true'] {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.qn-lang__link:focus-visible {
+  outline: 2px solid var(--qn-focus, currentColor);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .qn-lang__select,
+  .qn-lang__link {
+    transition: border-color 0.15s ease;
+  }
+}
