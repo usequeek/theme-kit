@@ -346,8 +346,10 @@ keeps the page, the query string and the hash.
 ```tsx
 import { LanguageSwitcher } from '@usequeek/theme-kit/components/language-switcher';
 
-<LanguageSwitcher />                        // native <select> (default)
-<LanguageSwitcher variant="inline-list" />  // every language as a link
+<LanguageSwitcher variant="menu" />                  // button + popover (sheet on phones) — recommended
+<LanguageSwitcher variant="menu" side="top" />       // a footer: opens upward
+<LanguageSwitcher variant="inline-list" />           // every language as a link (footer, up to four)
+<LanguageSwitcher />                                 // native <select> — legacy
 ```
 
 Place it unconditionally, in the header or the footer: it renders nothing on a
@@ -357,10 +359,114 @@ store's languages.
 | Prop | Default | |
 | --- | --- | --- |
 | `className` | | Extra class on the root, to position or restyle it. |
-| `variant` | `'select'` | `'select'`: one native dropdown (best keyboard, touch and screen-reader behaviour). `'inline-list'`: a link per language that wraps on narrow screens; suits a footer. |
+| `variant` | `'select'` | `'menu'`: a trigger button and a list of language links (below). `'inline-list'`: a link per language that wraps on narrow screens. `'select'`: one native dropdown, **legacy** — it works and is unchanged, but its open list is the operating system's menu and cannot be styled; prefer `menu`. |
+| `side` | `'bottom'` | `menu` only. `'top'` opens above the trigger, for footers. Flips by itself when the preferred side does not fit. |
+| `align` | `'end'` | `menu` only. Line the popover up with the trigger's inline `'end'` or `'start'` edge (mirrors in right-to-left). Flips and shifts to stay inside the viewport. |
 | `showNativeName` | `true` | Label languages in their own language (`Français`) instead of English (`French`). |
-| `showCode` | `false` | Append the code: `Français · FR`. |
-| `children` | | Render-prop `(state) => ReactNode`: replaces the default control entirely (never called on a single-language store). `state` is `useLocales()` plus `label`, `labelFor(locale)` and `displayName(locale)`. |
+| `showCode` | `false` | Show the language code (`FR`) next to the name. |
+| `children` | | Render-prop `(state) => ReactNode`: replaces the default control entirely (never called on a single-language store). `state` is `useLocales()` plus `label`, `labelFor(locale)`, `displayName(locale)`, `open` and `setOpen`. |
+
+### The `menu` variant
+
+A real `<button>` opens a list of language **links** (`<a href>` built from the
+current page, so open-in-new-tab and copy-link work). On screens wider than
+640px it is a popover under the trigger; below 640px it becomes a bottom sheet
+with a scrim, safe-area padding, and page scroll locked while it is open. The
+wide/narrow layout switch is CSS only (one media query), so the markup is the
+same on both and server and client agree; JavaScript only consults the media
+query while the menu opens, to lock scroll and to place the popover.
+With more than four languages in a footer, use `menu` with `side="top"` rather
+than `inline-list`. 2 to 20 languages are fine: the list scrolls past about
+eight rows, and a long list can use two columns on wide screens (below).
+
+It is the *disclosure* pattern, not a listbox, because choosing an item
+navigates: the button has `aria-expanded` and `aria-controls` and the name
+"Language: English"; the list is a `<ul>` labelled by its title; the current
+language's link has `aria-current="true"`; there are no `option` roles.
+
+| Key | |
+| --- | --- |
+| Enter, Space, ArrowDown on the button | Open, focus on the current language |
+| ArrowUp on the button | Open, focus on the last language |
+| ArrowDown / ArrowUp in the list | Next / previous link (wraps) |
+| Home / End | First / last link |
+| Typing letters | Jump to the language whose name or code starts with them (500 ms buffer) |
+| Enter on a link | Follow it (native); Space does the same |
+| Escape | Close and return focus to the button |
+| Tab | Close the menu |
+| Click outside, scrim tap | Close |
+
+Only the focused link is in the tab order (roving tabindex), so Tab leaves the
+list and closes it. Choosing a language closes the menu, returns focus to the
+button and navigates (a modified click — new tab, copy link — is left to the
+browser). Motion respects `prefers-reduced-motion` (an 80 ms fade only).
+
+**Styling surface.** Every part has a class and a `data-part` attribute; the
+root also carries state attributes:
+
+| Part | Class | `data-part` |
+| --- | --- | --- |
+| Root | `qn-lang qn-lang--menu` | `data-qn-language-switcher`, `data-variant="menu"` |
+| Trigger button | `qn-lang__trigger` | `trigger` |
+| Trigger name / code / chevron | `qn-lang__trigger-label` / `__trigger-code` / `__chevron` | `trigger-label` / `trigger-code` / `chevron` |
+| Scrim (sheet) | `qn-lang__scrim` | `scrim` |
+| Popover / sheet | `qn-lang__popover` | `popover` |
+| Sheet grabber | `qn-lang__handle` | `handle` |
+| Group label | `qn-lang__title` | `title` |
+| List / item | `qn-lang__options` / `__item` | `list` / `item` |
+| Link (current: `aria-current="true"`, `data-current="true"`) | `qn-lang__option` | `option` |
+| Name / code / current marker | `qn-lang__name` / `__code` / `__mark` | `name` / `code` / `mark` |
+
+Root attributes: `data-state="open|closed"`, `data-side="bottom|top"`,
+`data-align="start|end"`, `data-mode="popover|sheet"` (while open),
+`data-count="<n>"`, `data-many="true"` (more than ten languages),
+`data-show-code="true"`. The code spans are always rendered and hidden by
+default, so a theme can show a code-only trigger with
+`.my-header [data-part='trigger-label'] { display: none }` plus
+`.my-header [data-part='trigger-code'] { display: inline }`.
+
+| Variable | Default | Controls |
+| --- | --- | --- |
+| `--qn-lang-surface` | `--qn-surface` | popover / sheet background |
+| `--qn-lang-ink` | `--qn-text` | text colour |
+| `--qn-lang-muted` | `--qn-text-muted` | title and code colour |
+| `--qn-lang-border` | `--qn-border` | hairlines |
+| `--qn-lang-radius` | `--qn-radius-md` (8px) | trigger / popover corners |
+| `--qn-lang-item-radius` | `--qn-radius-sm` (6px) | link corners |
+| `--qn-lang-item-hover` / `--qn-lang-current-bg` | 6% ink / none | hover and current-link backgrounds |
+| `--qn-lang-accent` | `--qn-accent` | current marker colour |
+| `--qn-lang-focus` | `--qn-focus` | focus ring |
+| `--qn-lang-shadow` | subtle | popover shadow |
+| `--qn-lang-row-height` / `--qn-lang-sheet-row-height` | 44px / 52px | link height (popover / sheet) |
+| `--qn-lang-gap` / `--qn-lang-pad` | 0 / 4px | space between links / inside the popover |
+| `--qn-lang-offset` | 8px | gap between trigger and popover |
+| `--qn-lang-popover-width` | 240px | popover width |
+| `--qn-lang-many-width` / `--qn-lang-many-columns` | popover width / 1 | width and columns when `data-many="true"` (set `--qn-lang-many-columns: 2` and a wider width for two columns) |
+| `--qn-lang-list-max` | 8.5 rows | height at which the list scrolls |
+| `--qn-lang-sheet-radius` | 16px | sheet top corners |
+| `--qn-lang-scrim` | 40% black | scrim colour |
+| `--qn-lang-z` | 50 | z-index |
+| `--qn-lang-duration` / `--qn-lang-ease` | 160ms / ease-out curve | open motion |
+
+Each variable falls back to the matching `--qn-*` token, then a neutral
+value, and is never set by the kit itself — set it on the root, on an
+ancestor, or on `:root`. The sheet breakpoint (640px) is fixed.
+
+Restyling recipe — no override of internals needed:
+
+```css
+.site-header [data-qn-language-switcher] {
+  --qn-lang-surface: #f3f0e9;
+  --qn-lang-ink: #1b2029;
+  --qn-lang-radius: 0;
+  --qn-lang-item-radius: 0;
+  --qn-lang-popover-width: 280px;
+  --qn-lang-sheet-radius: 0;
+  --qn-lang-duration: 120ms;
+}
+.site-header [data-part='trigger'] { border: 0; letter-spacing: 0.12em; text-transform: uppercase; }
+.site-header [data-part='option'][aria-current='true'] { font-style: italic; }
+```
 
 **Tell the storefront the theme places it.** Set `languageSwitcher: 'theme'` in
 the theme manifest. Without it the storefront keeps rendering its own floating

@@ -37,8 +37,13 @@ export function Footer({ copyright }: FooterProps): JSX.Element {
     <footer>
       {copyright}
       <LanguageSwitcher variant="inline-list" showCode />
-      <LanguageSwitcher>
-        {({ active, displayName }) => <span>{displayName(active)}</span>}
+      <LanguageSwitcher variant="menu" side="top" align="start" showCode />
+      <LanguageSwitcher variant="menu">
+        {({ active, displayName, open, setOpen }) => (
+          <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
+            {displayName(active)}
+          </button>
+        )}
       </LanguageSwitcher>
       {hasMultiple ? locales.map((l) => <a key={l.locale} href={hrefFor(l)}>{label(l)}</a>) : null}
     </footer>

@@ -1,21 +1,29 @@
 'use client';
 
-import { useContext, type JSX, type MouseEvent, type ReactNode } from 'react';
+import { useContext, useState, type JSX, type MouseEvent, type ReactNode } from 'react';
 import { StorefrontContext, useThemeStrings } from '../provider';
 import { Link } from '../navigation';
 import { useLocales, type LocalesState } from '../hooks/use-locales';
 import type { StoreLocale } from '../utils/locale-switch';
+import type { MenuAlign, MenuSide } from '../utils/menu-placement';
+import { LanguageMenu } from './language-menu';
 import './language-switcher.css';
 
 export interface LanguageSwitcherProps {
   /** Extra class on the root, to position or restyle the control. */
   className?: string;
   /**
-   * `'select'` (default): one native dropdown — the best keyboard, touch and
-   * screen-reader behaviour for free. `'inline-list'`: every language as a
-   * link, wrapping onto new lines on narrow screens; suits a footer.
+   * `'menu'`: a trigger button and a list of language links — a popover on
+   * wide screens, a bottom sheet on narrow ones; fully restylable through
+   * documented parts and `--qn-lang-*` variables. `'select'` (default, legacy):
+   * one native dropdown. `'inline-list'`: every language as a link, wrapping
+   * onto new lines on narrow screens; suits a footer with up to four languages.
    */
-  variant?: 'select' | 'inline-list';
+  variant?: 'select' | 'inline-list' | 'menu';
+  /** `menu` only: open below (`'bottom'`, default) or above (`'top'`, for footers) the trigger. Flips on its own when it does not fit. */
+  side?: MenuSide;
+  /** `menu` only: line the popover up with the trigger's inline `'end'` (default) or `'start'` edge. */
+  align?: MenuAlign;
   /** Append the language code, e.g. `Français · FR`. Default false. */
   showCode?: boolean;
   /** Label each language in its own language (`Français`) rather than English (`French`). Default true. */
@@ -32,6 +40,9 @@ export interface LanguageSwitcherProps {
 export interface LanguageSwitcherState extends LocalesState {
   /** "Language" — the group label. */
   label: string;
+  /** Whether the `menu` variant is open. A custom UI may drive it with `setOpen`. */
+  open: boolean;
+  setOpen: (open: boolean) => void;
   /** "Language: French" — names the control and the current language. */
   labelFor: (locale: StoreLocale) => string;
   /** The text to show for one language, honouring `showNativeName` / `showCode`. */
@@ -60,13 +71,16 @@ export function LanguageSwitcher(props: LanguageSwitcherProps): JSX.Element | nu
 function LanguageSwitcherInner({
   className,
   variant = 'select',
+  side = 'bottom',
+  align = 'end',
   showCode = false,
   showNativeName = true,
   children,
 }: LanguageSwitcherProps): JSX.Element | null {
   const t = useThemeStrings();
-  const state = useLocales();
-  const { locales, active, hasMultiple, hrefFor, switchTo } = state;
+  const base = useLocales();
+  const [open, setOpen] = useState(false);
+  const { locales, active, hasMultiple, hrefFor, switchTo } = base;
 
   if (!hasMultiple) return null;
 
@@ -77,9 +91,26 @@ function LanguageSwitcherInner({
     return showCode ? `${name} · ${locale.locale.toUpperCase()}` : name;
   };
 
-  if (children) return <>{children({ ...state, label, labelFor, displayName })}</>;
+  const state: LanguageSwitcherState = { ...base, label, open, setOpen, labelFor, displayName };
+
+  if (children) return <>{children(state)}</>;
 
   const rootClass = ['qn-lang', `qn-lang--${variant}`, className].filter(Boolean).join(' ');
+
+  if (variant === 'menu') {
+    const nameOf = (locale: StoreLocale): string => (showNativeName ? locale.native_name : locale.name);
+    return (
+      <LanguageMenu
+        state={state}
+        rootClass={rootClass}
+        showCode={showCode}
+        side={side}
+        align={align}
+        nameOf={nameOf}
+        triggerLabelFor={(locale) => t('language.named', { name: nameOf(locale) })}
+      />
+    );
+  }
 
   if (variant === 'inline-list') {
     return (
