@@ -2,7 +2,7 @@
  * Pseudo-locale QA helper.
  *
  * PURE AND SERVER-SAFE: this module imports nothing from `next/*` and nothing
- * from React, so server components, Node tooling (such as the theme check), tests and the
+ * from React, so server components, Node tooling (such as `npm run check` in a theme starter), tests and the
  * browser all share it (precedent: `utils/locale.ts`, `strings/theme-strings.ts`).
  * Keep it that way.
  *

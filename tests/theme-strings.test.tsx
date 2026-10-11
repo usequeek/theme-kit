@@ -249,8 +249,8 @@ describe('default English dictionary budget (64-character stored key)', () => {
 
   it('every key fits the dotted-lowercase grammar and the 40-char budget', () => {
     for (const [key] of pairs) {
-      // Same grammar as the backend overlay (ThemeStringTranslatable::KEY_PATTERN suffix) and theme-check
-      // `theme/locale-key-naming`: segments may start with a digit (e.g. `auth.2fa.code`).
+      // Same grammar as the API's string overrides and the `theme/locale-key-naming` rule of `npm run check`:
+      // segments may start with a digit (e.g. `auth.2fa.code`).
       expect(key, `grammar: ${key}`).toMatch(/^[a-z0-9]+(\.[a-z0-9]+)*$/);
       expect(key.length, `budget: ${key}`).toBeLessThanOrEqual(THEME_STRING_KEY_MAX_LENGTH);
     }
