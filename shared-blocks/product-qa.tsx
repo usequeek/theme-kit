@@ -80,7 +80,7 @@ function AskQuestionPanel({ productSlug }: { productSlug: string }): JSX.Element
     setError(null);
     try {
       const client = getQueekClient(vendor.slug ?? undefined);
-      await client.post(`/client/store/products/${productSlug}/questions`, { question: trimmed });
+      await client.post(`/client/store/products/${encodeURIComponent(productSlug)}/questions`, { question: trimmed });
       setOpen(false);
       setQuestion('');
       setSubmitted(true);

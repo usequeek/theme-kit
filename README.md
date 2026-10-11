@@ -1,18 +1,27 @@
 # @usequeek/theme-kit
 
-The framework a Queek storefront theme is built against: hooks, stores, headless
-flows (auth, cart, checkout), types and the block renderer. See the
-[theme documentation](https://docs.usequeek.com/docs/themes) for how themes
-work end to end.
+The runtime a Queek storefront theme is built on: hooks for products, cart, auth
+and search, state stores, the page and block renderer, navigation, shared blocks,
+and locale strings. A theme is React components and CSS; this kit supplies
+everything that talks to Queek. See the
+[theme documentation](https://docs.usequeek.com/docs/themes) for how themes work
+end to end.
+
+## Requirements
+
+- **Next.js 15 or later (App Router)**, `react` and `react-dom` 19 or later. The
+  kit imports `next` itself (links, navigation, server request headers), so it
+  runs inside a Next.js app, not in a bare React app.
+- `@queekai/client-sdk` `^0.3.0`, the Queek customer SDK the auth and checkout
+  hooks call.
+- Node.js 22 or later (the version CI tests on).
+- TypeScript with `moduleResolution: bundler` and `jsx: react-jsx`.
 
 ## Install
 
 ```bash
 npm install @usequeek/theme-kit
 ```
-
-Peer dependencies: `next` (>=15), `react` and `react-dom` (>=19) and
-`@queekai/client-sdk`.
 
 The package ships TypeScript source, not a build. Most modules carry a
 `'use client'` directive, and that directive is the whole contract with the
@@ -26,10 +35,57 @@ bundler that enforces them:
 export default { transpilePackages: ['@usequeek/theme-kit'] };
 ```
 
-Compiling a theme against it needs `moduleResolution: bundler` and
-`jsx: react-jsx`. A vitest setup that renders kit components needs the package
-inlined (`server.deps.inline: ['@usequeek/theme-kit']`) so the shipped `.tsx`
-source is transformed like first-party code.
+A vitest setup that renders kit components needs the package inlined
+(`server.deps.inline: ['@usequeek/theme-kit']`) so the shipped `.tsx` source is
+transformed like first-party code.
+
+## Quickstart
+
+A product list that loads, handles a failed request, links to each product and
+adds to the cart:
+
+```tsx
+'use client';
+
+import { useCart } from '@usequeek/theme-kit/hooks/use-cart';
+import { useHref } from '@usequeek/theme-kit/hooks/use-href';
+import { useProducts } from '@usequeek/theme-kit/hooks/use-products';
+import { Link } from '@usequeek/theme-kit/navigation';
+import { formatMoney } from '@usequeek/theme-kit/utils/format';
+
+export function PopularProducts() {
+  const { products, isLoading, error } = useProducts({ limit: 4, sort: 'popular' });
+  const { addProduct } = useCart();
+  const href = useHref();
+
+  if (isLoading) return <p>Loading…</p>;
+  if (error) return <p>We could not load products. Please try again.</p>;
+
+  return (
+    <ul>
+      {products.map((product) => (
+        <li key={product.id}>
+          <Link href={href(`/products/${product.slug}`)}>{product.title}</Link>
+          <span>{formatMoney(product.pricing.sale_amount, product.currency)}</span>
+          <button type="button" onClick={() => addProduct(product)}>
+            Add to cart
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+The storefront mounts `StorefrontProvider` for every theme, so a theme never
+renders it. Hooks called outside it throw an error that says so. In a test or a
+script, wrap the component yourself:
+
+```tsx
+<StorefrontProvider vendor={vendor} config={config} menus={[]}>
+  <PopularProducts />
+</StorefrontProvider>
+```
 
 ## Use
 
@@ -52,6 +108,71 @@ checked by `tests/public-surface.test.ts`.
 Theme CSS ships with the package: `@usequeek/theme-kit/shared-blocks/core-blocks.css`
 (framework-owned blocks), plus per-component CSS next to its component
 (`components/variant-picker.css`, `apps/apps.css`).
+
+### Hooks
+
+The hooks that fetch (products, shop, categories, posts, reviews, questions,
+related products, product detail) report failure through an `error` field (an
+`Error`, or `null`). They never throw and never leave an unhandled rejection, and
+they keep the data already on screen. They return `isLoading`, except
+`useProductDetail`, which returns `loadingDetail`. In preview, hooks read
+`previewData` from the provider and make no request.
+
+| Hook | Module | Returns |
+| --- | --- | --- |
+| `useProducts(options?)` | `hooks/use-products` | A product list: `{ products, isLoading, error }` |
+| `useProductBySlug(slug)` | `hooks/use-products` | One product by slug: `{ product, isLoading, error }` |
+| `useProductDetail(listProduct, isOpen, vendorSlug?, locale?)` | `hooks/use-product-detail` | A list product completed with variants and add-ons |
+| `useRelatedProducts(slug, limit?)` | `hooks/use-related-products` | Related products |
+| `useShop(options?)` + `useShopParams()` | `hooks/use-shop`, `hooks/use-shop-params` | The shop catalogue page and its URL state |
+| `useCollectionParams()` | `hooks/use-collection-params` | Search, sort and page state for a collection page |
+| `useCategories(options?)` | `hooks/use-categories` | Categories, flattened |
+| `usePosts(options?)` | `hooks/use-posts` | Blog posts |
+| `useReviews(block)` | `hooks/use-reviews` | Reviews and the rating summary |
+| `useProductQuestions(block)` | `hooks/use-product-questions` | Product questions and answers |
+| `useCart()` / `useShopCart(shopId)` | `hooks/use-cart`, `hooks/use-shop-cart` | The cart and its actions; one shop's lines and totals |
+| `useAuth()` | `hooks/use-auth` | The signed-in customer and sign-in modal controls |
+| `useVariantSelection(product)` | `hooks/use-variant-selection` | Option selection state and the add-to-cart gate |
+| `useSearch(query, products, collections)` | `hooks/use-search` | Instant search over data you hold |
+| `useAddressAutocomplete(text)` / `useResolveCoordinates()` | `hooks/use-address-autocomplete`, `hooks/use-resolve-coordinates` | Delivery address lookup |
+| `useHref()` | `hooks/use-href` | Builds a store-relative link |
+| `useLocales()` | `hooks/use-locales` | The store's languages and the active one |
+| `useStorefront()` / `useStorefrontLocale()` / `useThemeStrings()` | `provider` | The store, the request locale, the bound `t` |
+
+## Errors
+
+Requests go through one place (`sdk/client.ts`). A non-2xx answer throws
+`ApiRequestError`, a request that outlives its budget throws `ApiTimeoutError`.
+Branch on `code`, never on the message:
+
+| Field | Meaning |
+| --- | --- |
+| `code` | `unauthenticated` (401), `forbidden` (403), `not_found` (404), `rate_limited` (429), `client_error` (other 4xx), `server_error` (5xx), `timeout` |
+| `status`, `url` | The HTTP status and the full request URL (`ApiRequestError` only) |
+| `retryable` | `true` for 429, 5xx and timeouts. The kit never retries a write on its own: a timed-out POST may already have reached the API. |
+| `requestId` | The API's `x-request-id`, for a support ticket |
+| `retryAfterSeconds` | The API's `Retry-After`, when it sent one |
+| `detail` | The API's own error message, when its body carried one |
+| `cause` | The original `DOMException` (`ApiTimeoutError` only) |
+
+Messages never include the query string, so search terms stay out of logs.
+Server-side fetchers that must render "not found" for a missing resource use
+`swallowNotFound`, which returns `null` for a 404 and rethrows everything else,
+so an API outage never shows as a missing page.
+
+## Configuration (storefront host)
+
+Themes set none of these; the storefront host does.
+
+| Variable | Used for |
+| --- | --- |
+| `QUEEK_API_URL` (or `NEXT_PUBLIC_QUEEK_API_URL`) | Origin of the Queek API for server-side reads. Without it the kit falls back to `http://127.0.0.1:8000/api/v1` and warns once in production builds. |
+| `NEXT_PUBLIC_QUEEK_AUTH_URL` | Origin of the sign-in service (default `https://auth.usequeek.com`). |
+| `STOREFRONT_DOMAIN` | Domain whose subdomains are store slugs (default `queek.com.ng`). |
+| `CUSTOM_DOMAIN_VENDOR_MAP` | JSON object mapping a custom domain to a store slug. |
+
+Browser requests are always same-origin (`/api/v1/client/*`), so the host needs
+a rewrite from that path to the API. The browser never learns the API origin.
 
 ## Theme strings
 
@@ -292,7 +413,7 @@ export default function Footer() {
 - MUST: place `<PoweredByQueek />` on every footer variant (`footers/*.tsx`,
   or `footer.tsx` where a theme has no `footers/` dir). The placement and
   spacing are the theme's — the component is the content, the footer owns
-  where it sits. The theme check rule `theme/footer-shows-powered-by`
+  where it sits. The `theme/footer-shows-powered-by` rule of `npm run check`
   ([checks reference](https://docs.usequeek.com/docs/themes/checks)) enforces
   this, so a theme cannot ship without it.
 - Style only: the link emits `core-powered-by` with a
@@ -538,8 +659,8 @@ the kit is the one place that knows it, and a framework change is a kit
 release, not an update to every theme. `Link` is an `<a>` that moves inside the
 store without a full page load (`href`, `prefetch`, `replace`, plus any anchor
 attribute); `useRouter()` gives `push`, `replace`, `back` and `refresh`;
-`usePathname()` returns the current path. The theme check rejects a theme that
-imports `next`.
+`usePathname()` returns the current path. `npm run check` in the theme starter rejects a
+theme that imports `next`.
 
 ## Boundary
 
@@ -549,7 +670,7 @@ framework: the kit may import `next`, a theme may not.
 ## Develop
 
 ```bash
-npm install
+npm ci
 npm run typecheck       # tsc --noEmit
 npm test                # public-text check, then vitest run
 npm run verify-package  # pack current source, typecheck a real theme against it
@@ -560,19 +681,41 @@ it from a sandbox, so a break that only external consumers would see (for
 example a module relying on the global `JSX` namespace, which React 19 removed)
 fails here instead of after publishing.
 
+## Versioning
+
+The kit is pre-1.0 (`0.x`). A change to the surface the barrels declare that can
+break a theme ships in a minor version and is listed in
+[CHANGELOG.md](./CHANGELOG.md); patch versions are fixes and additions. Pin a
+minor version (`~0.1.23`) if a theme must not move on its own.
+
 ## Release
 
 Publishing runs on tags via `.github/workflows/publish.yml`, which needs the
-`NPM_TOKEN` repository secret:
+`NPM_TOKEN` repository secret and publishes with npm provenance:
 
 ```bash
-# 1. Bump version in package.json and commit
-# 2. Tag and push the tag — the workflow typechecks, tests, runs verify-package,
-#    then `npm publish --access public`:
+# 1. Bump version in package.json, add the CHANGELOG entry, commit
+# 2. Tag and push the tag. The workflow typechecks, tests, runs verify-package,
+#    then `npm publish --access public --provenance`:
 git tag vX.Y.Z
 git push origin main --tags
 ```
 
+## Contributing
+
+Open an issue or a pull request at
+[usequeek/theme-kit](https://github.com/usequeek/theme-kit). Run `npm run typecheck`
+and `npm test` before you push; CI runs both plus `verify-package`. Keep a change
+to the public surface small, documented with a JSDoc `@example`, and recorded in
+the CHANGELOG.
+
+## Security
+
+The kit holds no secrets and only calls the Queek API's `/client/*` routes (a
+guard in `sdk/client.ts` refuses anything else). Customer tokens live in the
+browser's `localStorage`. To report a vulnerability, use GitHub's private
+vulnerability reporting on this repository rather than a public issue.
+
 ## License
 
-MIT
+MIT, copyright Queekx Technology LTD. See [LICENSE](./LICENSE).

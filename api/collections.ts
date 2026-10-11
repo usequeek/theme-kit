@@ -63,7 +63,7 @@ export async function fetchCollectionProducts(
   try {
     const [collection, response] = await Promise.all([
       fetchCollection(vendorSlug, slug, options?.locale),
-      client.get<ApiResponse<unknown, Record<string, unknown>>>(`/collections/${slug}/products`, query, options?.locale),
+      client.get<ApiResponse<unknown, Record<string, unknown>>>(`/collections/${encodeURIComponent(slug)}/products`, query, options?.locale),
     ]);
 
     return {
