@@ -75,6 +75,16 @@ export function getLastRequestId(): string | null {
 let cachedClient: QueekClientInstance | null = null;
 let cachedSlug: string | null = null;
 
+/**
+ * The Queek customer SDK client for this store, created once and reused.
+ * Browser only: it keeps the customer's tokens in `localStorage` and sends
+ * every request to the same-origin `/api/v1`. A 401 signs the customer out and
+ * opens the sign-in modal (see `triggerReauth`).
+ *
+ * @example
+ * const client = getQueekClient(vendor.slug);
+ * const orders = await client.get('/client/store/orders');
+ */
 export function getQueekClient(vendorSlug?: string): QueekClientInstance {
   const slug = vendorSlug ?? null;
 
@@ -99,7 +109,7 @@ export function getQueekClient(vendorSlug?: string): QueekClientInstance {
   return cachedClient;
 }
 
-/** Read the current access token for one-off requests outside the SDK (e.g. inbox pairing-code mint). */
+/** The customer's current access token, or null when signed out or on the server. For one-off requests outside the SDK; never log it. */
 export function getAccessToken(): string | null {
   return typeof window !== 'undefined' ? localStorage.getItem(ACCESS_KEY) : null;
 }

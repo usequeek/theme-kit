@@ -6,9 +6,10 @@ import dynamic from 'next/dynamic';
 
 const QK_EDIT_FLAG = 'edit';
 
-// Lightweight: reads `?edit=1` once on mount. Always shipped to the
-// storefront bundle, but cheap (one URLSearchParams parse) and adds no
-// runtime overhead for public visitors.
+/**
+ * True when the page was opened by the merchant editor (`?edit=1`). Read once
+ * on mount. Cheap enough to ship to every visitor: one query-string parse.
+ */
 export function useEditMode(): boolean {
   const [isEdit, setIsEdit] = useState(false);
 

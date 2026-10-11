@@ -10,6 +10,7 @@ import { useShopCart } from '../../hooks/use-shop-cart';
 import { useCartPanelStore } from '../../stores/cart-panel-store';
 import { normalizeCurrencyCode } from '../../utils/format';
 
+/** What {@link CartPanelController} hands to your render function: the panel state, this shop's lines, and the actions that change them. */
 export interface CartPanelControllerRenderProps {
   isOpen: boolean;
   items: CartItem[];
@@ -23,6 +24,18 @@ export interface CartPanelControllerRenderProps {
   onRemove: (id: string, shopId: string) => void;
 }
 
+/**
+ * Headless controller for a cart panel (drawer). It owns open and close state,
+ * the Escape key, scroll locking and navigation to checkout; you own the markup.
+ * Open it from anywhere with `useCartPanelStore.getState().open()`.
+ *
+ * @example
+ * <CartPanelController>
+ *   {({ isOpen, items, total, onClose, onCheckout }) =>
+ *     isOpen ? <MyDrawer items={items} total={total} onClose={onClose} onCheckout={onCheckout} /> : <></>
+ *   }
+ * </CartPanelController>
+ */
 export function CartPanelController({
   children,
 }: {

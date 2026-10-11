@@ -17,7 +17,7 @@ describe('storefront API scope guard', () => {
 
   it('refuses any backend route outside /v1/client', async () => {
     for (const badPath of ['/products/abc', '/vendors/foo/products', '/categories', '/vendors/foo/collections/x/products']) {
-      await expect(request('http://api/api/v1', badPath)).rejects.toThrow(/only call \/v1\/client/);
+      await expect(request('http://api/api/v1', badPath)).rejects.toThrow(/only call \/client\/\* routes/);
     }
   });
 

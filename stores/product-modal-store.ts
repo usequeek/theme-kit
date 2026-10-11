@@ -10,6 +10,7 @@ interface ProductModalState {
   close: () => void;
 }
 
+/** Open and close state for the quick-view product modal. Call `useProductModalStore.getState().open()` from anywhere, or select from it in a component. */
 export const useProductModalStore = create<ProductModalState>()((set) => ({
   isOpen: false,
   product: null,

@@ -4,6 +4,7 @@ import { useContext, type JSX } from 'react';
 import { StorefrontContext } from '../provider';
 import { poweredByQueekUrl } from '../utils/powered-by';
 
+/** Props for {@link PoweredByQueek}. */
 export interface PoweredByQueekProps {
   /** Extra class so a footer can position the link — styling stays theme-owned. */
   className?: string;
@@ -15,11 +16,11 @@ export interface PoweredByQueekProps {
 }
 
 /**
- * Core-owned storefront attribution — the `ProductMetafields` pattern: themes
- * import-and-place it, never re-implement it.
+ * The storefront attribution link, owned by the kit: themes import and place
+ * it, and never re-implement it.
  *
  * Required on every footer variant of every theme (enforced by the
- * `theme/footer-shows-powered-by` rule of the theme check). The link
+ * `theme/footer-shows-powered-by` rule of `npm run check`). The link
  * target (`https://usequeek.com/business`) and `rel` are the contract —
  * do not change them. The href is tagged `utm_source=powered_by`,
  * `utm_medium=storefront`, `utm_campaign=<store slug>` via `poweredByQueekUrl`

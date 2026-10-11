@@ -9,6 +9,7 @@ interface CartPanelState {
   toggle: () => void;
 }
 
+/** Open and close state for the cart panel (drawer). Call `useCartPanelStore.getState().open()` from anywhere, or select from it in a component. */
 export const useCartPanelStore = create<CartPanelState>()((set) => ({
   isOpen: false,
   open: () => set({ isOpen: true }),

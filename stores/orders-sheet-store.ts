@@ -11,6 +11,7 @@ interface OrdersSheetState {
   closeDetail: () => void;
 }
 
+/** Open and close state for the customer's orders sheet. Call `useOrdersSheetStore.getState().open()` from anywhere, or select from it in a component. */
 export const useOrdersSheetStore = create<OrdersSheetState>()((set) => ({
   isOpen: false,
   activeOrderId: null,

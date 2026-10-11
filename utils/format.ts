@@ -144,6 +144,14 @@ export function normalizeCurrencyCode(value: unknown, fallback: string = PLATFOR
   return /^[A-Z]{3}$/.test(cleanFallback) ? cleanFallback : PLATFORM_DEFAULT_CURRENCY;
 }
 
+/**
+ * Format an amount in a currency (ISO 4217 code), in the shopper's locale.
+ * Decimals show only when the amount has them (`₦5,000`, `₦0.28`). An invalid
+ * currency code falls back to the platform default. Never throws.
+ *
+ * @example
+ * formatMoney(5000, 'NGN'); // "₦5,000"
+ */
 export function formatMoney(
   amount: number,
   currency = PLATFORM_DEFAULT_CURRENCY,
@@ -163,6 +171,7 @@ export function formatMoney(
   }
 }
 
+/** A whole-number percentage string, e.g. `toPercent(12.4)` is `"12%"`. */
 export function toPercent(value: number): string {
   return `${Math.max(0, Math.round(value))}%`;
 }

@@ -8,6 +8,11 @@ import { CheckoutContactSection } from './checkout-contact';
 import { useThemeStrings } from '../../provider';
 import { PolicyLinks } from './policy-links';
 
+/**
+ * The kit's default checkout layout. The storefront fills its slots (address,
+ * payment, promo, fees, submit) and passes them in; a theme can replace the
+ * whole shell by providing its own checkout component.
+ */
 export function DefaultCheckoutShell({
   cartItems,
   deliveryModes,

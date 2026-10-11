@@ -7,10 +7,12 @@ import type {
 } from '../types/product';
 import { formatDisplayDate } from '../utils/format';
 
+/** Merchant-set labels and types for custom fields, keyed by field key. Passed as `metafieldDefinitions` on the product page. */
 export interface ProductMetafieldDefinitionLabels {
   [key: string]: { name: string; type: string };
 }
 
+/** Props for {@link ProductMetafields}. */
 export interface ProductMetafieldsProps {
   product: Product;
   definitions?: ProductMetafieldDefinitionLabels;
@@ -205,6 +207,13 @@ export function renderValue(value: MetafieldValue, fieldKey: string, label: stri
   return renderScalar(value as MetafieldScalar, fieldKey, label, type);
 }
 
+/**
+ * Place this on the product page to show the product's custom fields.
+ * Renders nothing when there are none to show.
+ *
+ * @example
+ * <ProductMetafields product={product} definitions={metafieldDefinitions} />
+ */
 export function ProductMetafields({ product, definitions }: ProductMetafieldsProps): JSX.Element | null {
   const metafields = product.metafields && typeof product.metafields === 'object' ? product.metafields : {};
   const visible = Object.entries(metafields).filter(([, value]) => isVisibleValue(value as MetafieldValue));

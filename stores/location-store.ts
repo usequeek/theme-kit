@@ -16,6 +16,11 @@ interface LocationState {
   clearLocation: () => void;
 }
 
+/**
+ * The shopper's chosen delivery location (coordinates and address), persisted
+ * per sales channel. Before one is chosen it holds the platform's default map
+ * centre and an empty address.
+ */
 export const useLocationStore = create<LocationState>()(
   persist(
     (set) => ({

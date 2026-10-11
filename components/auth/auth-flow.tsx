@@ -18,6 +18,18 @@ function AuthFlowInner(): JSX.Element | null {
   return null;
 }
 
+/**
+ * The kit's customer sign-in and sign-up flow (email code, email and password,
+ * and Google), rendered step by step. A theme that wants its own sign-in
+ * layout provides `AuthRenderer` in its module and renders this inside it. Its
+ * markup carries `core-auth*` classes for your CSS, and every string goes
+ * through the theme strings (`auth.*`).
+ *
+ * @example
+ * export function AuthRenderer() {
+ *   return <div className="my-auth-card"><AuthFlow /></div>;
+ * }
+ */
 export function AuthFlow(): JSX.Element {
   return (
     <AuthFlowProvider>

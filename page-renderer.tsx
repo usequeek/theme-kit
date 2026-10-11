@@ -65,6 +65,17 @@ function signatureReplacer(_key: string, value: unknown): unknown {
   return value;
 }
 
+/**
+ * Renders a page's blocks in order, choosing each block's theme variant (or
+ * the kit's shared block). Block data arrives already resolved: a theme never
+ * fetches it. While a merchant edits, a draft section that cannot render shows
+ * a short "can't be previewed yet" notice instead of blanking the page.
+ *
+ * @example
+ * export default function HomePage({ blocks }: HomePageProps) {
+ *   return <PageRenderer blocks={blocks} />;
+ * }
+ */
 export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
   const draftBlocks = useEditPreviewStore((state) => state.blocks);
   const reconcileDraftBlocks = useEditPreviewStore((state) => state.reconcile);

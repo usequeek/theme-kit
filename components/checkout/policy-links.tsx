@@ -23,6 +23,10 @@ function subscribeNoop(): () => void {
   return () => {};
 }
 
+/**
+ * Links to the store's published policies (returns, shipping, privacy, terms).
+ * Each opens in the kit's policy modal. Renders nothing when `policies` is empty.
+ */
 export function PolicyLinks({ policies }: { policies: Page[] }): JSX.Element | null {
   const t = useThemeStrings();
   const activeSlug = usePolicyModalStore((s) => s.activeSlug);

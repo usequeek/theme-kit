@@ -11,6 +11,14 @@ export function menuItemKey(item: MenuItem, index: number): string {
   return `${item.type}:${item.ref ?? ''}:${item.meta?.anchor ?? ''}:${index}`;
 }
 
+/**
+ * The link target for a menu item: pages, collections, the shop, the blog, posts
+ * and galleries resolve under `basePath`; a `url` item is used as is; anything
+ * unknown becomes `#`. Pass `useStorefront().basePath` (or use `useHref`).
+ *
+ * @example
+ * <Link href={menuItemToHref(item, basePath)}>{item.label}</Link>
+ */
 export function menuItemToHref(item: MenuItem, basePath: string = ''): string {
   switch (item.type) {
     case 'page': {

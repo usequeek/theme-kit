@@ -15,6 +15,7 @@ import NextLink from 'next/link';
 import { usePathname as useFrameworkPathname, useRouter as useFrameworkRouter } from 'next/navigation';
 import { useMemo, type AnchorHTMLAttributes, type ReactNode, type Ref } from 'react';
 
+/** Props for {@link Link}: any anchor attribute except `href`, plus `prefetch` and `replace`. */
 export interface LinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
   /** A path inside the store (`menuItemToHref()`, `useHref()`) or a full URL. */
   href: string;
@@ -31,6 +32,7 @@ export function Link({ href, prefetch, replace, ...anchor }: LinkProps) {
   return <NextLink href={href} prefetch={prefetch} replace={replace} {...anchor} />;
 }
 
+/** What {@link useRouter} returns. */
 export interface Router {
   /** Go to `href`, adding a history entry. */
   push(href: string): void;

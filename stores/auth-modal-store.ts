@@ -9,6 +9,7 @@ interface AuthModalState {
   close: () => void;
 }
 
+/** Open and close state for the sign-in modal. `open('signup')` starts on the sign-up step. Most code uses `useAuth()` instead. */
 export const useAuthModalStore = create<AuthModalState>()((set) => ({
   isOpen: false,
   mode: 'login',

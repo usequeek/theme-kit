@@ -19,6 +19,11 @@ interface ProductMediaFrameProps {
   intent?: ImageIntent;
 }
 
+/**
+ * One frame of a product's media gallery: an image through `Image`, or a video.
+ * Pass a frame from `buildMediaFrames(product)`. `variant="thumbnail"` renders a
+ * muted video with no controls, so the browser shows its first frame.
+ */
 export function ProductMediaFrame({
   frame,
   className,

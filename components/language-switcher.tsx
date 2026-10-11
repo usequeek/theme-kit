@@ -9,6 +9,7 @@ import type { MenuAlign, MenuSide } from '../utils/menu-placement';
 import { LanguageMenu } from './language-menu';
 import './language-switcher.css';
 
+/** Props for `LanguageSwitcher`. The README lists each prop with its default. */
 export interface LanguageSwitcherProps {
   /** Extra class on the root, to position or restyle the control. */
   className?: string;

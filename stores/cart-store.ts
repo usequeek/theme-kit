@@ -48,6 +48,11 @@ export function makeItemId(productId: string, addons: CartAddon[], variantId?: s
   return `${base}-${addons.map((addon) => addon.item_id).sort().join(',')}`;
 }
 
+/**
+ * The cart store. Prefer the `useCart()` and `useShopCart()` hooks; read this
+ * directly only from non-React code (`useCartStore.getState()`). Lines persist
+ * in `localStorage` under a per-channel key.
+ */
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({

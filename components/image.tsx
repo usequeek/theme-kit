@@ -23,6 +23,7 @@ const PLACEHOLDER_SVG = `data:image/svg+xml,${encodeURIComponent(
   </svg>`,
 )}`;
 
+/** A labelled placeholder drawn in place of an image that is missing or failed to load. Size it to the space the image will fill. */
 export interface PlaceholderProp {
   label?: string;
   sublabel?: string;
@@ -59,6 +60,15 @@ type ImageProps = ImgHTMLAttributes<HTMLImageElement> & {
  */
 type LoadStage = 'primary' | 'original' | 'failed';
 
+/**
+ * The kit's image element. Use it instead of a raw `<img>`: it picks a
+ * responsive `srcset` from the API's image variants, retries the original file
+ * when a resized one fails, and falls back to `fallback` or a branded
+ * placeholder. It accepts every `<img>` attribute.
+ *
+ * @example
+ * <Image src={product.media.image ?? ''} variants={product.media.image_variants} intent="card" alt={product.title} />
+ */
 export function Image({ fallback, placeholder, variants, intent = 'raw', onError, ...props }: ImageProps) {
   const [stage, setStage] = useState<LoadStage>('primary');
   // Read context directly — returns null outside a StorefrontProvider

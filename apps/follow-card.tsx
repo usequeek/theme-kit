@@ -41,6 +41,11 @@ const POSITION_CLASS: Record<string, string> = {
   'center-left': 'core-follow-card--center-left',
 };
 
+/**
+ * The store's follow card, shown when the merchant has turned it on. It is
+ * floating by default; `display="inline"` places it in the page flow. Renders
+ * nothing when the app is off.
+ */
 export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}): JSX.Element | null {
   const { config, vendor } = useStorefront();
   const followConfig = config.apps?.follow_card;

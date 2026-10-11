@@ -8,6 +8,7 @@ import { extractProducts, normalizeProduct } from '../utils/product-normalizer';
  *  gets a 422 from the API. */
 export type CollectionSort = 'newest' | 'popular' | 'price_low' | 'price_high';
 
+/** Options for `fetchCollectionProducts`. */
 export interface FetchCollectionProductsOptions {
   page?: number;
   perPage?: number;
@@ -20,6 +21,10 @@ export interface FetchCollectionProductsOptions {
 // SSR collection reads go through `/client/store/*`, which resolves the store and
 // forces X-Platform=storefront (base prices, no marketplace commission) — never
 // the legacy v1 routes shared with the marketplace.
+/**
+ * The store's collections, for server components. Returns `[]` when the store
+ * has none. A 404 becomes `[]`; any other failure (timeout, 5xx) throws.
+ */
 export async function fetchCollections(vendorSlug: string, storefrontOnly = true, locale?: string): Promise<Collection[]> {
   const client = createServerStoreClient(vendorSlug, await getRequestOrigin());
 
@@ -36,12 +41,20 @@ export async function fetchCollections(vendorSlug: string, storefrontOnly = true
   }
 }
 
+/** One collection by slug, or `null` when it is not in the store's list. */
 export async function fetchCollection(vendorSlug: string, slug: string, locale?: string): Promise<Collection | null> {
   const collections = await fetchCollections(vendorSlug, true, locale);
 
   return collections.find((collection) => collection.slug === slug) ?? null;
 }
 
+/**
+ * A collection and one page of its products, for server components.
+ *
+ * A missing collection gives `{ collection: null, products: [] }`.
+ *
+ * @throws {ApiRequestError} on any other API failure (timeout, 5xx).
+ */
 export async function fetchCollectionProducts(
   vendorSlug: string,
   slug: string,
