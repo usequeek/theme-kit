@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useStorefront, useStorefrontLocale } from '../provider';
 import { createBrowserClient } from '../sdk/client';
 import { withLocaleQuery } from '../utils/locale';
+import { toError } from '../utils/to-error';
 import type { ReviewItem, ReviewsBlockData, ReviewsSummary } from '../types/block';
 
 interface ReviewsResponse {
@@ -62,10 +63,20 @@ function summarize(reviews: ReviewItem[]): ReviewsSummary {
   };
 }
 
+/**
+ * Customer reviews for a `reviews` block: a list plus the rating summary
+ * (average and 1 to 5 breakdown). Scope, filters and sorting come from the
+ * block's own data. On failure the list is empty and `error` is set; the hook
+ * never throws.
+ *
+ * @example
+ * const { reviews, summary, isLoading } = useReviews({ scope: 'product', product_slug: 'oak-chair', limit: 6 });
+ */
 export function useReviews(options: ReviewsBlockData): {
   reviews: ReviewItem[];
   summary: ReviewsSummary;
   isLoading: boolean;
+  error: Error | null;
 } {
   const { vendor, previewData } = useStorefront();
   const locale = useStorefrontLocale();
@@ -73,6 +84,7 @@ export function useReviews(options: ReviewsBlockData): {
   const [reviews, setReviews] = useState<ReviewItem[]>(seeded);
   const [summary, setSummary] = useState<ReviewsSummary>(options._preview?.summary ?? summarize(seeded));
   const [isLoading, setIsLoading] = useState(!options._preview && !previewData);
+  const [error, setError] = useState<Error | null>(null);
 
   const {
     scope,
@@ -114,6 +126,7 @@ export function useReviews(options: ReviewsBlockData): {
 
     async function run(): Promise<void> {
       setIsLoading(true);
+      setError(null);
       try {
         let path = '/reviews';
         if (ids && ids.length > 0) {
@@ -136,10 +149,11 @@ export function useReviews(options: ReviewsBlockData): {
           setReviews(response.data.reviews ?? []);
           setSummary(response.data.summary ?? EMPTY_SUMMARY);
         }
-      } catch {
+      } catch (caught) {
         if (!cancelled) {
           setReviews([]);
           setSummary(EMPTY_SUMMARY);
+          setError(toError(caught));
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -166,5 +180,5 @@ export function useReviews(options: ReviewsBlockData): {
     locale,
   ]);
 
-  return { reviews, summary, isLoading };
+  return { reviews, summary, isLoading, error };
 }

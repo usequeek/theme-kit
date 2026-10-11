@@ -32,7 +32,7 @@ export interface StorefrontUser {
  * the vendor already has the customer physically present, so a phone is not
  * needed to fulfil the order (matches POS, which never requires it either).
  *
- * `requiresEmail` — pass true for an automated-shipping vendor: Shipbubble's
+ * `requiresEmail` — pass true for an automated-shipping vendor: the
  * courier lookup needs a real email, which a phone-OTP-only signup never has.
  * Defaults false everywhere else so this stays a no-op for every other caller.
  */

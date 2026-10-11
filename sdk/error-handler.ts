@@ -6,8 +6,15 @@ import { useUserStore } from '../stores/user-store';
 import { isReauthSuppressed } from './reauth-guard';
 
 /**
- * Returns true if the caught error is an unauthenticated (401) error
- * from the API or SDK token layer.
+ * True when the error is an unauthenticated (401) failure from the API or the
+ * SDK token layer: the customer session is missing, expired or revoked.
+ *
+ * @example
+ * try {
+ *   await client.get('/client/orders');
+ * } catch (error) {
+ *   if (isUnauthenticatedError(error)) triggerReauth('orders');
+ * }
  */
 export function isUnauthenticatedError(err: unknown): boolean {
   if (err instanceof QueekSdkError) {
@@ -18,19 +25,20 @@ export function isUnauthenticatedError(err: unknown): boolean {
 }
 
 /**
- * Reset local user state and open the auth modal. Safe to call
- * repeatedly (idempotent). Called by the SDK's onUnauthenticated
- * callback (configured in queek-client.ts).
+ * Clear the local customer session and open the sign-in modal. Safe to call
+ * repeatedly. The SDK's `onUnauthenticated` callback (configured in
+ * `queek-client.ts`) calls it, so most code never needs to.
+ *
+ * `reason` (usually the request path) is logged to help trace which call
+ * lost the session. It must not contain tokens.
  */
 export function triggerReauth(reason?: string): void {
   if (isReauthSuppressed()) {
-     
-    console.warn(`[queek-sdk] unauthenticated (${reason ?? 'unknown'}) — suppressed, an auth exchange is in flight`);
+    console.warn(`[theme-kit] a request lost its session (${reason ?? 'unknown request'}), but sign-in is in progress, so the customer was not signed out.`);
     return;
   }
   if (reason) {
-     
-    console.warn(`[queek-sdk] unauthenticated → reauth (${reason})`);
+    console.warn(`[theme-kit] session expired on ${reason}: signing the customer out and opening sign-in.`);
   }
   useUserStore.getState().logout();
   useAuthModalStore.getState().open('login');

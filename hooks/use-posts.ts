@@ -6,19 +6,25 @@ import type { ApiResponse } from '../types/product';
 import type { Post } from '../types/page';
 import { createBrowserClient } from '../sdk/client';
 import { withLocaleQuery } from '../utils/locale';
+import { toError } from '../utils/to-error';
 
 /**
- * Client-side blog-post listing, for blocks embedded on an arbitrary page
- * (e.g. the 'blog' home-page block) — mirrors useProducts' shape/pattern.
- * The blog LISTING page itself (pages/blog.tsx) gets its posts via SSR props
- * instead (`fetchPosts` in the host's page loader); this hook is for anywhere
- * else a theme needs a live post list without page-level SSR data.
+ * A live list of blog posts, for a block on any page (such as the home page
+ * `blog` block). Takes the same shape as {@link useProducts}: `isLoading`,
+ * plus `error` when the request fails.
+ *
+ * The blog listing page itself receives its posts as server-rendered props;
+ * use this hook everywhere else a theme needs posts without page-level data.
+ *
+ * @example
+ * const { posts, isLoading } = usePosts({ category: 'news', limit: 3 });
  */
-export function usePosts(options?: { category?: string | null; limit?: number }): { posts: Post[]; isLoading: boolean } {
+export function usePosts(options?: { category?: string | null; limit?: number }): { posts: Post[]; isLoading: boolean; error: Error | null } {
   const { previewData, vendor } = useStorefront();
   const locale = useStorefrontLocale();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,6 +32,7 @@ export function usePosts(options?: { category?: string | null; limit?: number })
 
     async function run(): Promise<void> {
       setIsLoading(true);
+      setError(null);
 
       try {
         if (Array.isArray(previewPosts)) {
@@ -55,9 +62,10 @@ export function usePosts(options?: { category?: string | null; limit?: number })
         if (!cancelled) {
           setPosts(response.data ?? []);
         }
-      } catch {
+      } catch (caught) {
         if (!cancelled) {
           setPosts([]);
+          setError(toError(caught));
         }
       } finally {
         if (!cancelled) {
@@ -73,5 +81,5 @@ export function usePosts(options?: { category?: string | null; limit?: number })
     };
   }, [options?.category, options?.limit, previewData?.posts, vendor.slug, locale]);
 
-  return { posts, isLoading };
+  return { posts, isLoading, error };
 }

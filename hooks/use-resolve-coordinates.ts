@@ -14,6 +14,15 @@ interface CoordinatesResponse {
   state_id?: string | null;
 }
 
+/**
+ * Turns a chosen address suggestion into coordinates and saves it as the
+ * shopper's delivery location. `resolve` returns true when a location was
+ * saved and false when the API gave no usable position or the request failed.
+ *
+ * @example
+ * const { resolve, resolving } = useResolveCoordinates();
+ * const ok = await resolve(suggestion.place_id, suggestion.description);
+ */
 export function useResolveCoordinates(): {
   resolve: (placeId: string, description: string) => Promise<boolean>;
   resolving: boolean;

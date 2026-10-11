@@ -4,12 +4,22 @@ import { useMemo } from 'react';
 import type { Product } from '../types/product';
 import type { Collection } from '../types/page';
 
+/** What {@link useSearch} returns: the matches to show in a search panel. */
 export interface SearchResults {
   products: Product[];
   categories: Array<[slug: string, name: string]>;
   collections: Collection[];
 }
 
+/**
+ * Instant search over products and collections you already hold (no request).
+ * An empty query returns the first products and categories as suggestions.
+ * Matches are case-insensitive on product title, category name and collection
+ * name, capped at 5 products, 4 categories and 2 collections.
+ *
+ * @example
+ * const { products, categories, collections } = useSearch(query, allProducts, allCollections);
+ */
 export function useSearch(
   query: string,
   products: Product[],

@@ -22,8 +22,8 @@ type Status = 'idle' | 'saving' | 'done' | 'error';
  * The `subscribe` app's `inline` variant (the theme-declared default) — a
  * theme's own `getSubscribeForm` dispatch renders this directly, passing
  * heading/tagline/cta straight through with no gate of its own; gating on
- * `config.apps?.subscribe?.enabled` happens once, centrally, in whichever
- * variant dispatch mounts it (see vendor-shell.tsx / a theme's footer).
+ * `config.apps?.subscribe?.enabled` happens once, centrally, by whatever
+ * mounts it (the storefront host, or a theme's footer).
  */
 export function SubscribeForm({
   heading = 'Stay in the loop',

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getQueekClient } from '../sdk/queek-client';
 import { withLocalePath } from '../utils/locale';
 import { normalizeProduct } from '../utils/product-normalizer';
+import { toError } from '../utils/to-error';
 import type { Product, LegacyProductLike } from '../types/product';
 
 interface UseProductDetailResult {
@@ -11,18 +12,26 @@ interface UseProductDetailResult {
   product: Product | null;
   /** True only while a fetch the caller should show a loading state for is in flight. */
   loadingDetail: boolean;
+  /** The last detail request's failure, or null. `product` is still the list product then. */
+  error: Error | null;
 }
 
 /**
- * The product LIST/collection endpoint never returns `addons`, `options`, or
- * `variants` — those only exist on the single-product "view" response.
- * Any quick-view/quick-add modal opened from a product card only has the
- * list-shaped object, so it must re-fetch full detail before it can render
- * or select an addon/option — rendering `listProduct.addons` directly always
- * shows nothing, regardless of CSS or wiring.
+ * Complete a product you already hold from a list. The list and collection
+ * endpoints never return `addons`, `options` or `variants`; only the
+ * single-product response has them. A quick-view or quick-add modal opened
+ * from a product card must therefore fetch the full product before it can
+ * show or select an add-on or option.
  *
- * `isOpen` gates the fetch so a modal closed and reopened on a different
- * product re-fetches instead of showing stale detail.
+ * `isOpen` gates the fetch, so a modal closed and reopened on another product
+ * fetches again instead of showing stale detail. `product` is `listProduct`
+ * until the full product arrives, and stays `listProduct` if the request fails
+ * (see `error`).
+ *
+ * For a product you only know by slug, use `useProductBySlug`.
+ *
+ * @example
+ * const { product, loadingDetail } = useProductDetail(card, isModalOpen, vendor.slug, useStorefrontLocale());
  */
 export function useProductDetail(
   listProduct: Product | null,
@@ -39,15 +48,18 @@ export function useProductDetail(
 ): UseProductDetailResult {
   const [fullProduct, setFullProduct] = useState<Product | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!isOpen || !listProduct) {
       setFullProduct(null);
       setLoadingDetail(false);
+      setError(null);
       return;
     }
 
     let cancelled = false;
+    setError(null);
     const needsDetail = listProduct.variants_count > 0 || listProduct.addons.length > 0;
     if (needsDetail) {
       setLoadingDetail(true);
@@ -55,7 +67,7 @@ export function useProductDetail(
 
     const client = getQueekClient(vendorSlug ?? undefined);
     client
-      .get<{ data?: LegacyProductLike } | LegacyProductLike>(withLocalePath(`/client/store/products/${listProduct.slug}`, locale))
+      .get<{ data?: LegacyProductLike } | LegacyProductLike>(withLocalePath(`/client/store/products/${encodeURIComponent(listProduct.slug)}`, locale))
       .then((res) => {
         if (cancelled) return;
         const raw = (res as { data?: LegacyProductLike })?.data ?? res;
@@ -63,7 +75,9 @@ export function useProductDetail(
           setFullProduct(normalizeProduct(raw as LegacyProductLike));
         }
       })
-      .catch(() => {})
+      .catch((caught: unknown) => {
+        if (!cancelled) setError(toError(caught));
+      })
       .finally(() => {
         if (!cancelled) setLoadingDetail(false);
       });
@@ -73,5 +87,5 @@ export function useProductDetail(
     };
   }, [isOpen, listProduct, vendorSlug, locale]);
 
-  return { product: fullProduct ?? listProduct, loadingDetail };
+  return { product: fullProduct ?? listProduct, loadingDetail, error };
 }

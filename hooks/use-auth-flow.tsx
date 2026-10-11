@@ -246,14 +246,9 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
       const returnTo = typeof window !== 'undefined' ? window.location.href : '';
       const slug = vendor.slug ?? '';
       const url = `${QUEEK_AUTH_URL}/oauth/google/start?channel=storefront&vendor_slug=${encodeURIComponent(slug)}&return_to=${encodeURIComponent(returnTo)}`;
-      // eslint-disable-next-line no-console
-      console.info('[google-auth] requesting redirect URL from', url);
       const res = await fetch(url);
       if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        // eslint-disable-next-line no-console
-        console.warn('[google-auth] redirect endpoint returned non-2xx', res.status, text);
-        throw new Error(`Failed to initiate Google auth (HTTP ${res.status}).`);
+        throw new Error(`The Queek sign-in service answered HTTP ${res.status} when starting Google sign-in. Retry, or use email sign-in.`);
       }
       // Response envelope: { status, message, data: { url } }
       const body = (await res.json()) as {
@@ -266,13 +261,11 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
       if (redirectUrl) {
         window.location.href = redirectUrl;
       } else {
-        // eslint-disable-next-line no-console
-        console.warn('[google-auth] no redirect URL in response body', body);
-        throw new Error('No redirect URL returned.');
+        throw new Error('The Queek sign-in service did not return a Google redirect URL.');
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[google-auth] initiate failed', err);
+      // The shopper sees the translated message; the cause stays in the console for the theme developer.
+      console.error('[theme-kit] could not start Google sign-in:', err);
       setError(t('auth.error.google'));
     } finally {
       setLoading(false);
@@ -342,7 +335,9 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
 export function useAuthFlow(): AuthFlowValue {
   const ctx = useContext(AuthFlowContext);
   if (!ctx) {
-    throw new Error('useAuthFlow must be used within an AuthFlowProvider');
+    throw new Error(
+      'useAuthFlow() was called outside <AuthFlowProvider>. Render the auth step components inside <AuthFlow> (or wrap them in <AuthFlowProvider>).',
+    );
   }
   return ctx;
 }

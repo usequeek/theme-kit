@@ -12,11 +12,11 @@ import { productRequiresVariant } from '../utils/match-variant';
 
 interface CartState {
   items: CartItem[];
-  /** Set once per vendor mount (see vendor-shell.tsx) — the store has no
+  /** Set once per vendor mount by the storefront host. The store has no
    *  React context, so this is how it learns the active vendor's currency
-   *  for GA4 event values. The initial value is the platform default as a
-   *  last resort only; vendor-shell overwrites it with the vendor's currency
-   *  on mount. List-level `meta.currency` is never a source. */
+   *  for analytics event values. The initial value is the platform default as
+   *  a last resort only; the host overwrites it with the vendor's currency on
+   *  mount. List-level `meta.currency` is never a source. */
   currency: string;
   setCurrency: (currency: string) => void;
   addProduct: (product: Product, quantity?: number, variant?: ProductVariant | null) => void;
@@ -25,7 +25,7 @@ interface CartState {
   setQuantity: (id: string, shopId: string, quantity: number) => void;
   clearShopCart: (shopId: string) => void;
   /** Replaces a shop's items with the server-persisted cart — only called when
-   *  the local cart for that shop is empty (see use-cart-sync.ts), so this
+   *  the local cart for that shop is empty (by the storefront host), so this
    *  never clobbers what the customer is actively looking at. */
   adoptServerItems: (shopId: string, items: CartItem[]) => void;
 }
@@ -62,7 +62,7 @@ export const useCartStore = create<CartState>()(
         // save fails server-side, so persisting one only moves the failure to
         // checkout. Themes gate
         // their add button too, but a theme is presentation — correctness
-        // cannot depend on all seven, or on the next one, getting it right.
+        // cannot depend on every theme getting it right.
         if (!variant && productRequiresVariant(product)) {
           toast({
             title: 'Select options',
@@ -75,7 +75,7 @@ export const useCartStore = create<CartState>()(
         const itemId = makeItemId(product.id, addons, variant?.id);
         const addonTotal = addons.reduce((sum, addon) => sum + addon.price, 0);
         // A variant's own price/stock override the base product's — the same
-        // precedence quick-add-page.tsx's matchedVariant already uses.
+        // precedence the quick-add flow uses.
         const unitPrice = (variant?.pricing.sale_amount ?? product.pricing.sale_amount) + addonTotal;
         const itemImage = variant?.media.thumbnail ?? variant?.media.image ?? product.media.thumbnail ?? product.media.image ?? null;
 

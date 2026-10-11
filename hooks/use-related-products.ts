@@ -7,21 +7,32 @@ import type { ApiResponse } from '../types/product';
 import { createBrowserClient } from '../sdk/client';
 import { withLocaleQuery } from '../utils/locale';
 import { extractProducts, normalizeProduct } from '../utils/product-normalizer';
+import { toError } from '../utils/to-error';
 
+/**
+ * Products related to the one being viewed (up to `limit`, default 4). The
+ * list stays empty when the request fails; `error` tells you why, and a theme
+ * can simply hide the section.
+ *
+ * @example
+ * const { products } = useRelatedProducts(product.slug, 4);
+ */
 export function useRelatedProducts(
   currentSlug: string,
   limit = 4,
-): { products: Product[]; isLoading: boolean } {
+): { products: Product[]; isLoading: boolean; error: Error | null } {
   const { vendor, previewData } = useStorefront();
   const locale = useStorefrontLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function run(): Promise<void> {
       setIsLoading(true);
+      setError(null);
       try {
         if (previewData?.products) {
           const others = (previewData.products as Product[])
@@ -33,7 +44,7 @@ export function useRelatedProducts(
 
         const client = createBrowserClient(vendor.slug ?? undefined);
         const response = await client.get<ApiResponse<unknown>>(
-          `/products/${currentSlug}/related`,
+          `/products/${encodeURIComponent(currentSlug)}/related`,
           withLocaleQuery({ limit }, locale),
         );
 
@@ -43,8 +54,9 @@ export function useRelatedProducts(
           .slice(0, limit);
 
         if (!cancelled) setProducts(normalized);
-      } catch {
-        // Non-critical — silently fail
+      } catch (caught) {
+        // Non-critical: the section can hide itself. The failure is on `error`.
+        if (!cancelled) setError(toError(caught));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -54,5 +66,5 @@ export function useRelatedProducts(
     return () => { cancelled = true; };
   }, [currentSlug, limit, vendor.slug, previewData?.products, locale]);
 
-  return { products, isLoading };
+  return { products, isLoading, error };
 }

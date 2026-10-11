@@ -26,25 +26,6 @@ export interface VariantSelection {
 }
 
 /**
- * The option-selection state machine every theme's product page used to
- * hand-roll — six near-identical copies, all of which gated their add button
- * on stock and addons but never on a resolved variant.
- *
- * Two things it fixes that the copies got wrong:
- *
- * 1. It seeds from a real variant (first in-stock, else first) rather than
- *    from the first value of each option independently. On a sparse matrix —
- *    Red/S is not stocked but Red/M and Blue/S are — first-value-of-each
- *    produces a combination that matches nothing, so the page opened with an
- *    unresolvable selection.
- * 2. It exposes `variantSatisfied`, so a selection that resolves to nothing
- *    (mid-change, or that sparse seed) disables the add instead of sending a
- *    line the backend rejects.
- *
- * Themes keep their own option markup and call `selectOption` — core owns the
- * state, the theme owns the design.
- */
-/**
  * The opening selection. Seeded from a variant that actually exists, so the
  * initial state is always resolvable — preferring one in stock, since opening
  * on a sold-out variant reads as "unavailable" for a product that is not.
@@ -85,6 +66,29 @@ export function resolveVariantState(
   };
 }
 
+/**
+ * The option-selection state machine every theme's product page used to
+ * hand-roll, and which gated the add button on stock and add-ons but never on a
+ * resolved variant.
+ *
+ * It does two things a hand-rolled version tends to get wrong:
+ *
+ * 1. It seeds from a real variant (first in-stock, else first) rather than
+ *    from the first value of each option independently. On a sparse matrix —
+ *    Red/S is not stocked but Red/M and Blue/S are — first-value-of-each
+ *    produces a combination that matches nothing, so the page opened with an
+ *    unresolvable selection.
+ * 2. It exposes `variantSatisfied`, so a selection that resolves to nothing
+ *    (mid-change, or that sparse seed) disables the add instead of sending a
+ *    line the backend rejects.
+ *
+ * Themes keep their own option markup and call `selectOption`: the kit owns the
+ * state, the theme owns the design.
+ *
+ * @example
+ * const { selectedOptions, selectOption, variantSatisfied, activePrice } = useVariantSelection(product);
+ * <button disabled={!variantSatisfied || !activeInStock}>Add to cart</button>
+ */
 export function useVariantSelection(product: Product): VariantSelection {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => seedVariantOptions(product));
 

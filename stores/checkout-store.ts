@@ -15,7 +15,7 @@ export interface ScheduleSlot {
 export type CheckoutTab = 'summary' | 'checkout';
 export type DeliveryType = 'instant' | 'schedule';
 
-/** The Shipbubble courier the customer picked. Its price is re-derived from the
+/** The courier option the customer picked for automated shipping. Its price is re-derived from the
  *  server-cached quote (via request_token + service_code) at fee/order time —
  *  never trusted from the client — so display == charge. */
 export interface ShipbubbleSelection {
@@ -42,7 +42,7 @@ interface CheckoutState {
   paymentMethodName: string | null;
   selectedBankAccount: SelectedBankAccount | null;
   /** instore_qr dine-in only — which of the vendor's tables the customer is
-   *  sitting at (App\Models\VendorTable id). Null for every other flow. */
+   *  sitting at (the table's id). Null for every other flow. */
   selectedTableId: string | null;
   promoCode: string;
   vendorNote: string;
@@ -53,7 +53,7 @@ interface CheckoutState {
   /** Shipping zone UUID — required for a MANUAL shipping order */
   shippingZoneId: string | null;
   shippingZoneName: string | null;
-  /** The picked Shipbubble courier for an AUTOMATED shipping order (transient) */
+  /** The courier option picked for an AUTOMATED shipping order (transient) */
   shipbubbleSelection: ShipbubbleSelection | null;
   /** Total order weight in kg — needed when selected zone has has_weight_pricing: true */
   weightKg: number | null;
@@ -64,7 +64,7 @@ interface CheckoutState {
   /** Transient. True while the customer is searching/changing their delivery
    *  address — the resolved fee is stale then, so surfaces hide it. */
   isEditingAddress: boolean;
-  /** The customer's saved address (CustomerAddress uuid) currently selected for
+  /** The customer's saved address (its uuid) currently selected for
    *  delivery, when they picked one from their address book instead of
    *  searching a fresh address. Lets the API reuse the cached courier
    *  geocode. Null whenever the address came from a fresh Google search. */

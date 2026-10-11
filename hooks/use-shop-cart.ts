@@ -3,6 +3,14 @@
 import { useMemo } from 'react';
 import { useCartStore } from '../stores/cart-store';
 
+/**
+ * The cart lines for one shop, with the unit count and the total (in the
+ * currency's major unit, before delivery and discounts). Pass the shop id from
+ * `product.shop_id`; a missing id gives an empty cart.
+ *
+ * @example
+ * const { items, count, total } = useShopCart(product.shop_id);
+ */
 export function useShopCart(shopId: string | null | undefined): {
   items: ReturnType<typeof useCartStore.getState>['items'];
   count: number;

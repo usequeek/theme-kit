@@ -1,11 +1,8 @@
 /* ============================================================
-   VariantPicker — shared option-selection UI (QR ordering sheet,
-   default theme's quick-view modal). Prefix: qk-variant-.
-   Reads --brand-* directly (not a context-scoped token set like
-   --qr- or --qka-) so it renders correctly regardless of which
-   surface mounts it. Mirrors quick-add-page.css's qka-option/qka-swatch
-   rules — same visual language, kept as a separate small file since
-   this component is reused outside that page's scope.
+   VariantPicker: shared option-selection UI (in-store ordering sheet,
+   quick-view modal). Class prefix: qk-variant-.
+   Reads --brand-* directly, not a surface-scoped token set, so it renders
+   correctly whichever surface mounts it.
    ============================================================ */
 
 .qk-variant-option {

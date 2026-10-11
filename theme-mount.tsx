@@ -49,6 +49,7 @@ class ThemeBoundary extends Component<
   }
 }
 
+/** Props for {@link ThemeMount}. */
 export interface ThemeMountProps {
   theme: ThemeModule;
   headerProps: HeaderProps;
@@ -59,6 +60,19 @@ export interface ThemeMountProps {
   children: ReactNode;
 }
 
+/**
+ * Render a theme: its layout, the header and footer chosen by variant id, and
+ * `children` (the page) between them. A header or footer that throws is
+ * replaced by a visible error box naming the part, so one broken component
+ * does not blank the screen.
+ *
+ * @example
+ * <StorefrontProvider vendor={vendor} config={config} menus={menus}>
+ *   <ThemeMount theme={theme} headerProps={headerProps} footerProps={footerProps}>
+ *     <HomePage blocks={blocks} />
+ *   </ThemeMount>
+ * </StorefrontProvider>
+ */
 export function ThemeMount({
   theme,
   headerProps,

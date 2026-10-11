@@ -125,7 +125,7 @@ export function formatRelativeTime(
 /**
  * Platform default — the LAST resort only. Item rows carry their own
  * `currency` code (see normalizeProduct) and store-wide display uses the
- * vendor's currency (cart-store, set from vendor-shell on mount). A missing
+ * vendor's currency (held in the cart store, which the storefront host sets on mount). A missing
  * or malformed code must resolve through this function, never a bare
  * `?? 'NGN'` at a call site, so the fallback stays in exactly one place.
  */

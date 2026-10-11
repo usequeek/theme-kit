@@ -6,6 +6,10 @@ import type { ThemeModule } from './types/theme';
 
 const ThemeContext = createContext<ThemeModule | null>(null);
 
+/**
+ * Makes a theme module available to `useTheme()`. `ThemeMount` renders it for
+ * you; use it directly only when you mount a theme yourself.
+ */
 export function ThemeProvider({
   theme,
   children,
@@ -18,11 +22,17 @@ export function ThemeProvider({
   );
 }
 
+/**
+ * The mounted theme module (manifest, pages, header and footer variants).
+ *
+ * @throws {Error} when called outside `ThemeMount` or `ThemeProvider`. Use
+ * `useOptionalTheme()` where a theme may be absent.
+ */
 export function useTheme(): ThemeModule {
   const theme = useContext(ThemeContext);
 
   if (!theme) {
-    throw new Error('useTheme must be used within ThemeProvider');
+    throw new Error('useTheme() was called outside <ThemeProvider>. Render the component inside <ThemeMount> (or <ThemeProvider theme={...}>).');
   }
 
   return theme;

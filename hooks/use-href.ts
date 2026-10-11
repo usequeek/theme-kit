@@ -1,11 +1,16 @@
 import { useStorefront } from '../provider';
 
 /**
- * Returns a function that builds storefront-relative hrefs.
- * On subdomain: href("/shop") → "/shop"
- * On path-based: href("/shop") → "/vendor-slug/shop"
+ * Returns a function that turns a store path into a link target. A store served
+ * on its own domain keeps `/shop` as `/shop`; a store served under a path
+ * prefix gets `/<store-slug>/shop`. Anything that does not start with `/`
+ * (a full URL, `#anchor`, `mailto:`) is returned unchanged.
+ *
+ * @example
+ * const href = useHref();
+ * <Link href={href('/shop')}>Shop</Link>
  */
-export function useHref() {
+export function useHref(): (path: string) => string {
   const { basePath } = useStorefront();
 
   return (path: string) => {

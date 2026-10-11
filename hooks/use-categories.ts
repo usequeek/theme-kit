@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useStorefront, useStorefrontLocale } from '../provider';
 import { createBrowserClient } from '../sdk/client';
 import { withLocaleQuery } from '../utils/locale';
+import { toError } from '../utils/to-error';
 
 export interface Category {
   id: string;
@@ -37,17 +38,28 @@ function flattenCategories(items: Category[]): Category[] {
   return out;
 }
 
+/**
+ * The store's categories (collections), flattened from any depth. Pass `ids`
+ * to pick specific ones, kept in the order you gave; pass `limit` to cap the
+ * count. On failure the list is empty and `error` is set; the hook never
+ * throws.
+ *
+ * @example
+ * const { categories } = useCategories({ limit: 6 });
+ */
 export function useCategories(options?: {
   ids?: string[];
   limit?: number;
 }): {
   categories: Category[];
   isLoading: boolean;
+  error: Error | null;
 } {
   const { previewData, vendor } = useStorefront();
   const locale = useStorefrontLocale();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const idsKey = options?.ids?.join(',') ?? '';
   const limit = options?.limit;
@@ -59,6 +71,7 @@ export function useCategories(options?: {
 
     async function run(): Promise<void> {
       setIsLoading(true);
+      setError(null);
 
       try {
         if (Array.isArray(previewCategories)) {
@@ -95,9 +108,10 @@ export function useCategories(options?: {
           setCategories(typeof limit === 'number' ? items.slice(0, limit) : items);
           setIsLoading(false);
         }
-      } catch {
+      } catch (caught) {
         if (!cancelled) {
           setCategories([]);
+          setError(toError(caught));
           setIsLoading(false);
         }
       }
@@ -110,5 +124,5 @@ export function useCategories(options?: {
     };
   }, [idsKey, limit, previewData?.categories, vendor.slug, locale]);
 
-  return { categories, isLoading };
+  return { categories, isLoading, error };
 }

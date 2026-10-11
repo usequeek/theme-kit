@@ -84,8 +84,7 @@ export async function resolveCustomDomainVendorSlugRemote(hostname: string): Pro
   }
 
   // Middleware runs server-side — prefer the server-only absolute URL. The
-  // public var can be a same-origin relative path (checkout-proxy rollout),
-  // which `fetch()` can't resolve without a document origin here.
+  // public var can be a same-origin relative path, which `fetch()` can't resolve without a document origin here.
   const baseUrl = process.env.QUEEK_API_URL ?? process.env.NEXT_PUBLIC_QUEEK_API_URL;
   if (!baseUrl) {
     return null;

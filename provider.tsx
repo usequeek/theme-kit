@@ -61,8 +61,23 @@ interface StorefrontContextValue {
   locales?: StoreLocale[];
 }
 
+/** The context behind {@link StorefrontProvider}. Read it through the hooks; use it directly only to test for a provider without throwing. */
 export const StorefrontContext = createContext<StorefrontContextValue | null>(null);
 
+/**
+ * Gives every kit hook and component the store they render for: its profile,
+ * configuration, menus, locale, languages and strings. The Queek storefront
+ * mounts it for every theme, so a theme never renders it. Render it yourself
+ * only in a test, a preview or a script.
+ *
+ * `basePath` defaults to `/<vendor.slug>`; pass `''` for a store served on its
+ * own domain. Brand design tokens become CSS variables on a wrapping element.
+ *
+ * @example
+ * <StorefrontProvider vendor={vendor} config={config} menus={[]}>
+ *   <MySection />
+ * </StorefrontProvider>
+ */
 export function StorefrontProvider({
   vendor,
   config,
@@ -147,11 +162,22 @@ export function StorefrontProvider({
   );
 }
 
+/**
+ * The current store: `vendor`, `config`, `menus`, `basePath`, `locale` and the
+ * rest of what the host passed to {@link StorefrontProvider}.
+ *
+ * @throws {Error} when called outside a `StorefrontProvider`.
+ *
+ * @example
+ * const { vendor, config } = useStorefront();
+ */
 export function useStorefront(): StorefrontContextValue {
   const context = useContext(StorefrontContext);
 
   if (!context) {
-    throw new Error('useStorefront must be used within StorefrontProvider');
+    throw new Error(
+      'useStorefront() was called outside <StorefrontProvider>. Render the component inside StorefrontProvider (the Queek storefront does this for every theme). In a test, wrap it yourself.',
+    );
   }
 
   return context;
@@ -167,7 +193,7 @@ export function useStorefrontLocale(): string | null {
   const context = useContext(StorefrontContext);
 
   if (!context) {
-    throw new Error('useStorefrontLocale must be used within StorefrontProvider');
+    throw new Error('useStorefrontLocale() was called outside <StorefrontProvider>. Render the component inside StorefrontProvider.');
   }
 
   return context.locale ?? null;
@@ -188,7 +214,7 @@ export function useThemeStrings(): ThemeStringsFn {
   const context = useContext(StorefrontContext);
 
   if (!context) {
-    throw new Error('useThemeStrings must be used within StorefrontProvider');
+    throw new Error('useThemeStrings() was called outside <StorefrontProvider>. Render the component inside StorefrontProvider.');
   }
 
   const theme = useOptionalTheme();

@@ -67,7 +67,7 @@ describe('client surface: StorefrontProvider strings + useThemeStrings', () => {
 
   it('throws outside a provider, like every other kit hook', () => {
     expect(() => renderToStaticMarkup(<Title />)).toThrow(
-      'useThemeStrings must be used within StorefrontProvider',
+      'useThemeStrings() was called outside <StorefrontProvider>. Render the component inside StorefrontProvider.',
     );
   });
 });

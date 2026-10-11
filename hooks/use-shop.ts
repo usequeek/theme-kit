@@ -5,6 +5,7 @@ import { useStorefront, useStorefrontLocale } from '../provider';
 import type { Product, ApiResponse } from '../types/product';
 import { createBrowserClient } from '../sdk/client';
 import { localeCacheKeySegment, withLocaleQuery } from '../utils/locale';
+import { toError } from '../utils/to-error';
 import {
   SHOP_DEFAULT_PER_PAGE,
   normalizeShopQuery,
@@ -78,11 +79,18 @@ function filterProducts(
 }
 
 /**
- * Shop catalogue data source. Hits the live products endpoint in production.
- * In preview (when the provider carries `previewData.products`) it filters,
- * sorts and paginates the demo catalogue in-memory so themes render real cards.
+ * The shop page's catalogue: one page of products for a category, keyword,
+ * sort and page number. Reads the live products endpoint in production. In
+ * preview (when the provider carries `previewData.products`) it filters, sorts
+ * and paginates the demo catalogue in memory, so themes render real cards.
  *
- * Page is controlled by the caller — pair with `useShopParams` for URL sync.
+ * The page is controlled by the caller; pair this with `useShopParams` to keep
+ * it in the URL. On failure the previous page of products stays on screen and
+ * `error` is set; the hook never throws.
+ *
+ * @example
+ * const { categorySlug, keyword, sort, page } = useShopParams();
+ * const { products, isLoading, pagination, error } = useShop({ categorySlug, keyword, sort, page });
  */
 export function useShop(options?: {
   categorySlug?: string | null;
@@ -94,6 +102,7 @@ export function useShop(options?: {
   products: Product[];
   isLoading: boolean;
   pagination: ShopPagination;
+  error: Error | null;
 } {
   const { vendor, previewData } = useStorefront();
   const locale = useStorefrontLocale();
@@ -123,6 +132,7 @@ export function useShop(options?: {
 
   const [products, setProducts] = useState<Product[]>(seed?.products ?? []);
   const [isLoading, setIsLoading] = useState(!isPreview && !seed);
+  const [error, setError] = useState<Error | null>(null);
   const [pagination, setPagination] = useState<ShopPagination>(seed?.pagination ?? { ...EMPTY_PAGINATION, perPage });
   // The key whose results are already in state. Seeded with the prefetch so
   // the first effect run does not refetch the page the server just rendered
@@ -166,6 +176,7 @@ export function useShop(options?: {
     // a newer one (filters B) had reset it, overwriting B's products.
     let cancelled = false;
     setIsLoading(true);
+    setError(null);
 
     const client = createBrowserClient(vendor.slug ?? undefined);
     const current = JSON.parse(queryKey) as typeof query;
@@ -182,6 +193,8 @@ export function useShop(options?: {
         setPagination(parsed.pagination);
         setProducts(parsed.products);
         loadedQueryRef.current = fetchKey;
+      } catch (caught) {
+        if (!cancelled) setError(toError(caught));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -195,8 +208,8 @@ export function useShop(options?: {
   }, [isPreview, vendor.slug, queryKey, fetchKey, locale]);
 
   if (isPreview && previewResult) {
-    return { products: previewResult.products, isLoading: false, pagination: previewResult.pagination };
+    return { products: previewResult.products, isLoading: false, pagination: previewResult.pagination, error: null };
   }
 
-  return { products, isLoading, pagination };
+  return { products, isLoading, pagination, error };
 }

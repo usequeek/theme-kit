@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useStorefront } from '../provider';
 import { getQueekClient } from '../sdk/queek-client';
 
+/** One address suggestion. Pass `place_id` to `useResolveCoordinates` to get its position. */
 export interface AddressSuggestion {
   description: string;
   place_id: string;
@@ -11,6 +12,14 @@ export interface AddressSuggestion {
 
 const DEBOUNCE_MS = 300;
 
+/**
+ * Address suggestions for what the shopper has typed, after a 300 ms pause.
+ * Nothing is requested for fewer than two characters. A failed request clears
+ * the suggestions rather than throwing, so the field stays usable.
+ *
+ * @example
+ * const { suggestions, loading } = useAddressAutocomplete(text);
+ */
 export function useAddressAutocomplete(query: string): {
   suggestions: AddressSuggestion[];
   loading: boolean;

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useStorefront, useStorefrontLocale } from '../provider';
 import { createBrowserClient } from '../sdk/client';
 import { withLocaleQuery } from '../utils/locale';
+import { toError } from '../utils/to-error';
 import type { ProductQaBlockData, ProductQuestionItem } from '../types/block';
 
 interface ProductQuestionsResponse {
@@ -16,14 +17,24 @@ interface ProductQuestionsResponse {
   next_cursor?: string | null;
 }
 
+/**
+ * Published questions and answers for one product, for a `product-qa` block.
+ * Returns no questions when the block has no `product_slug`. On failure the
+ * list is empty and `error` is set; the hook never throws.
+ *
+ * @example
+ * const { questions, isLoading } = useProductQuestions({ product_slug: 'oak-chair', limit: 5 });
+ */
 export function useProductQuestions(options: ProductQaBlockData): {
   questions: ProductQuestionItem[];
   isLoading: boolean;
+  error: Error | null;
 } {
   const { vendor, previewData } = useStorefront();
   const locale = useStorefrontLocale();
   const [questions, setQuestions] = useState<ProductQuestionItem[]>(options._preview?.questions ?? []);
   const [isLoading, setIsLoading] = useState(!options._preview && !previewData);
+  const [error, setError] = useState<Error | null>(null);
 
   const { product_slug, limit } = options;
 
@@ -51,17 +62,19 @@ export function useProductQuestions(options: ProductQaBlockData): {
 
     async function run(): Promise<void> {
       setIsLoading(true);
+      setError(null);
       try {
         const response = await client.get<ProductQuestionsResponse>(
-          `/products/${product_slug}/questions`,
+          `/products/${encodeURIComponent(product_slug)}/questions`,
           withLocaleQuery(query, locale),
         );
         if (!cancelled) {
           setQuestions(response.data.questions ?? []);
         }
-      } catch {
+      } catch (caught) {
         if (!cancelled) {
           setQuestions([]);
+          setError(toError(caught));
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -76,5 +89,5 @@ export function useProductQuestions(options: ProductQaBlockData): {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendor.slug, previewData, product_slug, limit, locale]);
 
-  return { questions, isLoading };
+  return { questions, isLoading, error };
 }

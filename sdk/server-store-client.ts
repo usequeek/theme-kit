@@ -120,8 +120,8 @@ function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolic
 
 /**
  * True when this render is the merchant editor's preview iframe, which loads the
- * storefront with `?preview=true&id=<vendorId>`. Set by `proxy.ts`, which is the only
- * place that can see query params before the fetch layer runs.
+ * storefront with `?preview=true&id=<vendorId>`. Set by the host's request proxy, the
+ * only place that sees query params before the fetch layer runs.
  *
  * A preview render MUST bypass the cache outright rather than rely on the API's
  * invalidation call. Invalidation is a distributed handshake — it needs two env vars

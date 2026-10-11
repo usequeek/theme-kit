@@ -7,8 +7,10 @@ import type { ApiResponse, LegacyProductLike, ProductListMeta } from '../types/p
 import { createBrowserClient } from '../sdk/client';
 import { withLocaleQuery } from '../utils/locale';
 import { extractProducts, normalizeProduct } from '../utils/product-normalizer';
+import { toError } from '../utils/to-error';
 
-type ProductQuery = {
+/** Filters for {@link useProducts}. */
+export type ProductQuery = {
   collection?: string | null;
   ids?: string[];
   limit?: number;
@@ -42,15 +44,29 @@ function resolvePreviewProducts(products: Product[], options: ProductQuery): Pro
   return typeof options.limit === 'number' ? next.slice(0, options.limit) : next;
 }
 
+/**
+ * A list of the store's products, fetched in the browser (or filtered from the
+ * seeded catalogue in preview).
+ *
+ * Pass `undefined` instead of an options object when the caller already holds
+ * the products: the hook then does nothing and reports `isLoading: false`.
+ * On failure the products already shown are kept and `error` is set; the hook
+ * never throws.
+ *
+ * @example
+ * const { products, isLoading, error } = useProducts({ collection: 'chairs', limit: 8, sort: 'popular' });
+ * if (error) return <p>We could not load products. Try again.</p>;
+ */
 export function useProducts(options?: ProductQuery & {
   /** Backs the "video showcase" products variant. Deliberately incompatible
    *  with `collection` (that path calls a different, collection-scoped
    *  endpoint this filter isn't wired into) — has_video is ignored whenever
    *  collection is also set. */
   hasVideo?: boolean;
-}): { products: Product[]; isLoading: boolean } {
+}): { products: Product[]; isLoading: boolean; error: Error | null } {
   const { previewData, vendor } = useStorefront();
   const locale = useStorefrontLocale();
+  const [error, setError] = useState<Error | null>(null);
   const hasPreviewProducts = Array.isArray(previewData?.products);
   const [products, setProducts] = useState<Product[]>(() => (
     options && hasPreviewProducts ? resolvePreviewProducts(previewData.products!, options) : []
@@ -88,12 +104,13 @@ export function useProducts(options?: ProductQuery & {
         }
 
         setIsLoading(true);
+        setError(null);
 
         let resolvedProducts: Product[];
 
         if (options?.collection) {
           const response = await client.get<ApiResponse<unknown>>(
-            `/collections/${options.collection}/products`,
+            `/collections/${encodeURIComponent(options.collection)}/products`,
             withLocaleQuery(undefined, locale),
           );
           resolvedProducts = extractProducts(response.data).map((p) => normalizeProduct(p));
@@ -129,6 +146,10 @@ export function useProducts(options?: ProductQuery & {
         if (!cancelled) {
           setProducts(next);
         }
+      } catch (caught) {
+        // Keep the products already on screen; surface the failure instead of
+        // leaving an unhandled rejection.
+        if (!cancelled) setError(toError(caught));
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -143,31 +164,30 @@ export function useProducts(options?: ProductQuery & {
     };
   }, [hasOptions, options?.collection, options?.ids, options?.limit, options?.sort, options?.hasVideo, previewData?.products, vendor.slug, locale]);
 
-  return { products, isLoading };
+  return { products, isLoading, error };
 }
 
 /**
- * Full product detail (the same `/products/{slug}` request the PDP itself
- * uses), including the full ordered detail `media.images` list — the
- * list/collection endpoints `useProducts` calls only ever return a capped
- * `media.images` list plus `media.{image,thumbnail}`. Single-product spotlight
- * blocks (e.g. a `featured` variant) need this instead of substituting
- * image/thumbnail as a fake 2-image list.
- */
-/**
- * Fetch one product by SLUG.
+ * Fetch one product by slug: the same `/products/{slug}` request the product
+ * page uses, including the full ordered `media.images` list. The list
+ * endpoints behind {@link useProducts} return only a capped image list, so a
+ * single-product spotlight block needs this hook instead.
  *
- * Distinct from `useProductDetail` in hooks/use-product-detail.ts, which
- * enriches a product you ALREADY hold from a list payload (that one takes the
- * list product, an enabled flag and a vendor slug). Both were called
- * `useProductDetail` until the public surface was written down and the clash
- * surfaced — same name, unrelated signatures, one import path apart.
+ * Different from `useProductDetail` (hooks/use-product-detail.ts), which
+ * completes a product you already hold from a list. Pass `null` or
+ * `undefined` to skip the request. `product` is null while loading, when the
+ * product does not exist, and when the request failed (`error` tells the last
+ * two apart).
+ *
+ * @example
+ * const { product, isLoading, error } = useProductBySlug('oak-chair');
  */
-export function useProductBySlug(slug: string | null | undefined): { product: Product | null; isLoading: boolean } {
+export function useProductBySlug(slug: string | null | undefined): { product: Product | null; isLoading: boolean; error: Error | null } {
   const { previewData, vendor } = useStorefront();
   const locale = useStorefrontLocale();
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(!!slug);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!slug) {
@@ -190,16 +210,18 @@ export function useProductBySlug(slug: string | null | undefined): { product: Pr
 
     async function run(): Promise<void> {
       setIsLoading(true);
+      setError(null);
       try {
-        const response = await client.get<ApiResponse<LegacyProductLike>>(`/products/${slug}`, withLocaleQuery(undefined, locale));
+        const response = await client.get<ApiResponse<LegacyProductLike>>(`/products/${encodeURIComponent(slug as string)}`, withLocaleQuery(undefined, locale));
         const products = extractProducts(response.data);
         const payload = products[0] ?? response.data;
         if (!cancelled) {
           setProduct(payload ? normalizeProduct(payload as LegacyProductLike) : null);
         }
-      } catch {
+      } catch (caught) {
         if (!cancelled) {
           setProduct(null);
+          setError(toError(caught));
         }
       } finally {
         if (!cancelled) {
@@ -215,5 +237,5 @@ export function useProductBySlug(slug: string | null | undefined): { product: Pr
     };
   }, [slug, previewData?.products, vendor.slug, locale]);
 
-  return { product, isLoading };
+  return { product, isLoading, error };
 }
