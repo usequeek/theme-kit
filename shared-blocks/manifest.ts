@@ -20,7 +20,7 @@ export const FRAMEWORK_BLOCK_MANIFEST: Record<string, ThemeManifestVariant[]> = 
     { id: 'default', label: 'Quote', default: true, purpose: 'Pull-quote with optional attribution' },
   ],
   embed: [
-    { id: 'default', label: 'Embed', default: true, purpose: 'Instagram, Spotify, Twitter, or any iframe URL' },
+    { id: 'default', label: 'Embed', default: true, purpose: 'Any page that allows embedding, from its URL' },
   ],
   video: [
     { id: 'default', label: 'Video', default: true, purpose: 'Embed a YouTube, Vimeo, or self-hosted video' },

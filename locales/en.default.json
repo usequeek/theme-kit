@@ -176,5 +176,9 @@
   "language": {
     "label": "Language",
     "named": "Language: {name}"
+  },
+  "embed": {
+    "placeholder": "Paste the link or embed code of the content you want to show",
+    "title": "Embedded content"
   }
 }

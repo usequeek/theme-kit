@@ -2,12 +2,16 @@
 
 import type { JSX } from 'react';
 import type { EmbedBlockData } from '../types/block';
+import { useThemeStrings } from '../provider';
 
 /**
  * Framework-owned embed block. Renders an iframe for any external URL
- * (Instagram, Spotify, Twitter, custom). Themes style via `.core-block-embed`.
+ * (a social post, an audio player, any page that allows embedding). Its words come
+ * from the theme strings (`embed.*`). Themes style via `.core-block-embed`.
  */
 export function CoreEmbedBlock({ url }: EmbedBlockData): JSX.Element {
+  const t = useThemeStrings();
+
   if (!url) {
     return (
       <section className="core-block core-block-embed">
@@ -17,7 +21,7 @@ export function CoreEmbedBlock({ url }: EmbedBlockData): JSX.Element {
               <polyline points="16 18 22 12 16 6" />
               <polyline points="8 6 2 12 8 18" />
             </svg>
-            <span>Paste an Instagram, Spotify, or iframe URL</span>
+            <span>{t('embed.placeholder')}</span>
           </div>
         </div>
       </section>
@@ -30,7 +34,7 @@ export function CoreEmbedBlock({ url }: EmbedBlockData): JSX.Element {
         <iframe
           className="core-block-embed__frame"
           src={url}
-          title="Embedded content"
+          title={t('embed.title')}
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
