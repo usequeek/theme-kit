@@ -3,7 +3,22 @@
   "version": "0.1.23",
   "private": false,
   "license": "MIT",
-  "description": "The framework a Queek storefront theme is built against.",
+  "description": "The runtime a Queek storefront theme is built on: hooks, stores, page renderer, navigation, shared blocks and locale strings.",
+  "keywords": [
+    "queek",
+    "storefront",
+    "theme",
+    "themes",
+    "react",
+    "nextjs",
+    "commerce",
+    "ecommerce"
+  ],
+  "homepage": "https://docs.usequeek.com/docs/themes",
+  "bugs": {
+    "url": "https://github.com/usequeek/theme-kit/issues"
+  },
+  "author": "Queekx Technology LTD",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/usequeek/theme-kit.git"
@@ -25,13 +40,19 @@
     "**/*.css",
     "locales/*.json",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md",
+    "!tests",
+    "!scripts"
   ],
   "peerDependencies": {
     "next": ">=15",
     "react": ">=19",
     "react-dom": ">=19",
-    "@queekai/client-sdk": "*"
+    "@queekai/client-sdk": "^0.3.0"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "zustand": "^5.0.11",
