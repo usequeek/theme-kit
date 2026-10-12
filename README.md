@@ -562,13 +562,13 @@ fails here instead of after publishing.
 
 ## Release
 
-Publishing runs on tags via `.github/workflows/publish.yml`, which needs the
-`NPM_TOKEN` repository secret:
+Publishing runs on tags via `.github/workflows/publish.yml`, through npm
+trusted publishing (no stored token):
 
 ```bash
 # 1. Bump version in package.json and commit
 # 2. Tag and push the tag — the workflow typechecks, tests, runs verify-package,
-#    then `npm publish --access public`:
+#    then `npm publish --provenance --access public`:
 git tag vX.Y.Z
 git push origin main --tags
 ```
