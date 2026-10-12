@@ -12,7 +12,7 @@ end to end.
 - **Next.js 15 or later (App Router)**, `react` and `react-dom` 19 or later. The
   kit imports `next` itself (links, navigation, server request headers), so it
   runs inside a Next.js app, not in a bare React app.
-- `@queekai/client-sdk` `^0.3.0`, the Queek customer SDK the auth and checkout
+- `@queekai/client-sdk` `^0.3.1 || ^0.4.0`, the Queek customer SDK the auth and checkout
   hooks call.
 - Node.js 22 or later (the version CI tests on).
 - TypeScript with `moduleResolution: bundler` and `jsx: react-jsx`.

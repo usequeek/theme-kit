@@ -3,7 +3,7 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
-## Unreleased
+## 0.1.24 - 2026-10-12
 
 ### Added
 
@@ -31,7 +31,7 @@ policy. Versions before this file started are in the git tags.
 ### Packaging
 
 - The published package no longer contains `tests/` or `scripts/`.
-- Peer dependency `@queekai/client-sdk` is `^0.3.0` (was `*`); `engines.node` is
+- Peer dependency `@queekai/client-sdk` is `^0.3.1 || ^0.4.0` (was `*`); `engines.node` is
   `>=22`; `bugs`, `homepage`, `author` and `keywords` are set; releases publish
   with npm provenance.
 - The licence names the legal entity, Queekx Technology LTD.
