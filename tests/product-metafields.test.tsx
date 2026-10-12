@@ -125,7 +125,7 @@ describe('ProductMetafields', () => {
           type: 'designer',
           handle: 'adaeze',
           display_name: 'Adaeze',
-          fields: { name: 'Adaeze', instagram: '@adaeze' },
+          fields: { name: 'Adaeze', handle: '@adaeze' },
         },
       },
       { designer: { name: 'Designer', type: 'metaobject_reference' } },

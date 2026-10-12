@@ -2,8 +2,8 @@ name: Publish
 
 # Tags are the release: `git tag v0.1.6 && git push origin main --tags`.
 # The workflow re-runs every gate, then publishes the exact source it verified.
-# Requires the NPM_TOKEN repository secret (an npm access token with publish
-# rights on @usequeek/theme-kit).
+# Publishes through npm trusted publishing (OIDC): no token is stored.
+# The package's Trusted Publisher on npmjs.com names this workflow file.
 
 on:
   push:
@@ -16,14 +16,14 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: read
-      id-token: write # npm provenance
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
           registry-url: 'https://registry.npmjs.org'
 
@@ -49,6 +49,4 @@ jobs:
           fi
 
       - name: Publish
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

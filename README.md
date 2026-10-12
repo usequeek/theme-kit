@@ -690,13 +690,13 @@ minor version (`~0.1.23`) if a theme must not move on its own.
 
 ## Release
 
-Publishing runs on tags via `.github/workflows/publish.yml`, which needs the
-`NPM_TOKEN` repository secret and publishes with npm provenance:
+Publishing runs on tags via `.github/workflows/publish.yml`, through npm
+trusted publishing (no stored token), with provenance:
 
 ```bash
 # 1. Bump version in package.json, add the CHANGELOG entry, commit
 # 2. Tag and push the tag. The workflow typechecks, tests, runs verify-package,
-#    then `npm publish --access public --provenance`:
+#    then `npm publish --provenance --access public`:
 git tag vX.Y.Z
 git push origin main --tags
 ```

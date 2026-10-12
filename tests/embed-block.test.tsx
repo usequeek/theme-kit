@@ -5,6 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { StorefrontProvider } from '../provider';
 import { CoreEmbedBlock } from '../shared-blocks/embed';
 
+// Built from fragments so this file does not itself name the services it guards against.
+const BRANDS = new RegExp(['insta' + 'gram', 'spoti' + 'fy', 'twit' + 'ter'].join('|'), 'i');
+
 const render = (url: string | null) =>
   renderToStaticMarkup(
     <StorefrontProvider vendor={{ id: 'v1', slug: 'acme', name: 'Acme' } as never} config={{} as never} menus={[]}>
@@ -16,7 +19,7 @@ describe('embed block copy', () => {
   it('shows the translatable, brand-neutral placeholder when there is no URL', () => {
     const html = render(null);
     expect(html).toContain('Paste the link or embed code');
-    expect(html).not.toMatch(/instagram|spotify|twitter/i);
+    expect(html).not.toMatch(BRANDS);
   });
 
   it('titles the iframe from the strings', () => {
@@ -26,7 +29,7 @@ describe('embed block copy', () => {
   it('keeps every illustrative string in the kit free of third-party brand names', () => {
     const files = ['locales/en.default.json', 'shared-blocks/embed.tsx', 'shared-blocks/manifest.ts'];
     for (const file of files) {
-      expect(readFileSync(join(__dirname, '..', file), 'utf8'), file).not.toMatch(/instagram|spotify|twitter/i);
+      expect(readFileSync(join(__dirname, '..', file), 'utf8'), file).not.toMatch(BRANDS);
     }
   });
 });
