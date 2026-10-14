@@ -1,6 +1,6 @@
 'use client';
 
-import { createQueekClient, type QueekClientInstance, type StorageAdapter } from '@queekai/client-sdk';
+import { createQueekClient, type QueekClientInstance, type StorageAdapter } from '@usequeek/client-sdk';
 import { triggerReauth } from './error-handler';
 import { getActivePlatform } from './platform';
 

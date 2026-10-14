@@ -3,6 +3,14 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.25 - 2026-10-14
+
+### Packaging
+
+- The customer SDK moved to the Queek scope: the peer dependency is now
+  `@usequeek/client-sdk` `^0.4.0` (was `@queekai/client-sdk`, which is deprecated).
+  Install `@usequeek/client-sdk` alongside the kit and remove `@queekai/client-sdk`.
+
 ## 0.1.24 - 2026-10-12
 
 ### Added

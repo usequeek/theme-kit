@@ -53,7 +53,7 @@ function main(): void {
       name: 'kit-consumer', private: true, version: '1.0.0',
       dependencies: {
         [kitPkg.name]: `file:./${tarball}`,
-        '@queekai/client-sdk': peers['@queekai/client-sdk'] ?? '*',
+        '@usequeek/client-sdk': peers['@usequeek/client-sdk'] ?? '*',
         next: '^16.0.0', react: '^19.0.0', 'react-dom': '^19.0.0',
       },
       devDependencies: { typescript: '^5', '@types/react': '^19', '@types/react-dom': '^19', '@types/node': '^22' },

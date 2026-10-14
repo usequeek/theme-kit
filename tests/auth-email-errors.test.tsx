@@ -7,7 +7,7 @@
  * changing any English value fails here.
  */
 import { describe, expect, it } from 'vitest';
-import { QueekSdkError } from '@queekai/client-sdk';
+import { QueekSdkError } from '@usequeek/client-sdk';
 import { t, defaultThemeStrings } from '../strings/theme-strings';
 import { mapEmailError } from '../hooks/use-auth-flow';
 

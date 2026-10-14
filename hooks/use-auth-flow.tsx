@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react';
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { QueekSdkError, type EmailVerifyOtpResponse } from '@queekai/client-sdk';
+import { QueekSdkError, type EmailVerifyOtpResponse } from '@usequeek/client-sdk';
 import { useStorefront, useThemeStrings } from '../provider';
 import { getQueekClient, setAuthTokens, QUEEK_AUTH_URL } from '../sdk/queek-client';
 import { useAuthModalStore } from '../stores/auth-modal-store';

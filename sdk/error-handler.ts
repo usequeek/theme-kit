@@ -1,6 +1,6 @@
 'use client';
 
-import { QueekSdkError } from '@queekai/client-sdk';
+import { QueekSdkError } from '@usequeek/client-sdk';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { useUserStore } from '../stores/user-store';
 import { isReauthSuppressed } from './reauth-guard';
