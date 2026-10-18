@@ -24,14 +24,32 @@ describe('visibleLineProperties', () => {
 
   it('bearer keys never show', () => {
     const properties = {
-      'app.booking.claim': 'token',
-      'app.booking.reschedule_url': 'https://example.test/r',
-      'app.booking.cancel_url': 'https://example.test/c',
-      'app.booking.my_claim': 'token',
+      'app.x.claim': 'token',
+      'app.x.reschedule_url': 'https://example.test/r',
+      'app.x.cancel_url': 'https://example.test/c',
     };
     const property_labels = Object.fromEntries(Object.keys(properties).map((key) => [key, 'Label']));
 
     expect(visibleLineProperties({ properties, property_labels })).toEqual([]);
+  });
+
+  it.each([
+    'app.x.my_claim',
+    'app.x.reclaim',
+    'app.x.my_cancel_url',
+    'app.x.url_claim',
+    'app.x.claim_note',
+  ])('a declared key that only resembles a bearer key shows when labelled (%s)', (key) => {
+    expect(visibleLineProperties({ properties: { [key]: 'Ada' }, property_labels: { [key]: 'Label' } })).toEqual([
+      { key, label: 'Label', value: 'Ada' },
+    ]);
+  });
+
+  it('text of only invisible characters never shows', () => {
+    const invisible = [0x200b, 0x200d, 0x2060, 0xfeff, 0x200e, 0xa0].map((code) => String.fromCharCode(code)).join('');
+
+    expect(visibleLineProperties({ properties: { a: invisible }, property_labels: { a: 'A' } })).toEqual([]);
+    expect(visibleLineProperties({ properties: { a: 'x' }, property_labels: { a: invisible } })).toEqual([]);
   });
 
   it('blank and non-string never show', () => {

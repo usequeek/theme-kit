@@ -8,13 +8,15 @@ policy. Versions before this file started are in the git tags.
 ### Added
 
 - Line text. An app can ask the shopper for text on a product (for example an
-  engraving). `registerLineText`, `setLineText` and `clearLineText` (from
-  `stores/line-text-store`) hold what the shopper typed for the product on screen;
-  nothing is persisted or sent anywhere by the store itself. `addProduct` and
-  `addItemWithAddons` write the cleaned text on the new cart line as `properties`
-  with its labels in `property_labels`, refuse a required field left blank with an
-  "Add your {label} before adding to cart" toast, and keep lines with different text
-  apart. A line without text keeps exactly the id and shape it had before.
+  engraving). The line text store (`useLineTextStore` in `stores/line-text-store`)
+  has `registerLineText`, `setLineText` and `clearLineText` actions that hold what
+  the shopper typed for the product on screen; nothing is persisted or sent anywhere
+  by the store itself. `addProduct` and `addItemWithAddons` write the cleaned text on
+  the new cart line as `properties` with its labels in `property_labels`, refuse a
+  required field left blank with an "Add your {label} before adding to cart" toast,
+  and keep lines with different text apart. Text made only of spaces or invisible
+  characters counts as blank. A line without text keeps exactly the id and shape it
+  had before.
 - `makeItemId` takes an optional fourth argument, the line's text properties.
 - `CartItem.properties` and `CartItem.property_labels` (both optional).
 - `visibleLineProperties` (from `utils/line-properties`) returns the rows of line

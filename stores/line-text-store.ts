@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { isBlankText } from '../utils/blank-text';
 
 /** The longest text a line field may carry. Mirrors the platform limit. */
 export const LINE_TEXT_MAX_LENGTH = 500;
@@ -18,6 +19,8 @@ export interface LineTextField {
 }
 
 interface LineTextEntry {
+  /** Identity of the registration that wrote this entry. */
+  owner: object;
   fields: LineTextField[];
   values: Record<string, string>;
 }
@@ -28,7 +31,8 @@ interface LineTextState {
   /**
    * Declares the fields a product page renders. Call it only from an effect and
    * only for fields that are on screen; the returned function removes the
-   * registration and is meant as the effect cleanup. Values already typed for a
+   * registration, only while it is still the current one for that product, and is
+   * meant as the effect cleanup. Values already typed for a
    * key that is still declared are kept.
    */
   registerLineText: (shopId: string, productId: string, fields: LineTextField[]) => () => void;
@@ -70,6 +74,10 @@ function cleanValue(raw: unknown, maxLength: number): string {
 
   const trimmed = raw.replace(UNSAFE_CHARACTERS, '').trim();
 
+  if (isBlankText(trimmed)) {
+    return '';
+  }
+
   return Array.from(trimmed).slice(0, effectiveMaxLength(maxLength)).join('').trimEnd();
 }
 
@@ -82,6 +90,7 @@ export const useLineTextStore = create<LineTextState>()((set, get) => ({
   entries: {},
   registerLineText: (shopId, productId, fields) => {
     const entryKey = lineTextKey(shopId, productId);
+    const owner = {};
     const declared = fields.filter((field) => typeof field.key === 'string' && field.key.trim() !== '');
 
     set((state) => {
@@ -94,14 +103,14 @@ export const useLineTextStore = create<LineTextState>()((set, get) => ({
         }
       }
 
-      return { entries: { ...state.entries, [entryKey]: { fields: declared, values } } };
+      return { entries: { ...state.entries, [entryKey]: { owner, fields: declared, values } } };
     });
 
     return () => {
       set((state) => {
-        const { [entryKey]: removed, ...rest } = state.entries;
+        const { [entryKey]: current, ...rest } = state.entries;
 
-        return removed === undefined ? state : { entries: rest };
+        return current === undefined || current.owner !== owner ? state : { entries: rest };
       });
     };
   },

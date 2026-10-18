@@ -1,8 +1,12 @@
+import { isBlankText } from './blank-text';
+
 /**
- * Key endings that carry a bearer link or token. The platform never accepts them
- * as shopper text and the kit never shows them. Mirrors the backend list.
+ * Key endings that carry a bearer link or token, dot-prefixed so a derived key
+ * `app.<ns>.<field key>` ends in one only when the field key is exactly `claim`,
+ * `reschedule_url` or `cancel_url`. Parity constant: keep it equal to the
+ * platform list. Internal: not part of the public barrels.
  */
-export const BEARER_PROPERTY_SUFFIXES = ['claim', 'reschedule_url', 'cancel_url'] as const;
+const BEARER_PROPERTY_SUFFIXES = ['.claim', '.reschedule_url', '.cancel_url'] as const;
 
 export interface LineProperty {
   key: string;
@@ -39,11 +43,11 @@ export function visibleLineProperties(source: LinePropertiesSource): LinePropert
     const value = properties[key];
     const label = labels[key];
 
-    if (typeof value !== 'string' || value.trim() === '') {
+    if (typeof value !== 'string' || isBlankText(value)) {
       continue;
     }
 
-    if (typeof label !== 'string' || label.trim() === '') {
+    if (typeof label !== 'string' || isBlankText(label)) {
       continue;
     }
 

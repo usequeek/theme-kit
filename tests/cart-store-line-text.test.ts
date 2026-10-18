@@ -16,6 +16,11 @@ import { useLineTextStore } from '../stores/line-text-store';
 const CART_KEY = 'queek-storefront-cart';
 const NBSP = String.fromCharCode(0xa0);
 const BEL = String.fromCharCode(7);
+const ZERO_WIDTH_SPACE = String.fromCharCode(0x200b);
+const ZERO_WIDTH_JOINER = String.fromCharCode(0x200d);
+const WORD_JOINER = String.fromCharCode(0x2060);
+const BYTE_ORDER_MARK = String.fromCharCode(0xfeff);
+const LEFT_TO_RIGHT_MARK = String.fromCharCode(0x200e);
 const LINE_SEPARATOR = String.fromCharCode(0x2028);
 const BIDI_OVERRIDE = String.fromCharCode(0x202e);
 
@@ -147,6 +152,8 @@ describe('addItemWithAddons with line text', () => {
     ['spaces', '   '],
     ['no-break spaces', `${NBSP}${NBSP}`],
     ['control characters only', `${BEL}${BEL}`],
+    ['zero-width spaces only', `${ZERO_WIDTH_SPACE}${ZERO_WIDTH_SPACE}`],
+    ['invisible format characters only', `${ZERO_WIDTH_JOINER}${WORD_JOINER}${BYTE_ORDER_MARK}${LEFT_TO_RIGHT_MARK}`],
     ['never typed', null],
   ])('required refusal writes nothing and announces nothing (%s)', (_name, typed) => {
     registerLineText('s1', 'p1', [{ ...ENGRAVING, required: true }]);
@@ -210,6 +217,28 @@ describe('addItemWithAddons with line text', () => {
     expect(line.id).toBe('p1');
     expect('properties' in line).toBe(false);
     expect('property_labels' in line).toBe(false);
+  });
+
+  it('optional zero-width-only text adds a line with no properties key and the old id', () => {
+    registerLineText('s1', 'p1', [ENGRAVING]);
+    setLineText('s1', 'p1', ENGRAVING.key, `${ZERO_WIDTH_SPACE}${WORD_JOINER}`);
+    useCartStore.getState().addProduct(product());
+
+    const [line] = useCartStore.getState().items;
+
+    expect(line.id).toBe('p1');
+    expect('properties' in line).toBe(false);
+    expect('property_labels' in line).toBe(false);
+  });
+
+  it('keeps invisible characters inside non-blank text', () => {
+    const family = `\u{1F468}${ZERO_WIDTH_JOINER}\u{1F469}${ZERO_WIDTH_JOINER}\u{1F467}`;
+
+    registerLineText('s1', 'p1', [{ ...ENGRAVING, maxLength: 10 }]);
+    setLineText('s1', 'p1', ENGRAVING.key, family);
+    useCartStore.getState().addProduct(product());
+
+    expect(useCartStore.getState().items[0].properties).toEqual({ [ENGRAVING.key]: family });
   });
 
   it('required filled adds', () => {

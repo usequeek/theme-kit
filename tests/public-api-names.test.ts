@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { makeItemId, useCartStore } from '../stores/cart-store';
+import * as lineProperties from '../utils/line-properties';
+import * as lineTextStore from '../stores/line-text-store';
 
 const ROOT = resolve(__dirname, '..');
 
@@ -107,6 +109,21 @@ describe('public API names recorded from 0.1.25', () => {
     const declared = barrelModules('client.ts');
 
     expect(CLIENT_MODULES_0_1_25.filter((module) => !declared.has(module))).toEqual([]);
+  });
+
+  it('the new public names are exported from the barrels', () => {
+    expect(barrelModules('index.ts').has('utils/line-properties')).toBe(true);
+    expect(barrelModules('client.ts').has('stores/line-text-store')).toBe(true);
+    expect(typeof lineProperties.visibleLineProperties).toBe('function');
+    expect(typeof lineTextStore.useLineTextStore).toBe('function');
+    expect(typeof lineTextStore.readLineText).toBe('function');
+  });
+
+  it('the bearer suffix list and the blank-text helper stay internal', () => {
+    expect(Object.keys(lineProperties)).not.toContain('BEARER_PROPERTY_SUFFIXES');
+    expect(Object.keys(lineTextStore)).not.toContain('BEARER_PROPERTY_SUFFIXES');
+    expect(barrelModules('index.ts').has('utils/blank-text')).toBe(false);
+    expect(barrelModules('client.ts').has('utils/blank-text')).toBe(false);
   });
 
   it('stores/cart-store still exports makeItemId and useCartStore', () => {

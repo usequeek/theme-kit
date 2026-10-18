@@ -10,6 +10,7 @@ import { pushAddToCart } from '../apps/analytics-events';
 import { getActivePlatform, platformScopedStorage } from '../sdk/platform';
 import { productRequiresVariant } from '../utils/match-variant';
 import { readLineText } from './line-text-store';
+import { isBlankText } from '../utils/blank-text';
 
 interface CartState {
   items: CartItem[];
@@ -78,7 +79,7 @@ function propertiesSuffix(properties?: Record<string, unknown> | null): string {
   for (const key of Object.keys(properties).sort()) {
     const value = properties[key];
 
-    if (typeof value === 'string' && value.trim() !== '') {
+    if (typeof value === 'string' && !isBlankText(value)) {
       canonical[key] = value;
     }
   }

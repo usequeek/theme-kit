@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../stores/toast-store', () => ({ toast: vi.fn() }));
 vi.mock('../apps/analytics-events', () => ({ pushAddToCart: vi.fn() }));
 
+import { StorefrontProvider } from '../provider';
+import { DefaultCartShell } from '../components/cart/default-cart-shell';
 import { useCartStore } from '../stores/cart-store';
 import { LINE_TEXT_MAX_LENGTH, lineTextKey, readLineText, useLineTextStore } from '../stores/line-text-store';
 import type { Product } from '../types/product';
@@ -27,8 +29,54 @@ beforeEach(() => {
 });
 
 describe('line text store', () => {
-  it('ssr leaves the store empty', () => {
+  it('ssr leaves the store empty', async () => {
+    // A fresh import starts empty: nothing registers at module scope.
+    vi.resetModules();
+
+    const fresh = await import('../stores/line-text-store');
+
+    expect(fresh.useLineTextStore.getState().entries).toEqual({});
+
+    // Rendering on the server runs no effects, so no action touches the store.
+    const changes = vi.fn();
+    const unsubscribe = useLineTextStore.subscribe(changes);
+
     renderToString(<RegisteringHost />);
+    renderToString(
+      <StorefrontProvider vendor={{ id: 'v1', slug: 'demo', name: 'Demo' } as never} config={{} as never} menus={[]}>
+        <DefaultCartShell
+          items={[]}
+          currency="NGN"
+          total={0}
+          empty
+          onIncrease={() => {}}
+          onDecrease={() => {}}
+          onRemove={() => {}}
+        />
+      </StorefrontProvider>,
+    );
+    unsubscribe();
+
+    expect(changes).not.toHaveBeenCalled();
+    expect(api().entries).toEqual({});
+  });
+
+  it('an unregister of a replaced registration leaves the newer one in place', () => {
+    const first = api().registerLineText('s1', 'p1', [FIELD]);
+
+    api().setLineText('s1', 'p1', FIELD.key, 'Ada');
+
+    const second = api().registerLineText('s1', 'p1', [FIELD, { ...FIELD, key: 'app.engraving.other' }]);
+
+    first();
+
+    expect(api().entries[lineTextKey('s1', 'p1')].fields.map((field) => field.key)).toEqual([
+      FIELD.key,
+      'app.engraving.other',
+    ]);
+    expect(readLineText('s1', 'p1').properties).toEqual({ [FIELD.key]: 'Ada' });
+
+    second();
 
     expect(api().entries).toEqual({});
   });
@@ -37,11 +85,15 @@ describe('line text store', () => {
     const cleanup = api().registerLineText('s1', 'p1', [FIELD]);
 
     api().setLineText('s1', 'p1', FIELD.key, 'Ada');
-    api().registerLineText('s1', 'p1', [FIELD]);
+    const again = api().registerLineText('s1', 'p1', [FIELD]);
 
     expect(readLineText('s1', 'p1').properties).toEqual({ [FIELD.key]: 'Ada' });
 
     cleanup();
+
+    expect(readLineText('s1', 'p1').properties).toEqual({ [FIELD.key]: 'Ada' });
+
+    again();
 
     expect(api().entries).toEqual({});
     expect(readLineText('s1', 'p1')).toEqual({ properties: {}, labels: {}, missingRequired: [] });
