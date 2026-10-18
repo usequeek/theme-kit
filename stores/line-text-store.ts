@@ -72,13 +72,15 @@ function cleanValue(raw: unknown, maxLength: number): string {
     return '';
   }
 
-  const trimmed = raw.replace(UNSAFE_CHARACTERS, '').trim();
+  // Cut before deciding blank, so invisible leading characters cannot hide that
+  // the text kept nothing visible. Ordinary surrounding whitespace is trimmed first
+  // so it does not use up the length budget.
+  const cut = Array.from(raw.replace(UNSAFE_CHARACTERS, '').trim())
+    .slice(0, effectiveMaxLength(maxLength))
+    .join('')
+    .trimEnd();
 
-  if (isBlankText(trimmed)) {
-    return '';
-  }
-
-  return Array.from(trimmed).slice(0, effectiveMaxLength(maxLength)).join('').trimEnd();
+  return isBlankText(cut) ? '' : cut;
 }
 
 /**

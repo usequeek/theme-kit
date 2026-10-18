@@ -20,6 +20,8 @@ const ZERO_WIDTH_SPACE = String.fromCharCode(0x200b);
 const ZERO_WIDTH_JOINER = String.fromCharCode(0x200d);
 const WORD_JOINER = String.fromCharCode(0x2060);
 const BYTE_ORDER_MARK = String.fromCharCode(0xfeff);
+const SOFT_HYPHEN = String.fromCharCode(0xad);
+const TAG_LATIN_A = String.fromCodePoint(0xe0061);
 const LEFT_TO_RIGHT_MARK = String.fromCharCode(0x200e);
 const LINE_SEPARATOR = String.fromCharCode(0x2028);
 const BIDI_OVERRIDE = String.fromCharCode(0x202e);
@@ -153,6 +155,8 @@ describe('addItemWithAddons with line text', () => {
     ['no-break spaces', `${NBSP}${NBSP}`],
     ['control characters only', `${BEL}${BEL}`],
     ['zero-width spaces only', `${ZERO_WIDTH_SPACE}${ZERO_WIDTH_SPACE}`],
+    ['soft hyphens only', `${SOFT_HYPHEN}${SOFT_HYPHEN}`],
+    ['tag characters only', `${TAG_LATIN_A}${TAG_LATIN_A}`],
     ['invisible format characters only', `${ZERO_WIDTH_JOINER}${WORD_JOINER}${BYTE_ORDER_MARK}${LEFT_TO_RIGHT_MARK}`],
     ['never typed', null],
   ])('required refusal writes nothing and announces nothing (%s)', (_name, typed) => {
@@ -222,6 +226,18 @@ describe('addItemWithAddons with line text', () => {
   it('optional zero-width-only text adds a line with no properties key and the old id', () => {
     registerLineText('s1', 'p1', [ENGRAVING]);
     setLineText('s1', 'p1', ENGRAVING.key, `${ZERO_WIDTH_SPACE}${WORD_JOINER}`);
+    useCartStore.getState().addProduct(product());
+
+    const [line] = useCartStore.getState().items;
+
+    expect(line.id).toBe('p1');
+    expect('properties' in line).toBe(false);
+    expect('property_labels' in line).toBe(false);
+  });
+
+  it('invisible leading characters followed by long text store nothing', () => {
+    registerLineText('s1', 'p1', [{ ...ENGRAVING, maxLength: 5 }]);
+    setLineText('s1', 'p1', ENGRAVING.key, `${ZERO_WIDTH_SPACE.repeat(6)}visible`);
     useCartStore.getState().addProduct(product());
 
     const [line] = useCartStore.getState().items;
