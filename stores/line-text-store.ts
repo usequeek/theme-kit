@@ -18,10 +18,19 @@ export interface LineTextField {
   maxLength: number;
 }
 
-interface LineTextEntry {
-  /** Identity of the registration that wrote this entry. */
-  owner: object;
+/** One live registration: what one block or app declared for a product. */
+interface LineTextRegistration {
+  /** Identity of this registration; its unregister removes exactly this one. */
+  id: object;
+  /** Optional caller-chosen name: registering again under it replaces its earlier registration. */
+  owner: string | null;
   fields: LineTextField[];
+}
+
+interface LineTextEntry {
+  /** Every live registration for the product, oldest first. */
+  registrations: LineTextRegistration[];
+  /** What the shopper typed, by field key. */
   values: Record<string, string>;
 }
 
@@ -30,15 +39,18 @@ interface LineTextState {
   entries: Record<string, LineTextEntry>;
   /**
    * Declares the fields a product page renders. Call it only from an effect and
-   * only for fields that are on screen; the returned function removes the
-   * registration, only while it is still the current one for that product, and is
-   * meant as the effect cleanup. Values already typed for a
-   * key that is still declared are kept.
+   * only for fields that are on screen; the returned function removes this
+   * registration only and is meant as the effect cleanup. Several registrations
+   * can be live for one product (two apps, or one block in two places): the
+   * product's fields are their union, and when two declare the same key the most
+   * recent declaration wins. Typed values are kept for every key that is still
+   * declared. Pass `owner` to make a later call with the same name replace this
+   * registration instead of adding another.
    */
-  registerLineText: (shopId: string, productId: string, fields: LineTextField[]) => () => void;
+  registerLineText: (shopId: string, productId: string, fields: LineTextField[], owner?: string) => () => void;
   /** Stores what the shopper typed. The text is cleaned when it is read, not here. */
   setLineText: (shopId: string, productId: string, key: string, value: string) => void;
-  /** Empties the typed values of a product and keeps its registered fields. */
+  /** Empties the typed values of a product and keeps every live registration. */
   clearLineText: (shopId: string, productId: string) => void;
 }
 
@@ -83,6 +95,46 @@ function cleanValue(raw: unknown, maxLength: number): string {
   return isBlankText(cut) ? '' : cut;
 }
 
+/** The product's fields: the union of its live registrations, the latest declaration of a key winning. */
+function effectiveFields(registrations: LineTextRegistration[]): LineTextField[] {
+  const byKey = new Map<string, LineTextField>();
+
+  for (const registration of registrations) {
+    for (const field of registration.fields) {
+      byKey.set(field.key, field);
+    }
+  }
+
+  return [...byKey.values()];
+}
+
+/** The entry for these registrations, keeping only the values of keys still declared; null when none are live. */
+function entryFor(registrations: LineTextRegistration[], values: Record<string, string>): LineTextEntry | null {
+  if (registrations.length === 0) {
+    return null;
+  }
+
+  const kept: Record<string, string> = {};
+
+  for (const field of effectiveFields(registrations)) {
+    if (typeof values[field.key] === 'string') {
+      kept[field.key] = values[field.key];
+    }
+  }
+
+  return { registrations, values: kept };
+}
+
+function withEntry(
+  entries: Record<string, LineTextEntry>,
+  entryKey: string,
+  entry: LineTextEntry | null,
+): Record<string, LineTextEntry> {
+  const { [entryKey]: removed, ...rest } = entries;
+
+  return entry === null ? rest : { ...rest, [entryKey]: entry };
+}
+
 /**
  * ONE store for what a shopper typed into app-declared line text fields. It is
  * deliberately not persisted: a reload starts empty, and only the cart lines
@@ -90,29 +142,32 @@ function cleanValue(raw: unknown, maxLength: number): string {
  */
 export const useLineTextStore = create<LineTextState>()((set, get) => ({
   entries: {},
-  registerLineText: (shopId, productId, fields) => {
+  registerLineText: (shopId, productId, fields, owner) => {
     const entryKey = lineTextKey(shopId, productId);
-    const owner = {};
-    const declared = fields.filter((field) => typeof field.key === 'string' && field.key.trim() !== '');
+    const registration: LineTextRegistration = {
+      id: {},
+      owner: owner ?? null,
+      fields: fields.filter((field) => typeof field.key === 'string' && field.key.trim() !== ''),
+    };
 
     set((state) => {
-      const previous = state.entries[entryKey]?.values ?? {};
-      const values: Record<string, string> = {};
+      const previous = state.entries[entryKey];
+      const live = (previous?.registrations ?? []).filter((entry) => owner === undefined || entry.owner !== owner);
 
-      for (const field of declared) {
-        if (typeof previous[field.key] === 'string') {
-          values[field.key] = previous[field.key];
-        }
-      }
-
-      return { entries: { ...state.entries, [entryKey]: { owner, fields: declared, values } } };
+      return { entries: withEntry(state.entries, entryKey, entryFor([...live, registration], previous?.values ?? {})) };
     });
 
     return () => {
       set((state) => {
-        const { [entryKey]: current, ...rest } = state.entries;
+        const previous = state.entries[entryKey];
 
-        return current === undefined || current.owner !== owner ? state : { entries: rest };
+        if (!previous || !previous.registrations.some((entry) => entry.id === registration.id)) {
+          return state;
+        }
+
+        const live = previous.registrations.filter((entry) => entry.id !== registration.id);
+
+        return { entries: withEntry(state.entries, entryKey, entryFor(live, previous.values)) };
       });
     };
   },
@@ -120,7 +175,7 @@ export const useLineTextStore = create<LineTextState>()((set, get) => ({
     const entryKey = lineTextKey(shopId, productId);
     const entry = get().entries[entryKey];
 
-    if (!entry || !entry.fields.some((field) => field.key === key)) {
+    if (!entry || !effectiveFields(entry.registrations).some((field) => field.key === key)) {
       return;
     }
 
@@ -154,7 +209,7 @@ export function readLineText(shopId: string, productId: string): ReadLineText {
     return result;
   }
 
-  const fields = [...entry.fields].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  const fields = effectiveFields(entry.registrations).sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 
   for (const field of fields) {
     const value = cleanValue(entry.values[field.key], field.maxLength);

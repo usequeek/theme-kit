@@ -70,11 +70,9 @@ describe('line text store', () => {
 
     first();
 
-    expect(api().entries[lineTextKey('s1', 'p1')].fields.map((field) => field.key)).toEqual([
-      FIELD.key,
-      'app.engraving.other',
-    ]);
-    expect(readLineText('s1', 'p1').properties).toEqual({ [FIELD.key]: 'Ada' });
+    api().setLineText('s1', 'p1', 'app.engraving.other', 'Bob');
+
+    expect(readLineText('s1', 'p1').properties).toEqual({ [FIELD.key]: 'Ada', 'app.engraving.other': 'Bob' });
 
     second();
 
@@ -100,9 +98,9 @@ describe('line text store', () => {
   });
 
   it('drops the typed value of a key that is no longer declared', () => {
-    api().registerLineText('s1', 'p1', [FIELD]);
+    api().registerLineText('s1', 'p1', [FIELD], 'engraving');
     api().setLineText('s1', 'p1', FIELD.key, 'Ada');
-    api().registerLineText('s1', 'p1', [{ ...FIELD, key: 'app.engraving.other' }]);
+    api().registerLineText('s1', 'p1', [{ ...FIELD, key: 'app.engraving.other' }], 'engraving');
 
     expect(api().entries[lineTextKey('s1', 'p1')].values).toEqual({});
   });
@@ -149,5 +147,140 @@ describe('line text store', () => {
     } as unknown as Product);
 
     expect(Object.keys(localStorage)).toEqual(['queek-storefront-cart']);
+  });
+});
+
+describe('several registrations for one product', () => {
+  const OTHER = { key: 'app.gift.note', label: 'Gift note', required: false, maxLength: 20 };
+  const mug = {
+    id: 'p1', shop_id: 's1', title: 'Mug', slug: 'mug', variants: [], variants_count: 0,
+    pricing: { sale_amount: 1000 }, media: { thumbnail: null, image: null },
+  } as unknown as Product;
+
+  it('keeps both owners enforced and puts both on the added line', () => {
+    api().registerLineText('s1', 'p1', [{ ...FIELD, required: true }]);
+    api().registerLineText('s1', 'p1', [{ ...OTHER, required: true }]);
+    api().setLineText('s1', 'p1', FIELD.key, 'Ada');
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    useCartStore.getState().addProduct(mug);
+
+    expect(useCartStore.getState().items).toEqual([]);
+    expect(readLineText('s1', 'p1').missingRequired.map((field) => field.key)).toEqual([OTHER.key]);
+
+    api().setLineText('s1', 'p1', OTHER.key, '   ');
+    useCartStore.getState().addProduct(mug);
+    errors.mockRestore();
+
+    expect(useCartStore.getState().items).toEqual([]);
+
+    api().setLineText('s1', 'p1', OTHER.key, 'Happy birthday');
+    useCartStore.getState().addProduct(mug);
+
+    const [line] = useCartStore.getState().items;
+
+    expect(line.properties).toEqual({ [OTHER.key]: 'Happy birthday', [FIELD.key]: 'Ada' });
+    expect(line.property_labels).toEqual({ [OTHER.key]: 'Gift note', [FIELD.key]: 'Engraving text' });
+    expect(Object.keys(line.properties ?? {})).toEqual([FIELD.key, OTHER.key]);
+  });
+
+  it('requires the first owner field when the second owner is the one filled', () => {
+    api().registerLineText('s1', 'p1', [{ ...FIELD, required: true }]);
+    api().registerLineText('s1', 'p1', [OTHER]);
+    api().setLineText('s1', 'p1', OTHER.key, 'Note');
+
+    expect(readLineText('s1', 'p1').missingRequired.map((field) => field.key)).toEqual([FIELD.key]);
+  });
+
+  it('first owner unmounting after the second registered keeps the second working and drops the first values', () => {
+    const first = api().registerLineText('s1', 'p1', [FIELD]);
+    const second = api().registerLineText('s1', 'p1', [{ ...OTHER, required: true }]);
+
+    api().setLineText('s1', 'p1', FIELD.key, 'Ada');
+    api().setLineText('s1', 'p1', OTHER.key, 'Note');
+    first();
+
+    expect(readLineText('s1', 'p1')).toEqual({
+      properties: { [OTHER.key]: 'Note' },
+      labels: { [OTHER.key]: 'Gift note' },
+      missingRequired: [],
+    });
+    expect(api().entries[lineTextKey('s1', 'p1')].values).toEqual({ [OTHER.key]: 'Note' });
+
+    api().setLineText('s1', 'p1', FIELD.key, 'ignored');
+    api().setLineText('s1', 'p1', OTHER.key, '');
+
+    expect(readLineText('s1', 'p1').missingRequired.map((field) => field.key)).toEqual([OTHER.key]);
+    second();
+    expect(api().entries).toEqual({});
+  });
+
+  it('second owner unmounting leaves the first working and drops the second values', () => {
+    const first = api().registerLineText('s1', 'p1', [{ ...FIELD, required: true }]);
+    const second = api().registerLineText('s1', 'p1', [OTHER]);
+
+    api().setLineText('s1', 'p1', FIELD.key, 'Ada');
+    api().setLineText('s1', 'p1', OTHER.key, 'Note');
+    second();
+
+    expect(readLineText('s1', 'p1').properties).toEqual({ [FIELD.key]: 'Ada' });
+    expect(api().entries[lineTextKey('s1', 'p1')].values).toEqual({ [FIELD.key]: 'Ada' });
+
+    api().clearLineText('s1', 'p1');
+
+    expect(readLineText('s1', 'p1').missingRequired.map((field) => field.key)).toEqual([FIELD.key]);
+    first();
+    expect(api().entries).toEqual({});
+  });
+
+  it('the same key from two owners: the most recent declaration wins and the older unregister does not remove it', () => {
+    const older = api().registerLineText('s1', 'p1', [{ ...FIELD, label: 'Old label', required: false }]);
+    const newer = api().registerLineText('s1', 'p1', [{ ...FIELD, label: 'New label', required: true }]);
+
+    api().setLineText('s1', 'p1', FIELD.key, 'Ada');
+
+    expect(readLineText('s1', 'p1').labels).toEqual({ [FIELD.key]: 'New label' });
+
+    older();
+
+    expect(readLineText('s1', 'p1')).toEqual({
+      properties: { [FIELD.key]: 'Ada' },
+      labels: { [FIELD.key]: 'New label' },
+      missingRequired: [],
+    });
+
+    api().clearLineText('s1', 'p1');
+
+    expect(readLineText('s1', 'p1').missingRequired.map((field) => field.label)).toEqual(['New label']);
+    newer();
+    expect(api().entries).toEqual({});
+  });
+
+  it('the same owner registering again replaces only its own fields and keeps values for keys still declared', () => {
+    api().registerLineText('s1', 'p1', [FIELD, { ...FIELD, key: 'app.engraving.extra' }], 'engraving');
+    api().registerLineText('s1', 'p1', [OTHER], 'gift');
+    api().setLineText('s1', 'p1', FIELD.key, 'Ada');
+    api().setLineText('s1', 'p1', 'app.engraving.extra', 'Dropped');
+    api().setLineText('s1', 'p1', OTHER.key, 'Note');
+    api().registerLineText('s1', 'p1', [{ ...FIELD, label: 'Renamed' }], 'engraving');
+
+    expect(readLineText('s1', 'p1')).toEqual({
+      properties: { [FIELD.key]: 'Ada', [OTHER.key]: 'Note' },
+      labels: { [FIELD.key]: 'Renamed', [OTHER.key]: 'Gift note' },
+      missingRequired: [],
+    });
+    expect(api().entries[lineTextKey('s1', 'p1')].registrations).toHaveLength(2);
+  });
+
+  it('an add and clear keep every live registration', () => {
+    api().registerLineText('s1', 'p1', [FIELD]);
+    api().registerLineText('s1', 'p1', [{ ...OTHER, required: true }]);
+    api().setLineText('s1', 'p1', OTHER.key, 'Note');
+    useCartStore.getState().addProduct(mug);
+    api().clearLineText('s1', 'p1');
+
+    expect(api().entries[lineTextKey('s1', 'p1')].registrations).toHaveLength(2);
+    expect(api().entries[lineTextKey('s1', 'p1')].values).toEqual({});
   });
 });
