@@ -9,6 +9,7 @@ import { normalizeCurrencyCode, PLATFORM_DEFAULT_CURRENCY } from '../utils/forma
 import { pushAddToCart } from '../apps/analytics-events';
 import { getActivePlatform, platformScopedStorage } from '../sdk/platform';
 import { productRequiresVariant } from '../utils/match-variant';
+import { readLineText } from './line-text-store';
 
 interface CartState {
   items: CartItem[];
@@ -38,14 +39,57 @@ interface CartState {
  * unchanged (existing localStorage carts, in-flight server carts) rather than
  * reshaping ids for products that were never affected by this gap.
  */
-export function makeItemId(productId: string, addons: CartAddon[], variantId?: string | null): string {
+export function makeItemId(
+  productId: string,
+  addons: CartAddon[],
+  variantId?: string | null,
+  properties?: Record<string, unknown> | null,
+): string {
   const base = variantId ? `${productId}::${variantId}` : productId;
+  const withAddons = addons.length === 0 ? base : `${base}-${addons.map((addon) => addon.item_id).sort().join(',')}`;
+  const suffix = propertiesSuffix(properties);
 
-  if (addons.length === 0) {
-    return base;
+  return suffix === '' ? withAddons : `${withAddons}${suffix}`;
+}
+
+/** FNV-1a (32 bit) over the UTF-8 bytes of `text`, as 8 hex digits. */
+function fnv1a(text: string, seed: number): string {
+  let hash = seed >>> 0;
+
+  for (const byte of new TextEncoder().encode(text)) {
+    hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
   }
 
-  return `${base}-${addons.map((addon) => addon.item_id).sort().join(',')}`;
+  return hash.toString(16).padStart(8, '0');
+}
+
+/**
+ * `~p-` plus 12 hex digits over the canonical JSON (keys sorted) of the
+ * non-blank string values, or an empty string when there are none, so a line
+ * without text keeps the id it has always had. Callers pass labelled keys only.
+ */
+function propertiesSuffix(properties?: Record<string, unknown> | null): string {
+  if (!properties) {
+    return '';
+  }
+
+  const canonical: Record<string, string> = {};
+
+  for (const key of Object.keys(properties).sort()) {
+    const value = properties[key];
+
+    if (typeof value === 'string' && value.trim() !== '') {
+      canonical[key] = value;
+    }
+  }
+
+  if (Object.keys(canonical).length === 0) {
+    return '';
+  }
+
+  const json = JSON.stringify(canonical);
+
+  return `~p-${(fnv1a(json, 0x811c9dc5) + fnv1a(json, 0x9e3779b9)).slice(0, 12)}`;
 }
 
 /**
@@ -77,7 +121,20 @@ export const useCartStore = create<CartState>()(
           return;
         }
 
-        const itemId = makeItemId(product.id, addons, variant?.id);
+        // Text an app asked for on this product. A product with nothing
+        // registered reads as empty, which is the behaviour of a kit without line text.
+        const lineText = readLineText(product.shop_id, product.id);
+
+        if (lineText.missingRequired.length > 0) {
+          const missing = lineText.missingRequired[0];
+
+          toast({ title: `Add your ${missing.label} before adding to cart` });
+          console.error('[cart] refused a product added without its required line text:', product.id, missing.key);
+          return;
+        }
+
+        const hasLineText = Object.keys(lineText.properties).length > 0;
+        const itemId = makeItemId(product.id, addons, variant?.id, hasLineText ? lineText.properties : null);
         const addonTotal = addons.reduce((sum, addon) => sum + addon.price, 0);
         // A variant's own price/stock override the base product's — the same
         // precedence the quick-add flow uses.
@@ -133,6 +190,7 @@ export const useCartStore = create<CartState>()(
                 addons,
                 variant_id: variant?.id ?? null,
                 variant_title: variant?.title ?? null,
+                ...(hasLineText ? { properties: lineText.properties, property_labels: lineText.labels } : {}),
               },
             ],
           };

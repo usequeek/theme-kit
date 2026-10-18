@@ -42,6 +42,7 @@ export * from './utils/contact-location';
 export * from './utils/benefit-icon';
 export * from './utils/video-embed';
 export * from './utils/match-variant';
+export * from './utils/line-properties';
 export * from './utils/announcement';
 export * from './utils/locale';
 export * from './utils/locale-switch';

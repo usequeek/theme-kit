@@ -11,6 +11,7 @@ import { useRelatedProducts } from '../../hooks/use-related-products';
 import { useCart } from '../../hooks/use-cart';
 import { formatMoney } from '../../utils/format';
 import { productRequiresVariant } from '../../utils/match-variant';
+import { visibleLineProperties } from '../../utils/line-properties';
 import { Image } from '../image';
 
 /**
@@ -76,6 +77,9 @@ export function DefaultCartShell({
                   )}
                   <div className="core-cart-page__item-info">
                     <span className="core-cart-page__item-title">{item.title}</span>
+                    {visibleLineProperties(item).map((row) => (
+                      <span key={row.key} className="core-cart-page__item-price">{`${row.label}: ${row.value}`}</span>
+                    ))}
                     <span className="core-cart-page__item-price">{t('cart.item.each', { price: formatMoney(item.unit_price, currency) })}</span>
                   </div>
                   <div className="core-cart-page__item-qty">

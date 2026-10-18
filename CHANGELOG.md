@@ -3,6 +3,24 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## Unreleased
+
+### Added
+
+- Line text. An app can ask the shopper for text on a product (for example an
+  engraving). `registerLineText`, `setLineText` and `clearLineText` (from
+  `stores/line-text-store`) hold what the shopper typed for the product on screen;
+  nothing is persisted or sent anywhere by the store itself. `addProduct` and
+  `addItemWithAddons` write the cleaned text on the new cart line as `properties`
+  with its labels in `property_labels`, refuse a required field left blank with an
+  "Add your {label} before adding to cart" toast, and keep lines with different text
+  apart. A line without text keeps exactly the id and shape it had before.
+- `makeItemId` takes an optional fourth argument, the line's text properties.
+- `CartItem.properties` and `CartItem.property_labels` (both optional).
+- `visibleLineProperties` (from `utils/line-properties`) returns the rows of line
+  text that may be shown: only keys that carry a label, with a non-blank text value.
+  The default cart page shows them under the product title.
+
 ## 0.1.25 - 2026-10-14
 
 ### Packaging
