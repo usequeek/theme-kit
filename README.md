@@ -480,7 +480,7 @@ store's languages.
 | Prop | Default | |
 | --- | --- | --- |
 | `className` | | Extra class on the root, to position or restyle it. |
-| `variant` | `'select'` | `'menu'`: a trigger button and a list of language links (below). `'inline-list'`: a link per language that wraps on narrow screens. `'select'`: one native dropdown, **legacy** — it works and is unchanged, but its open list is the operating system's menu and cannot be styled; prefer `menu`. |
+| `variant` | `'select'` | `'menu'`: a trigger button and a list of language links (below). `'inline-list'`: a link per language that wraps on narrow screens. `'select'`: one native dropdown, **legacy** — it works, but its open list is the operating system's menu and cannot be styled; prefer `menu`. |
 | `side` | `'bottom'` | `menu` only. `'top'` opens above the trigger, for footers. Flips by itself when the preferred side does not fit. |
 | `align` | `'end'` | `menu` only. Line the popover up with the trigger's inline `'end'` or `'start'` edge (mirrors in right-to-left). Flips and shifts to stay inside the viewport. |
 | `showNativeName` | `true` | Label languages in their own language (`Français`) instead of English (`French`). |
@@ -684,8 +684,8 @@ fails here instead of after publishing.
 ## Versioning
 
 The kit is pre-1.0 (`0.x`). A change to the surface the barrels declare that can
-break a theme ships in a minor version and is listed in
-[CHANGELOG.md](./CHANGELOG.md); patch versions are fixes and additions. Pin a
+break a theme ships in a minor version; patch versions are fixes and
+additions. Pin a
 minor version (`~0.1.23`) if a theme must not move on its own.
 
 ## Release
@@ -694,7 +694,7 @@ Publishing runs on tags via `.github/workflows/publish.yml`, through npm
 trusted publishing (no stored token), with provenance:
 
 ```bash
-# 1. Bump version in package.json, add the CHANGELOG entry, commit
+# 1. Bump version in package.json, commit
 # 2. Tag and push the tag. The workflow typechecks, tests, runs verify-package,
 #    then `npm publish --provenance --access public`:
 git tag vX.Y.Z
@@ -706,8 +706,7 @@ git push origin main --tags
 Open an issue or a pull request at
 [usequeek/theme-kit](https://github.com/usequeek/theme-kit). Run `npm run typecheck`
 and `npm test` before you push; CI runs both plus `verify-package`. Keep a change
-to the public surface small, documented with a JSDoc `@example`, and recorded in
-the CHANGELOG.
+to the public surface small and documented with a JSDoc `@example`.
 
 ## Security
 

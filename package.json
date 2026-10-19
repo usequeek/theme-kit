@@ -1,6 +1,6 @@
 {
   "name": "@usequeek/theme-kit",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "private": false,
   "license": "MIT",
   "description": "The runtime a Queek storefront theme is built on: hooks, stores, page renderer, navigation, shared blocks and locale strings.",
@@ -41,7 +41,6 @@
     "locales/*.json",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md",
     "!tests",
     "!scripts"
   ],
