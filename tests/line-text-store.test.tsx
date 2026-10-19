@@ -61,7 +61,7 @@ describe('line text store', () => {
     expect(api().entries).toEqual({});
   });
 
-  it('an unregister of a replaced registration leaves the newer one in place', () => {
+  it('unregistering the first of two registrations for one product keeps the second and the shared values', () => {
     const first = api().registerLineText('s1', 'p1', [FIELD]);
 
     api().setLineText('s1', 'p1', FIELD.key, 'Ada');
@@ -271,6 +271,21 @@ describe('several registrations for one product', () => {
       missingRequired: [],
     });
     expect(api().entries[lineTextKey('s1', 'p1')].registrations).toHaveLength(2);
+  });
+
+  it('an explicit null owner is anonymous, like an omitted one', () => {
+    const register = api().registerLineText as (
+      shopId: string,
+      productId: string,
+      fields: (typeof FIELD)[],
+      owner?: string | null,
+    ) => () => void;
+
+    register('s1', 'p1', [FIELD]);
+    register('s1', 'p1', [FIELD]);
+    register('s1', 'p1', [FIELD], null);
+
+    expect(api().entries[lineTextKey('s1', 'p1')].registrations).toHaveLength(3);
   });
 
   it('an add and clear keep every live registration', () => {

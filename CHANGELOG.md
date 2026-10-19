@@ -14,7 +14,10 @@ policy. Versions before this file started are in the git tags.
   by the store itself. `addProduct` and `addItemWithAddons` write the cleaned text on
   the new cart line as `properties` with its labels in `property_labels`, refuse a
   required field left blank with an "Add your {label} before adding to cart" toast,
-  and keep lines with different text apart. Text made only of spaces or invisible
+  and keep lines with different text apart. Every live registration for a product
+  is kept: their fields are united, and a later declaration of the same key wins.
+  `registerLineText` takes an optional `owner` name; registering again under the
+  same name replaces only that registration. Text made only of spaces or invisible
   characters counts as blank. A line without text keeps exactly the id and shape it
   had before.
 - `makeItemId` takes an optional fourth argument, the line's text properties.

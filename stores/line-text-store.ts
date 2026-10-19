@@ -152,7 +152,7 @@ export const useLineTextStore = create<LineTextState>()((set, get) => ({
 
     set((state) => {
       const previous = state.entries[entryKey];
-      const live = (previous?.registrations ?? []).filter((entry) => owner === undefined || entry.owner !== owner);
+      const live = (previous?.registrations ?? []).filter((entry) => owner == null || entry.owner !== owner);
 
       return { entries: withEntry(state.entries, entryKey, entryFor([...live, registration], previous?.values ?? {})) };
     });
