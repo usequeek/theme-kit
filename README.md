@@ -346,6 +346,32 @@ export default function ProductPage({ product, metafieldDefinitions }: ProductPa
   nothing visible to show.
 - MAY: compose your own layout with the exported `EntryCard` and `renderValue`
   from the same module instead of placing the section.
+- Collections, blog posts and product variants carry custom fields too. Each
+  arrives as `metafields` on the resource — `collection.metafields`,
+  `post.metafields` (blog posts only, `type=post`; pages, galleries and policies
+  carry none) and `variant.metafields` (inside `product.variants`) — keyed
+  `namespace.key` (`custom.fabric`), always an object (`{}` when none), and only
+  with the definitions the merchant marked storefront-visible. A new definition
+  is private until the merchant makes it visible, so a value you cannot see is
+  not an error. Labels come from the page's definitions: `metafieldDefinitions`
+  on the collection and post pages (`CollectionPageProps`, `PostPageProps`),
+  `variantMetafieldDefinitions` on the product page. Place the matching section
+  (all optional props, every one renders nothing when there is nothing visible):
+
+  ```tsx
+  <CollectionMetafields collection={collection} definitions={metafieldDefinitions} />
+  <PostMetafields post={post} definitions={metafieldDefinitions} />
+  <VariantMetafields variant={selectedVariant} definitions={variantMetafieldDefinitions} />
+  // or any owner through the one component behind them:
+  <Metafields owner="collection" metafields={collection.metafields} definitions={metafieldDefinitions} />
+  ```
+
+  `owner` is `'product' | 'variant' | 'collection' | 'post'`. All owners emit the
+  same `core-metafields*` classes, so the styling you wrote for the product
+  section already covers them; off the product the root also carries
+  `core-metafields--collection` / `--post` / `--variant` for owner-specific
+  rules. Definitions are found under the value's own `namespace.key` handle, or
+  under the bare key for a map keyed that way.
 - Style only: the section emits `core-metafields*` classes (`core-metafields`,
   `__field`, `__label`, `__value`, `__text`, `__link`, `__image`, `__pre`,
   `__list`, `__list-item`, `__entry-card`, `__entry-title`, `__entry-field`,

@@ -122,6 +122,10 @@ export interface ProductVariant {
   weight: string | null;
   position: number | null;
   is_active: boolean;
+  /** Presented variant metafields keyed `namespace.key` — only the
+   *  definitions the merchant marked storefront-visible. Absent on payloads
+   *  that predate variant custom fields. */
+  metafields?: Record<string, MetafieldValue>;
 }
 
 export interface ProductAddonItem {

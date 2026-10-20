@@ -199,16 +199,20 @@ function normalizeCategories(raw: LegacyProductLike): ProductCategory[] {
   }, []);
 }
 
+/** The presented `metafields` map of any owner, or null when the payload carries none. */
+function presentedMetafields(source: unknown): Record<string, MetafieldValue> | null {
+  if (!source || typeof source !== 'object' || Array.isArray(source)) {
+    return null;
+  }
+
+  return source as Record<string, MetafieldValue>;
+}
+
 function normalizeMetafields(raw: LegacyProductLike): Record<string, MetafieldValue> {
   // Explicit whitelist like every other field above: without this the
   // presented metafields (incl. linked metaobject entries) are dropped at
   // runtime and <ProductMetafields /> renders nothing at every call site.
-  const source = raw.metafields;
-  if (!source || typeof source !== 'object' || Array.isArray(source)) {
-    return {};
-  }
-
-  return source as Record<string, MetafieldValue>;
+  return presentedMetafields(raw.metafields) ?? {};
 }
 
 function cleanUrl(value: unknown): string | null {
@@ -322,7 +326,10 @@ export function normalizeProduct(raw: LegacyProductLike): Product {
     categories: normalizeCategories(raw),
     options: normalizeOptions(raw),
     variants: Array.isArray(raw.variants)
-      ? raw.variants.map((variant, index) => ({
+      ? raw.variants.map((variant, index) => {
+        const variantMetafields = presentedMetafields(variant.metafields);
+
+        return {
           id: String(variant.id ?? `variant-${index}`),
           sku: variant.sku ?? null,
           barcode: typeof variant.barcode === 'string' && variant.barcode !== '' ? variant.barcode : null,
@@ -343,7 +350,11 @@ export function normalizeProduct(raw: LegacyProductLike): Product {
           weight: variant.weight ?? null,
           position: variant.position ?? index,
           is_active: toBool(variant.is_active, true),
-        }))
+          // Same whitelist reason as the product's: a payload without the key
+          // keeps the variant's shape exactly as before.
+          ...(variantMetafields ? { metafields: variantMetafields } : {}),
+        };
+      })
       : [],
     addons: raw.addons ?? [],
     reviews: raw.reviews ?? [],

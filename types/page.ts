@@ -1,6 +1,6 @@
 import type { Block } from './block';
 import type { ImageVariants, MediaIndex } from './media';
-import type { Product } from './product';
+import type { MetafieldValue, Product } from './product';
 
 export type PageType = 'page' | 'post' | 'gallery' | 'policy';
 
@@ -72,6 +72,10 @@ export interface Post extends Page {
   reading_time?: number | null;
   author?: PostAuthor | null;
   related?: Post[];
+  /** Presented post metafields keyed `namespace.key` — only storefront-visible
+   *  definitions; `{}` when none. Absent on payloads that predate post custom
+   *  fields. Render them with `<PostMetafields />`. */
+  metafields?: Record<string, MetafieldValue>;
 }
 
 export interface Collection {
@@ -85,4 +89,8 @@ export interface Collection {
   mode: string | null;
   products_count: number;
   products?: Product[];
+  /** Presented collection metafields keyed `namespace.key` — only
+   *  storefront-visible definitions; `{}` when none. Absent on payloads that
+   *  predate collection custom fields. Render them with `<CollectionMetafields />`. */
+  metafields?: Record<string, MetafieldValue>;
 }

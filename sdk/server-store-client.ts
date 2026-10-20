@@ -70,7 +70,7 @@ const SSR_TIMEOUT_MS = 8_000;
  * safety net, not the primary mechanism — `POST /api/revalidate?tag=…` from the
  * API is what makes an edit show up immediately.
  */
-function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolicy | null {
+function resolveCachePolicy(vendorSlug: string, path: string, query?: RequestOptions['query']): RequestCachePolicy | null {
   const vendor = `v:${vendorSlug}`;
   const policy = (revalidate: number, suffix: string, extra?: string): RequestCachePolicy => ({
     revalidate,
@@ -102,10 +102,17 @@ function resolveCachePolicy(vendorSlug: string, path: string): RequestCachePolic
   const product = /^\/products\/([^/]+)(?:\/related)?$/.exec(path);
   if (product) return policy(60, 'products', `product:${product[1]}`);
 
-  // Product metafield definitions (the labels/types the core-owned
-  // <ProductMetafields /> section renders values under). Merchant-edited,
-  // shared across visitors — cached like pages, busted by revalidation.
-  if (path === '/metafield-definitions') return policy(300, 'metafields');
+  // Metafield definitions (the labels/types the core-owned custom-field
+  // sections render values under), one owner type per read (`owner_type`,
+  // product when absent — its tags stay exactly as before). Merchant-edited,
+  // shared across visitors — cached like pages, busted by revalidation. A read
+  // that names its owner type also carries a per-owner tag, so entries for
+  // different owners are never one cache entry; the plain `metafields` tag
+  // still clears them all.
+  if (path === '/metafield-definitions') {
+    const owner = String(query?.owner_type ?? '');
+    return /^[a-z_]+$/.test(owner) ? policy(300, 'metafields', `metafields:${owner}`) : policy(300, 'metafields');
+  }
 
   // Metaobject definitions (storefront-visible types + their field labels)
   // and entry lists/detail reads for the `metaobjects` block and its entry
@@ -212,7 +219,7 @@ export function createServerStoreClient(vendorSlug: string, origin?: string): {
           timeoutMs: SSR_TIMEOUT_MS,
           cachePolicy: (await isPreviewRender())
             ? null
-            : withLocaleCachePolicy(resolveCachePolicy(vendorSlug, path), code),
+            : withLocaleCachePolicy(resolveCachePolicy(vendorSlug, path, query), code),
         },
         buildHeaders(),
       );

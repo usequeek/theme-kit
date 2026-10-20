@@ -184,6 +184,36 @@ describe('server transport (sdk/server-store-client)', () => {
     expect(init.next?.tags).toEqual(['v:acme:locale:fr', 'v:acme:profile:locale:fr']);
   });
 
+  it('a metafield-definitions read with no owner keeps its tags exactly as before', async () => {
+    setRequestHeaders({ host: 'acme.test' });
+    const { url, init } = await capturedGet('/metafield-definitions');
+    expect(url).toBe('http://127.0.0.1:8000/api/v1/client/store/metafield-definitions');
+    expect(init.next).toEqual({ revalidate: 300, tags: ['v:acme', 'v:acme:metafields'] });
+  });
+
+  it('a metafield-definitions read names its owner type on the URL and in a per-owner tag', async () => {
+    setRequestHeaders({ host: 'acme.test' });
+    const { url, init } = await capturedGet('/metafield-definitions', { owner_type: 'collection' });
+    expect(url).toContain('owner_type=collection');
+    expect(init.next).toEqual({ revalidate: 300, tags: ['v:acme', 'v:acme:metafields', 'v:acme:metafields:collection'] });
+  });
+
+  it('the per-owner tag takes the locale suffix like every other tag', async () => {
+    setRequestHeaders({ [LOCALE_CODE_HEADER]: 'fr', host: 'acme.test' });
+    const { init } = await capturedGet('/metafield-definitions', { owner_type: 'post' });
+    expect(init.next?.tags).toEqual([
+      'v:acme:locale:fr',
+      'v:acme:metafields:locale:fr',
+      'v:acme:metafields:post:locale:fr',
+    ]);
+  });
+
+  it('never builds a tag from an owner_type that is not a plain handle', async () => {
+    setRequestHeaders({ host: 'acme.test' });
+    const { init } = await capturedGet('/metafield-definitions', { owner_type: 'x:y z' });
+    expect(init.next?.tags).toEqual(['v:acme', 'v:acme:metafields']);
+  });
+
   it('still bypasses the cache for preview renders, locale or not', async () => {
     setRequestHeaders({ 'x-queek-preview': '1', [LOCALE_CODE_HEADER]: 'zh', host: 'acme.test' });
     const { url, init } = await capturedGet('/info');

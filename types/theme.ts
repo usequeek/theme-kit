@@ -27,6 +27,12 @@ export interface BlogPageProps {
 
 export interface PostPageProps {
   post: Post;
+  /**
+   * Post metafield definitions keyed `namespace.key` — the labels (and types)
+   * `<PostMetafields />` renders `post.metafields` under. OPTIONAL: themes
+   * that destructure `{ post }` keep compiling.
+   */
+  metafieldDefinitions?: Record<string, { name: string; type: string }>;
 }
 
 export interface CollectionsPageProps {
@@ -73,6 +79,12 @@ export interface CollectionPageProps {
   collection: Collection;
   products: Product[];
   pagination?: Pagination;
+  /**
+   * Collection metafield definitions keyed `namespace.key` — the labels (and
+   * types) `<CollectionMetafields />` renders `collection.metafields` under.
+   * OPTIONAL: themes that destructure `{ collection, products }` keep compiling.
+   */
+  metafieldDefinitions?: Record<string, { name: string; type: string }>;
 }
 
 export interface ProductPageProps {
@@ -84,6 +96,11 @@ export interface ProductPageProps {
    * compiling; unknown keys fall back to a humanised key label.
    */
   metafieldDefinitions?: Record<string, { name: string; type: string }>;
+  /**
+   * Variant metafield definitions keyed `namespace.key` — the labels (and
+   * types) `<VariantMetafields />` renders `variant.metafields` under. OPTIONAL.
+   */
+  variantMetafieldDefinitions?: Record<string, { name: string; type: string }>;
 }
 
 export interface GalleryPageProps {
