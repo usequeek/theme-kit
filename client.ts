@@ -36,6 +36,7 @@ export * from './hooks/use-locales';
 export * from './hooks/use-auth';
 export * from './hooks/use-cart';
 export * from './hooks/use-shop-cart';
+export * from './hooks/use-cart-server-pricing';
 export * from './hooks/use-products';
 export * from './hooks/use-product-detail';
 export * from './hooks/use-product-sections';

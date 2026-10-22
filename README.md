@@ -139,6 +139,34 @@ they keep the data already on screen. They return `isLoading`, except
 | `useLocales()` | `hooks/use-locales` | The store's languages and the active one |
 | `useStorefront()` / `useStorefrontLocale()` / `useThemeStrings()` | `provider` | The store, the request locale, the bound `t` |
 
+### Cart pricing
+
+`useShopCart(shopId)` and `CartPanelController` also return `pricing`: what the
+server charges for exactly the lines on screen (quantity-break and spend-gate
+discounts included), or `null`. Amounts are decimal strings as the server sent
+them; print them with `formatWireMoney(amount, currency)` and never compute a
+discount in a theme. When `pricing` is `null`, print `unit_price x quantity` as
+before.
+
+```tsx
+const { items, total, pricing } = useShopCart(vendor.id);
+
+items.map((item) => {
+  const line = cartLinePricing(pricing, item.id); // from utils/cart-pricing
+  return line ? (
+    <>
+      {line.list_line_total ? <del>{formatWireMoney(line.list_line_total, currency)}</del> : null}
+      <ins>{formatWireMoney(line.line_total, currency)}</ins>
+    </>
+  ) : (
+    formatMoney(item.unit_price * item.quantity, currency)
+  );
+});
+```
+
+The host app supplies the server pricing once, above every theme, with
+`<CartServerPricingProvider value={pricing}>` (`hooks/use-cart-server-pricing`).
+
 ## Errors
 
 Requests go through one place (`sdk/client.ts`). A non-2xx answer throws

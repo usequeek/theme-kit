@@ -1,0 +1,122 @@
+{
+  "shells": {
+    "single": "<div data-brand-root=\"true\" style=\"--brand-bg:#ffffff;--brand-surface:#f9f9f9;--brand-surface-muted:#f2f2f2;--brand-text:#111111;--brand-text-muted:#6b7280;--brand-primary:#111111;--brand-button-bg:#111111;--brand-button-hover-bg:#000000;--brand-accent:#111111;--brand-accent-soft:rgba(17, 17, 17, 0.12);--brand-on-accent:#ffffff;--brand-button-text:#ffffff;--brand-border:#e5e5e5;--brand-success:#16a34a;--brand-warning:#d97706;--brand-danger:#dc2626;--font-heading:Georgia;--font-body:Helvetica Neue;--fs-xs:10.24px;--fs-sm:12.8px;--fs-base:16px;--fs-lg:20px;--fs-xl:25px;--fs-2xl:31.25px;--fs-3xl:39.06px;--fw-heading:600;--fw-body:400;--case-heading:none;--tracking-heading:0em;--tracking-body:0em;--leading-heading:1.15;--leading-body:1.5;--space-unit:1rem;--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.5rem;--space-6:2rem;--space-7:3rem;--space-8:4rem;--radius-sm:6px;--radius-md:10px;--radius-lg:16px;--border-weight:1px;--radius-pill:9999px;--shadow-1:0 1px 2px rgba(15, 15, 15, 0.06);--shadow-2:0 4px 10px rgba(15, 15, 15, 0.08);--shadow-3:0 10px 24px rgba(15, 15, 15, 0.10);--duration-fast:150ms;--duration-base:250ms;--duration-slow:400ms;--ease:ease;--image-fit:cover;--image-filter:none\"><div class=\"core-cart-page\"><h1 class=\"core-cart-page__title\">Your cart</h1><div class=\"core-cart-page__grid\"><div class=\"core-cart-page__main\"><div class=\"core-cart-page__items-card\"><ul class=\"core-cart-page__items\"><li class=\"core-cart-page__item\"><div class=\"core-cart-page__item-img core-cart-page__item-img--placeholder\"></div><div class=\"core-cart-page__item-info\"><span class=\"core-cart-page__item-title\">Mug</span><span class=\"core-cart-page__item-price\">₦5,000 each</span></div><div class=\"core-cart-page__item-qty\"><button type=\"button\" aria-label=\"Decrease Mug\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button><span>1</span><button type=\"button\" aria-label=\"Increase Mug\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M6 2v8M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button></div><span class=\"core-cart-page__item-total\">₦5,000</span><button type=\"button\" class=\"core-cart-page__item-remove\" aria-label=\"Remove Mug\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 6h12M8 6V4.5A1.5 1.5 0 019.5 3h1A1.5 1.5 0 0112 4.5V6m-6 0v9.5A1.5 1.5 0 007.5 17h5a1.5 1.5 0 001.5-1.5V6\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg></button></li></ul></div></div><div class=\"core-cart-page__summary\"><div class=\"core-cart-page__summary-card\"><h2 class=\"core-cart-page__summary-title\">Order summary</h2><button type=\"button\" class=\"core-cart-page__note-toggle\">Add order note<span aria-hidden=\"true\">+</span></button><div class=\"core-cart-page__subtotal\"><span>Subtotal:</span><strong>₦5,000 NGN</strong></div><label class=\"core-cart-page__terms\"><input type=\"checkbox\"/><span>I agree to the <a href=\"/demo/policies\">terms and refund policy</a></span></label><a href=\"/demo/checkout\" class=\"core-cart-page__checkout-btn\" aria-disabled=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 3h2l2.4 9.6a1 1 0 001 .4H15a1 1 0 00.97-.76L17 7H5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><circle cx=\"8\" cy=\"17\" r=\"1\" fill=\"currentColor\"></circle><circle cx=\"14\" cy=\"17\" r=\"1\" fill=\"currentColor\"></circle></svg>Checkout</a><a href=\"/demo/\" class=\"core-cart-page__continue-link\">Continue shopping</a></div></div></div></div></div>",
+    "mixed": "<div data-brand-root=\"true\" style=\"--brand-bg:#ffffff;--brand-surface:#f9f9f9;--brand-surface-muted:#f2f2f2;--brand-text:#111111;--brand-text-muted:#6b7280;--brand-primary:#111111;--brand-button-bg:#111111;--brand-button-hover-bg:#000000;--brand-accent:#111111;--brand-accent-soft:rgba(17, 17, 17, 0.12);--brand-on-accent:#ffffff;--brand-button-text:#ffffff;--brand-border:#e5e5e5;--brand-success:#16a34a;--brand-warning:#d97706;--brand-danger:#dc2626;--font-heading:Georgia;--font-body:Helvetica Neue;--fs-xs:10.24px;--fs-sm:12.8px;--fs-base:16px;--fs-lg:20px;--fs-xl:25px;--fs-2xl:31.25px;--fs-3xl:39.06px;--fw-heading:600;--fw-body:400;--case-heading:none;--tracking-heading:0em;--tracking-body:0em;--leading-heading:1.15;--leading-body:1.5;--space-unit:1rem;--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.5rem;--space-6:2rem;--space-7:3rem;--space-8:4rem;--radius-sm:6px;--radius-md:10px;--radius-lg:16px;--border-weight:1px;--radius-pill:9999px;--shadow-1:0 1px 2px rgba(15, 15, 15, 0.06);--shadow-2:0 4px 10px rgba(15, 15, 15, 0.08);--shadow-3:0 10px 24px rgba(15, 15, 15, 0.10);--duration-fast:150ms;--duration-base:250ms;--duration-slow:400ms;--ease:ease;--image-fit:cover;--image-filter:none\"><div class=\"core-cart-page\"><h1 class=\"core-cart-page__title\">Your cart</h1><div class=\"core-cart-page__grid\"><div class=\"core-cart-page__main\"><div class=\"core-cart-page__items-card\"><ul class=\"core-cart-page__items\"><li class=\"core-cart-page__item\"><div class=\"core-cart-page__item-img core-cart-page__item-img--placeholder\"></div><div class=\"core-cart-page__item-info\"><span class=\"core-cart-page__item-title\">Mug</span><span class=\"core-cart-page__item-price\">₦5,000 each</span></div><div class=\"core-cart-page__item-qty\"><button type=\"button\" aria-label=\"Decrease Mug\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button><span>2</span><button type=\"button\" aria-label=\"Increase Mug\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M6 2v8M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button></div><span class=\"core-cart-page__item-total\">₦10,000</span><button type=\"button\" class=\"core-cart-page__item-remove\" aria-label=\"Remove Mug\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 6h12M8 6V4.5A1.5 1.5 0 019.5 3h1A1.5 1.5 0 0112 4.5V6m-6 0v9.5A1.5 1.5 0 007.5 17h5a1.5 1.5 0 001.5-1.5V6\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg></button></li><li class=\"core-cart-page__item\"><div class=\"core-cart-page__item-img core-cart-page__item-img--placeholder\"></div><div class=\"core-cart-page__item-info\"><span class=\"core-cart-page__item-title\">Shirt</span><span class=\"core-cart-page__item-price\">₦12,500.5 each</span></div><div class=\"core-cart-page__item-qty\"><button type=\"button\" aria-label=\"Decrease Shirt\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button><span>3</span><button type=\"button\" aria-label=\"Increase Shirt\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M6 2v8M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button></div><span class=\"core-cart-page__item-total\">₦37,501.5</span><button type=\"button\" class=\"core-cart-page__item-remove\" aria-label=\"Remove Shirt\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 6h12M8 6V4.5A1.5 1.5 0 019.5 3h1A1.5 1.5 0 0112 4.5V6m-6 0v9.5A1.5 1.5 0 007.5 17h5a1.5 1.5 0 001.5-1.5V6\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg></button></li><li class=\"core-cart-page__item\"><div class=\"core-cart-page__item-img core-cart-page__item-img--placeholder\"></div><div class=\"core-cart-page__item-info\"><span class=\"core-cart-page__item-title\">Cup</span><span class=\"core-cart-page__item-price\">Engraving text: Ada</span><span class=\"core-cart-page__item-price\">₦1.25 each</span></div><div class=\"core-cart-page__item-qty\"><button type=\"button\" aria-label=\"Decrease Cup\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button><span>4</span><button type=\"button\" aria-label=\"Increase Cup\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M6 2v8M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button></div><span class=\"core-cart-page__item-total\">₦5</span><button type=\"button\" class=\"core-cart-page__item-remove\" aria-label=\"Remove Cup\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 6h12M8 6V4.5A1.5 1.5 0 019.5 3h1A1.5 1.5 0 0112 4.5V6m-6 0v9.5A1.5 1.5 0 007.5 17h5a1.5 1.5 0 001.5-1.5V6\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg></button></li></ul></div></div><div class=\"core-cart-page__summary\"><div class=\"core-cart-page__summary-card\"><h2 class=\"core-cart-page__summary-title\">Order summary</h2><button type=\"button\" class=\"core-cart-page__note-toggle\">Add order note<span aria-hidden=\"true\">+</span></button><div class=\"core-cart-page__subtotal\"><span>Subtotal:</span><strong>₦47,506.5 NGN</strong></div><label class=\"core-cart-page__terms\"><input type=\"checkbox\"/><span>I agree to the <a href=\"/demo/policies\">terms and refund policy</a></span></label><a href=\"/demo/checkout\" class=\"core-cart-page__checkout-btn\" aria-disabled=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 3h2l2.4 9.6a1 1 0 001 .4H15a1 1 0 00.97-.76L17 7H5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><circle cx=\"8\" cy=\"17\" r=\"1\" fill=\"currentColor\"></circle><circle cx=\"14\" cy=\"17\" r=\"1\" fill=\"currentColor\"></circle></svg>Checkout</a><a href=\"/demo/\" class=\"core-cart-page__continue-link\">Continue shopping</a></div></div></div></div></div>",
+    "fractional": "<div data-brand-root=\"true\" style=\"--brand-bg:#ffffff;--brand-surface:#f9f9f9;--brand-surface-muted:#f2f2f2;--brand-text:#111111;--brand-text-muted:#6b7280;--brand-primary:#111111;--brand-button-bg:#111111;--brand-button-hover-bg:#000000;--brand-accent:#111111;--brand-accent-soft:rgba(17, 17, 17, 0.12);--brand-on-accent:#ffffff;--brand-button-text:#ffffff;--brand-border:#e5e5e5;--brand-success:#16a34a;--brand-warning:#d97706;--brand-danger:#dc2626;--font-heading:Georgia;--font-body:Helvetica Neue;--fs-xs:10.24px;--fs-sm:12.8px;--fs-base:16px;--fs-lg:20px;--fs-xl:25px;--fs-2xl:31.25px;--fs-3xl:39.06px;--fw-heading:600;--fw-body:400;--case-heading:none;--tracking-heading:0em;--tracking-body:0em;--leading-heading:1.15;--leading-body:1.5;--space-unit:1rem;--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.5rem;--space-6:2rem;--space-7:3rem;--space-8:4rem;--radius-sm:6px;--radius-md:10px;--radius-lg:16px;--border-weight:1px;--radius-pill:9999px;--shadow-1:0 1px 2px rgba(15, 15, 15, 0.06);--shadow-2:0 4px 10px rgba(15, 15, 15, 0.08);--shadow-3:0 10px 24px rgba(15, 15, 15, 0.10);--duration-fast:150ms;--duration-base:250ms;--duration-slow:400ms;--ease:ease;--image-fit:cover;--image-filter:none\"><div class=\"core-cart-page\"><h1 class=\"core-cart-page__title\">Your cart</h1><div class=\"core-cart-page__grid\"><div class=\"core-cart-page__main\"><div class=\"core-cart-page__items-card\"><ul class=\"core-cart-page__items\"><li class=\"core-cart-page__item\"><div class=\"core-cart-page__item-img core-cart-page__item-img--placeholder\"></div><div class=\"core-cart-page__item-info\"><span class=\"core-cart-page__item-title\">Mug</span><span class=\"core-cart-page__item-price\">KWD 1.25 each</span></div><div class=\"core-cart-page__item-qty\"><button type=\"button\" aria-label=\"Decrease Mug\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button><span>3</span><button type=\"button\" aria-label=\"Increase Mug\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 12 12\" fill=\"none\" aria-hidden=\"true\"><path d=\"M6 2v8M2 6h8\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"></path></svg></button></div><span class=\"core-cart-page__item-total\">KWD 3.75</span><button type=\"button\" class=\"core-cart-page__item-remove\" aria-label=\"Remove Mug\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 6h12M8 6V4.5A1.5 1.5 0 019.5 3h1A1.5 1.5 0 0112 4.5V6m-6 0v9.5A1.5 1.5 0 007.5 17h5a1.5 1.5 0 001.5-1.5V6\" stroke=\"currentColor\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg></button></li></ul></div></div><div class=\"core-cart-page__summary\"><div class=\"core-cart-page__summary-card\"><h2 class=\"core-cart-page__summary-title\">Order summary</h2><button type=\"button\" class=\"core-cart-page__note-toggle\">Add order note<span aria-hidden=\"true\">+</span></button><div class=\"core-cart-page__subtotal\"><span>Subtotal:</span><strong>KWD 3.75 KWD</strong></div><label class=\"core-cart-page__terms\"><input type=\"checkbox\"/><span>I agree to the <a href=\"/demo/policies\">terms and refund policy</a></span></label><a href=\"/demo/checkout\" class=\"core-cart-page__checkout-btn\" aria-disabled=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M2 3h2l2.4 9.6a1 1 0 001 .4H15a1 1 0 00.97-.76L17 7H5\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><circle cx=\"8\" cy=\"17\" r=\"1\" fill=\"currentColor\"></circle><circle cx=\"14\" cy=\"17\" r=\"1\" fill=\"currentColor\"></circle></svg>Checkout</a><a href=\"/demo/\" class=\"core-cart-page__continue-link\">Continue shopping</a></div></div></div></div></div>",
+    "empty": "<div data-brand-root=\"true\" style=\"--brand-bg:#ffffff;--brand-surface:#f9f9f9;--brand-surface-muted:#f2f2f2;--brand-text:#111111;--brand-text-muted:#6b7280;--brand-primary:#111111;--brand-button-bg:#111111;--brand-button-hover-bg:#000000;--brand-accent:#111111;--brand-accent-soft:rgba(17, 17, 17, 0.12);--brand-on-accent:#ffffff;--brand-button-text:#ffffff;--brand-border:#e5e5e5;--brand-success:#16a34a;--brand-warning:#d97706;--brand-danger:#dc2626;--font-heading:Georgia;--font-body:Helvetica Neue;--fs-xs:10.24px;--fs-sm:12.8px;--fs-base:16px;--fs-lg:20px;--fs-xl:25px;--fs-2xl:31.25px;--fs-3xl:39.06px;--fw-heading:600;--fw-body:400;--case-heading:none;--tracking-heading:0em;--tracking-body:0em;--leading-heading:1.15;--leading-body:1.5;--space-unit:1rem;--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.5rem;--space-6:2rem;--space-7:3rem;--space-8:4rem;--radius-sm:6px;--radius-md:10px;--radius-lg:16px;--border-weight:1px;--radius-pill:9999px;--shadow-1:0 1px 2px rgba(15, 15, 15, 0.06);--shadow-2:0 4px 10px rgba(15, 15, 15, 0.08);--shadow-3:0 10px 24px rgba(15, 15, 15, 0.10);--duration-fast:150ms;--duration-base:250ms;--duration-slow:400ms;--ease:ease;--image-fit:cover;--image-filter:none\"><div class=\"core-cart-page\"><h1 class=\"core-cart-page__title\">Your cart</h1><div class=\"core-cart-page__empty\"><p>Your cart is empty.</p><a href=\"/demo/\" class=\"core-checkout__back-link\">Browse products</a></div></div></div>"
+  },
+  "hooks": {
+    "panel": {
+      "isOpen": true,
+      "items": [
+        {
+          "id": "p1",
+          "product_id": "p1",
+          "shop_id": "s1",
+          "title": "Mug",
+          "image": null,
+          "unit_price": 5000,
+          "quantity": 2,
+          "addons": []
+        },
+        {
+          "id": "p2::v1-a1",
+          "product_id": "p2",
+          "shop_id": "s1",
+          "title": "Shirt",
+          "image": null,
+          "unit_price": 12500.5,
+          "quantity": 3,
+          "addons": [
+            {
+              "addon_id": "a",
+              "item_id": "a1",
+              "name": "Gift wrap",
+              "price": 500
+            }
+          ],
+          "variant_id": "v1",
+          "variant_title": "Blue"
+        },
+        {
+          "id": "p3~p-aaaaaaaaaaaa",
+          "product_id": "p3",
+          "shop_id": "s1",
+          "title": "Cup",
+          "image": null,
+          "unit_price": 1.25,
+          "quantity": 4,
+          "addons": [],
+          "properties": {
+            "app.engraving.text": "Ada"
+          },
+          "property_labels": {
+            "app.engraving.text": "Engraving text"
+          }
+        }
+      ],
+      "total": 47506.5,
+      "currency": "NGN",
+      "onClose": "function",
+      "onCheckout": "function",
+      "onViewCart": "function",
+      "onBrowseCollections": "function",
+      "onSetQuantity": "function",
+      "onRemove": "function"
+    },
+    "shopCart": {
+      "items": [
+        {
+          "id": "p1",
+          "product_id": "p1",
+          "shop_id": "s1",
+          "title": "Mug",
+          "image": null,
+          "unit_price": 5000,
+          "quantity": 2,
+          "addons": []
+        },
+        {
+          "id": "p2::v1-a1",
+          "product_id": "p2",
+          "shop_id": "s1",
+          "title": "Shirt",
+          "image": null,
+          "unit_price": 12500.5,
+          "quantity": 3,
+          "addons": [
+            {
+              "addon_id": "a",
+              "item_id": "a1",
+              "name": "Gift wrap",
+              "price": 500
+            }
+          ],
+          "variant_id": "v1",
+          "variant_title": "Blue"
+        },
+        {
+          "id": "p3~p-aaaaaaaaaaaa",
+          "product_id": "p3",
+          "shop_id": "s1",
+          "title": "Cup",
+          "image": null,
+          "unit_price": 1.25,
+          "quantity": 4,
+          "addons": [],
+          "properties": {
+            "app.engraving.text": "Ada"
+          },
+          "property_labels": {
+            "app.engraving.text": "Engraving text"
+          }
+        }
+      ],
+      "count": 9,
+      "total": 47506.5,
+      "setQuantity": "function",
+      "removeItem": "function",
+      "clearShopCart": "function"
+    }
+  }
+}

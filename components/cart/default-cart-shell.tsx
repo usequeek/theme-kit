@@ -9,10 +9,36 @@ import { useThemeStrings } from '../../provider';
 import { useCheckoutStore } from '../../stores/checkout-store';
 import { useRelatedProducts } from '../../hooks/use-related-products';
 import { useCart } from '../../hooks/use-cart';
-import { formatMoney } from '../../utils/format';
+import { formatMoney, formatWireMoney } from '../../utils/format';
+import { cartLinePricing, resolveCartPricing } from '../../utils/cart-pricing';
+import { useCartServerPricing } from '../../hooks/use-cart-server-pricing';
 import { productRequiresVariant } from '../../utils/match-variant';
 import { visibleLineProperties } from '../../utils/line-properties';
 import { Image } from '../image';
+
+/**
+ * An amount the server charges, with the list amount struck through when the
+ * server charges less. Both are server decimal strings printed as received;
+ * the accessible label states the pair once and hides the two visual fragments
+ * (a strike-through alone is not reliably announced).
+ */
+function ChargedPrice({ amount, list, currency }: { amount: string; list: string | null; currency: string }): JSX.Element {
+  const t = useThemeStrings();
+  const charged = formatWireMoney(amount, currency);
+
+  if (list === null) {
+    return <>{charged}</>;
+  }
+
+  const original = formatWireMoney(list, currency);
+
+  return (
+    <span role="group" aria-label={t('cart.item.discounted', { original, price: charged })}>
+      <del aria-hidden="true">{original}</del>{' '}
+      <ins aria-hidden="true" style={{ textDecoration: 'none' }}>{charged}</ins>
+    </span>
+  );
+}
 
 /**
  * The cart page's shared, root design — every theme's shells/cart-shell.tsx
@@ -36,6 +62,8 @@ export function DefaultCartShell({
   const [noteOpen, setNoteOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const relatedRef = useRef<HTMLDivElement>(null);
+  // What the server charges for exactly these lines, or null: list prices, as always.
+  const serverPricing = resolveCartPricing(useCartServerPricing(), items);
 
   const firstSlug = items.find((item) => item.slug)?.slug ?? '';
   const { products: related } = useRelatedProducts(firstSlug, 6);
@@ -68,7 +96,10 @@ export function DefaultCartShell({
         <div className="core-cart-page__main">
           <div className="core-cart-page__items-card">
             <ul className="core-cart-page__items">
-              {items.map((item) => (
+              {items.map((item) => {
+                const linePricing = cartLinePricing(serverPricing, item.id);
+
+                return (
                 <li key={`${item.shop_id}-${item.id}`} className="core-cart-page__item">
                   {item.image ? (
                     <Image src={item.image} alt={item.title} className="core-cart-page__item-img" />
@@ -80,7 +111,7 @@ export function DefaultCartShell({
                     {visibleLineProperties(item).map((row) => (
                       <span key={row.key} className="core-cart-page__item-price">{`${row.label}: ${row.value}`}</span>
                     ))}
-                    <span className="core-cart-page__item-price">{t('cart.item.each', { price: formatMoney(item.unit_price, currency) })}</span>
+                    <span className="core-cart-page__item-price">{t('cart.item.each', { price: linePricing ? formatWireMoney(linePricing.unit_price, currency) : formatMoney(item.unit_price, currency) })}</span>
                   </div>
                   <div className="core-cart-page__item-qty">
                     <button type="button" onClick={() => onDecrease(item.id, item.shop_id)} aria-label={t('cart.item.decrease', { title: item.title })}>
@@ -91,14 +122,19 @@ export function DefaultCartShell({
                       <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                     </button>
                   </div>
-                  <span className="core-cart-page__item-total">{formatMoney(item.unit_price * item.quantity, currency)}</span>
+                  <span className="core-cart-page__item-total">
+                    {linePricing ? (
+                      <ChargedPrice amount={linePricing.line_total} list={linePricing.list_line_total} currency={currency} />
+                    ) : formatMoney(item.unit_price * item.quantity, currency)}
+                  </span>
                   <button type="button" className="core-cart-page__item-remove" onClick={() => onRemove(item.id, item.shop_id)} aria-label={t('cart.item.remove', { title: item.title })}>
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                       <path d="M4 6h12M8 6V4.5A1.5 1.5 0 019.5 3h1A1.5 1.5 0 0112 4.5V6m-6 0v9.5A1.5 1.5 0 007.5 17h5a1.5 1.5 0 001.5-1.5V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
 
@@ -184,7 +220,11 @@ export function DefaultCartShell({
 
             <div className="core-cart-page__subtotal">
               <span>{t('cart.summary.subtotal')}</span>
-              <strong>{formatMoney(total, currency)} {currency}</strong>
+              <strong>
+                {serverPricing ? (
+                  <ChargedPrice amount={serverPricing.total} list={serverPricing.list_total} currency={currency} />
+                ) : formatMoney(total, currency)} {currency}
+              </strong>
             </div>
 
             <label className="core-cart-page__terms">

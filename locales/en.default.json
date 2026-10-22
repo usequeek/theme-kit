@@ -9,7 +9,8 @@
       "each": "{price} each",
       "decrease": "Decrease {title}",
       "increase": "Increase {title}",
-      "remove": "Remove {title}"
+      "remove": "Remove {title}",
+      "discounted": "Was {original}, now {price}"
     },
     "related": {
       "title": "You may also like",

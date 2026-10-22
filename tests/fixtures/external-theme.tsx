@@ -7,7 +7,12 @@ import { useCart } from '@usequeek/theme-kit/hooks/use-cart';
 import { useProducts } from '@usequeek/theme-kit/hooks/use-products';
 import { useStorefront } from '@usequeek/theme-kit/provider';
 import { useHref } from '@usequeek/theme-kit/hooks/use-href';
-import { formatMoney } from '@usequeek/theme-kit/utils/format';
+import { formatMoney, formatWireMoney } from '@usequeek/theme-kit/utils/format';
+import { cartLinePricing } from '@usequeek/theme-kit/utils/cart-pricing';
+import type { CartServerPricing } from '@usequeek/theme-kit/utils/cart-pricing';
+import { useShopCart } from '@usequeek/theme-kit/hooks/use-shop-cart';
+import { CartServerPricingProvider, useCartServerPricing } from '@usequeek/theme-kit/hooks/use-cart-server-pricing';
+import { CartPanelController } from '@usequeek/theme-kit/components/cart/cart-panel-controller';
 import { Image } from '@usequeek/theme-kit/components/image';
 import { LanguageSwitcher } from '@usequeek/theme-kit/components/language-switcher';
 import { useLocales } from '@usequeek/theme-kit/hooks/use-locales';
@@ -48,6 +53,45 @@ export function Footer({ copyright }: FooterProps): JSX.Element {
       {hasMultiple ? locales.map((l) => <a key={l.locale} href={hrefFor(l)}>{label(l)}</a>) : null}
     </footer>
   );
+}
+
+/** A cart drawer that prints what the server charges, through the kit only. */
+export function CartDrawer(): JSX.Element {
+  return (
+    <CartPanelController>
+      {({ isOpen, items, total, pricing, currency }) => {
+        const charged: CartServerPricing | null = pricing;
+
+        return isOpen ? (
+          <ul>
+            {items.map((item) => {
+              const line = cartLinePricing(charged, item.id);
+
+              return (
+                <li key={item.id}>
+                  {line?.list_line_total ? <del>{formatWireMoney(line.list_line_total, currency)}</del> : null}
+                  {line ? formatWireMoney(line.line_total, currency) : formatMoney(item.unit_price * item.quantity, currency)}
+                </li>
+              );
+            })}
+            <li>{charged ? formatWireMoney(charged.total, currency) : formatMoney(total, currency)}</li>
+          </ul>
+        ) : <></>;
+      }}
+    </CartPanelController>
+  );
+}
+
+export function CartCount({ shopId }: { shopId: string }): JSX.Element {
+  const { count, pricing } = useShopCart(shopId);
+  const provided = useCartServerPricing();
+
+  return <span>{count}{pricing ? pricing.total : provided?.total ?? ''}</span>;
+}
+
+/** What a host app does: one provider above every theme. */
+export function HostSeam({ pricing, children }: { pricing: CartServerPricing | null; children: JSX.Element }): JSX.Element {
+  return <CartServerPricingProvider value={pricing}>{children}</CartServerPricingProvider>;
 }
 
 export function ProductCard({ product }: { product: Product }): JSX.Element {

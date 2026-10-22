@@ -171,6 +171,42 @@ export function formatMoney(
   }
 }
 
+/**
+ * Format a money amount the server sent as a decimal STRING ("4500.00",
+ * KWD "1.250") without a float round trip: the string reaches Intl untouched,
+ * at the currency's own precision, with decimals shown only when present (the
+ * same style as `formatMoney`, which caps at 2 digits). Returns an empty string
+ * for anything that is not a plain non-negative decimal. Never computes, never throws.
+ *
+ * @example
+ * formatWireMoney('4500.00', 'NGN'); // "₦4,500"
+ */
+export function formatWireMoney(
+  amount: string,
+  currency = PLATFORM_DEFAULT_CURRENCY,
+  locale?: string | null,
+): string {
+  if (typeof amount !== 'string' || !/^\d+(\.\d+)?$/.test(amount)) {
+    return '';
+  }
+
+  const code = normalizeCurrencyCode(currency);
+  const tag = displayTagFor(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
+  try {
+    const precision = new Intl.NumberFormat(tag, { style: 'currency', currency: code }).resolvedOptions().maximumFractionDigits ?? 2;
+
+    // Intl parses a decimal string exactly; the cast only satisfies the lib typing.
+    return new Intl.NumberFormat(tag, {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: precision,
+    }).format(amount as unknown as number);
+  } catch {
+    return `${code} ${amount}`;
+  }
+}
+
 /** A whole-number percentage string, e.g. `toPercent(12.4)` is `"12%"`. */
 /**
  * The one rounding for an amount the kit computes (event values, line totals):

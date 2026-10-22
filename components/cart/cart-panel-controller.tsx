@@ -9,12 +9,15 @@ import { useHref } from '../../hooks/use-href';
 import { useShopCart } from '../../hooks/use-shop-cart';
 import { useCartPanelStore } from '../../stores/cart-panel-store';
 import { normalizeCurrencyCode } from '../../utils/format';
+import type { CartServerPricing } from '../../utils/cart-pricing';
 
 /** What {@link CartPanelController} hands to your render function: the panel state, this shop's lines, and the actions that change them. */
 export interface CartPanelControllerRenderProps {
   isOpen: boolean;
   items: CartItem[];
   total: number;
+  /** What the server charges for these lines (decimal strings; print them with `formatWireMoney`), or `null`: print list prices. Never compute a discount. */
+  pricing: CartServerPricing | null;
   currency: string;
   onClose: () => void;
   onCheckout: () => void;
@@ -46,7 +49,7 @@ export function CartPanelController({
   const router = useRouter();
   const isOpen = useCartPanelStore((state) => state.isOpen);
   const closePanel = useCartPanelStore((state) => state.close);
-  const { items, total, setQuantity, removeItem } = useShopCart(vendor.id);
+  const { items, total, pricing, setQuantity, removeItem } = useShopCart(vendor.id);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -71,6 +74,7 @@ export function CartPanelController({
     isOpen,
     items,
     total,
+    pricing,
     // Store-wide display uses the vendor's currency; item rows carry their own.
     // List-level meta.currency is never read (platform default, wrong per store).
     currency: normalizeCurrencyCode(vendor.currency),
