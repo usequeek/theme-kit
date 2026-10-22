@@ -8,7 +8,7 @@ const toastSpy = vi.fn();
 const addToCartSpy = vi.fn();
 
 vi.mock('../stores/toast-store', () => ({ toast: (...args: unknown[]) => toastSpy(...args) }));
-vi.mock('../apps/analytics-events', () => ({ pushAddToCart: (...args: unknown[]) => addToCartSpy(...args) }));
+vi.mock('../apps/storefront-events', () => ({ trackStorefrontEvent: (...args: unknown[]) => addToCartSpy(...args) }));
 
 import { makeItemId, useCartStore } from '../stores/cart-store';
 import { useLineTextStore } from '../stores/line-text-store';

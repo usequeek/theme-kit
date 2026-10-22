@@ -6,7 +6,7 @@ import type { CartAddon, CartItem } from '../types/cart';
 import type { Product, ProductVariant } from '../types/product';
 import { toast } from './toast-store';
 import { normalizeCurrencyCode, PLATFORM_DEFAULT_CURRENCY } from '../utils/format';
-import { pushAddToCart } from '../apps/analytics-events';
+import { trackStorefrontEvent } from '../apps/storefront-events';
 import { getActivePlatform, platformScopedStorage } from '../sdk/platform';
 import { productRequiresVariant } from '../utils/match-variant';
 import { readLineText } from './line-text-store';
@@ -154,10 +154,13 @@ export const useCartStore = create<CartState>()(
             showCart: true,
           });
         }
-        pushAddToCart(
-          { item_id: product.id, item_name: product.title, price: unitPrice, quantity: Math.max(1, quantity) },
-          get().currency,
-        );
+        const addedQuantity = Math.max(1, quantity);
+
+        trackStorefrontEvent('product_added_to_cart', {
+          currency: get().currency,
+          value: unitPrice * addedQuantity,
+          items: [{ item_id: product.id, item_name: product.title, price: unitPrice, quantity: addedQuantity }],
+        });
 
         set((state) => {
           const existing = state.items.findIndex(

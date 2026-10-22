@@ -27,6 +27,7 @@ export * from './components/checkout/default-checkout-shell';
 export * from './components/checkout/checkout-contact';
 export * from './components/checkout/policy-links';
 export * from './apps/follow-card';
+export * from './apps/storefront-events';
 export * from './apps/subscribe-form';
 export * from './api/collections';
 export * from './api/orders';

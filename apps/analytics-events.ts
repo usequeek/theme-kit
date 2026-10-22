@@ -1,32 +1,36 @@
 'use client';
 
-import { gtagPush } from './gtag';
+import { trackStorefrontEvent, type StorefrontEventItem } from './storefront-events';
 
 /**
- * Not gated on consent here — Consent Mode (see analytics.tsx) is what
- * decides whether gtag.js actually transmits anything for a denied visitor.
- * Callers push events unconditionally; Google's library filters them.
+ * DEPRECATED. Thin wrappers over the storefront event bus (`./storefront-events`),
+ * kept only because the storefront deployed today still imports `pushViewItem`
+ * and `pushPurchase` from this path. They emit through the bus, so every
+ * subscriber sees them; new code calls `trackStorefrontEvent` directly. Remove
+ * once the storefront is on the bus.
  */
-interface GaItem {
-  item_id: string;
-  item_name: string;
-  price: number;
-  quantity?: number;
+type LegacyItem = Omit<StorefrontEventItem, 'quantity'> & { quantity?: number };
+
+export function pushViewItem(item: LegacyItem, currency: string): void {
+  trackStorefrontEvent('product_viewed', {
+    currency,
+    value: item.price,
+    items: [{ ...item, quantity: item.quantity ?? 1 }],
+  });
 }
 
-export function pushViewItem(item: GaItem, currency: string): void {
-  gtagPush('event', 'view_item', { currency, value: item.price, items: [item] });
-}
-
-export function pushAddToCart(item: GaItem, currency: string): void {
-  gtagPush('event', 'add_to_cart', { currency, value: item.price * (item.quantity ?? 1), items: [item] });
-}
-
-export function pushPurchase(args: { transactionId: string; value: number; currency: string; items: GaItem[] }): void {
-  gtagPush('event', 'purchase', {
-    transaction_id: args.transactionId,
-    value: args.value,
+/** Legacy callers only fire this for a placed order, so `paid` is true. */
+export function pushPurchase(args: {
+  transactionId: string;
+  value: number;
+  currency: string;
+  items: LegacyItem[];
+}): void {
+  trackStorefrontEvent('checkout_completed', {
+    order_no: args.transactionId,
     currency: args.currency,
-    items: args.items,
+    value: args.value,
+    paid: true,
+    items: args.items.map((item) => ({ ...item, quantity: item.quantity ?? 1 })),
   });
 }

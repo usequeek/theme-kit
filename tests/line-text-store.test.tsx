@@ -5,7 +5,7 @@ import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../stores/toast-store', () => ({ toast: vi.fn() }));
-vi.mock('../apps/analytics-events', () => ({ pushAddToCart: vi.fn() }));
+vi.mock('../apps/storefront-events', () => ({ trackStorefrontEvent: vi.fn() }));
 
 import { StorefrontProvider } from '../provider';
 import { DefaultCartShell } from '../components/cart/default-cart-shell';

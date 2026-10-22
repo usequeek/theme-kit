@@ -225,7 +225,13 @@ export interface StorefrontConfig {
   }>;
   apps?: {
     whatsapp_chat?: { enabled?: boolean; number?: string; message?: string; position?: string; bottom_offset?: number };
-    analytics?: { enabled?: boolean; ga_id?: string };
+    analytics?: {
+      enabled?: boolean;
+      ga_id?: string;
+      meta_pixel_id?: string;
+      tiktok_pixel_id?: string;
+      pinterest_tag_id?: string;
+    };
     follow_card?: { enabled?: boolean; display?: 'floating' | 'footer' | 'block'; position?: string };
     subscribe?: {
       enabled?: boolean;
