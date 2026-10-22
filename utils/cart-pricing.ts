@@ -45,9 +45,10 @@ function isGreater(a: string, b: string): boolean {
     return left.length > right.length;
   }
 
-  const width = Math.max(aFraction.length, bFraction.length);
-  const leftDigits = left + aFraction.padEnd(width, '0');
-  const rightDigits = right + bFraction.padEnd(width, '0');
+  // Equal-width digit strings compare in numeric order; this only orders text, it computes nothing.
+  const width = aFraction.length > bFraction.length ? aFraction.length : bFraction.length;
+  const leftDigits = `${left}${aFraction.padEnd(width, '0')}`;
+  const rightDigits = `${right}${bFraction.padEnd(width, '0')}`;
 
   return leftDigits > rightDigits;
 }
@@ -61,7 +62,7 @@ function strikeOf(list: unknown, charged: string): string | null {
  * The server pricing that may stand for these cart lines, or null.
  *
  * It stands only when it covers the lines one to one: same count, every line
- * found by id with the same quantity, no id twice, and every amount a plain
+ * found by id with the same quantity, and every amount a plain
  * non-negative decimal string. Anything else (no pricing, a line added or
  * re-quantified since the server read, a malformed amount) is null, and the
  * caller prints its own list prices exactly as it always has: nothing is
@@ -83,13 +84,7 @@ export function resolveCartPricing(
   const byId = new Map<string, CartLinePricing>();
 
   for (const entry of pricing.lines) {
-    if (
-      !entry
-      || typeof entry.line_id !== 'string'
-      || byId.has(entry.line_id)
-      || !isDecimal(entry.unit_price)
-      || !isDecimal(entry.line_total)
-    ) {
+    if (!entry || typeof entry.line_id !== 'string' || !isDecimal(entry.unit_price) || !isDecimal(entry.line_total)) {
       return null;
     }
 

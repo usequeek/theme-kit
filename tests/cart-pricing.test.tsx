@@ -100,10 +100,13 @@ describe('with server pricing', () => {
   it('prints the discounted line total with the list total struck, and the cart total the same way', () => {
     const html = renderShell('mixed', CART_CASES, withPricing(MIXED_PRICING));
 
-    expect(html).toContain('<del aria-hidden="true">₦10,000</del> <ins aria-hidden="true" style="text-decoration:none">₦9,000</ins>');
-    expect(html).toContain('<del aria-hidden="true">₦49,006.5</del> <ins aria-hidden="true" style="text-decoration:none">₦44,006.5</ins>');
-    expect(html).toContain('aria-label="Was ₦10,000, now ₦9,000"');
-    expect(html).toContain('aria-label="Was ₦49,006.5, now ₦44,006.5"');
+    expect(html).toContain('<del class="core-cart-item__was" aria-hidden="true">₦10,000</del> <ins class="core-cart-item__now" aria-hidden="true" style="text-decoration:none">₦9,000</ins>');
+    expect(html).toContain('<del class="core-cart-item__was" aria-hidden="true">₦49,006.5</del> <ins class="core-cart-item__now" aria-hidden="true" style="text-decoration:none">₦44,006.5</ins>');
+    // One visually hidden sentence per pair is what assistive technology reads; the pair itself is hidden from it.
+    expect(html).toMatch(/<span style="[^"]*clip:rect\(0 0 0 0\)[^"]*">Was ₦10,000, now ₦9,000<\/span>/);
+    expect(html).toMatch(/<span style="[^"]*clip:rect\(0 0 0 0\)[^"]*">Was ₦49,006.5, now ₦44,006.5<\/span>/);
+    expect(html).not.toContain('aria-label="Was');
+    expect(html).not.toContain('role="group"');
     // The "each" line states the server's unit price.
     expect(html).toContain('₦4,500 each');
     // A line the server does not discount shows its charged total plain, no strike.
@@ -261,11 +264,83 @@ describe('the kit does no price arithmetic of its own on server amounts', () => 
     }
   });
 
-  it('source: no float parsing or rounding in the overlay path', () => {
-    for (const file of ['utils/cart-pricing.ts', 'hooks/use-cart-server-pricing.tsx']) {
-      const source = readFileSync(join(ROOT, file), 'utf8');
+  /** Comments and string/template/regex literal contents removed, so only code is scanned. */
+  const codeOf = (source: string): string =>
+    source
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1')
+      .replace(/`(?:[^`\\]|\\.)*`/g, '``')
+      .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
+      .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
+      .replace(/<\/?[A-Za-z][^<>]*>/g, '')
+      .replace(/(?<=[=(,:?&|!]\s*)\/(?![*/])(?:[^/\\\n]|\\.)+\/[a-z]*/g, 'RE');
 
-      expect(source, file).not.toMatch(/parseFloat|Number\(|toFixed|Math\.(round|floor|ceil)|roundAmount/);
+  /** Anything that parses, coerces, rounds or does arithmetic on an amount. */
+  const ARITHMETIC = new RegExp([
+    '\\b(?:parseFloat|parseInt|Number|BigInt|toFixed|toPrecision|Math|roundAmount|valueOf)\\b',
+    '(?<![\\w)\\]\'"])[+-]\\s*[\\w(.]',
+    '[\\w)\\]]\\s*[-+*/%]\\s*[\\w(.]',
+    '[*/]\\s*1\\b',
+    '~~',
+    '\\|\\s*0\\b',
+    '\\*\\*',
+  ].join('|'));
+
+  /** The text of one named top-level declaration (up to its closing brace at column 0). */
+  const declaration = (file: string, start: string): string => {
+    const source = readFileSync(join(ROOT, file), 'utf8');
+    const from = source.indexOf(start);
+
+    expect(from, `${file}: ${start}`).toBeGreaterThanOrEqual(0);
+
+    return source.slice(from, source.indexOf('\n}\n', from) + 3);
+  };
+
+  /** The lines of a file that touch the overlay (the rest of the file predates it and does list-price maths). */
+  const overlayLines = (file: string): string =>
+    readFileSync(join(ROOT, file), 'utf8')
+      .split('\n')
+      .filter((line) => /pricing|Pricing|provided|ChargedPrice/.test(line))
+      .join('\n');
+
+  it('scanner: catches every way to compute on an amount, passes plain code', () => {
+    for (const bad of ['parseFloat(x)', 'parseInt(x, 10)', 'Number(x)', 'BigInt(x)', 'x.toFixed(2)', 'Math.round(x)', 'const y = +x;', 'a - b', 'x * 1', '1 * x', 'x / 1', 'x | 0', '~~x', 'a + b', 'x ** 2', 'x - 0', 'x.valueOf()']) {
+      expect(ARITHMETIC.test(codeOf(bad)), bad).toBe(true);
+    }
+    for (const fine of ["const t = 'a + b'; // x * 1", 'return list === null ? null : list;', 'const a = b ?? c;', 'x.split(".")', 'const r = /^\\d+(\\.\\d+)?$/;']) {
+      expect(ARITHMETIC.test(codeOf(fine)), fine).toBe(false);
+    }
+  });
+
+  it('source: nothing the overlay touches parses, coerces, rounds or computes', () => {
+    const scanned: Record<string, string> = {
+      'utils/cart-pricing.ts': readFileSync(join(ROOT, 'utils/cart-pricing.ts'), 'utf8'),
+      'hooks/use-cart-server-pricing.tsx': readFileSync(join(ROOT, 'hooks/use-cart-server-pricing.tsx'), 'utf8'),
+      'format.ts formatWireMoney': declaration('utils/format.ts', 'export function formatWireMoney'),
+      'default-cart-shell.tsx ChargedPrice': declaration('components/cart/default-cart-shell.tsx', 'function ChargedPrice'),
+      'default-cart-shell.tsx overlay lines': overlayLines('components/cart/default-cart-shell.tsx'),
+      'use-shop-cart.ts overlay lines': overlayLines('hooks/use-shop-cart.ts'),
+      'cart-panel-controller.tsx overlay lines': overlayLines('components/cart/cart-panel-controller.tsx'),
+    };
+
+    for (const [name, source] of Object.entries(scanned)) {
+      expect(source.length, name).toBeGreaterThan(0);
+      expect(codeOf(source).split('\n').filter((line) => ARITHMETIC.test(line)), name).toEqual([]);
+    }
+  });
+});
+
+describe('formatWireMoney', () => {
+  const plain = (text: string): string => text.replace(/\u00a0/g, ' ');
+
+  it('prints at the currency precision and refuses what is not a plain decimal', () => {
+    expect(plain(formatWireMoney('1500', 'UGX'))).toBe('UGX 1,500');
+    expect(plain(formatWireMoney('1500.50', 'UGX'))).toBe('UGX 1,501');
+    expect(formatWireMoney('1.2345', 'NGN')).toBe('₦1.23');
+    expect(plain(formatWireMoney('1.250', 'KWD'))).toBe('KWD 1.25');
+    expect(plain(formatWireMoney('1.2505', 'KWD'))).toBe('KWD 1.251');
+    for (const bad of ['', '-1.00', '1,5', ' 1', '1e3', 'abc', null, undefined, 12]) {
+      expect(formatWireMoney(bad as never, 'NGN'), String(bad)).toBe('');
     }
   });
 });

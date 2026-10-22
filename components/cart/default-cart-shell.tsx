@@ -1,6 +1,6 @@
 'use client';
 
-import type { JSX } from 'react';
+import type { CSSProperties, JSX } from 'react';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import type { CartShellProps } from '../../types/theme';
@@ -16,11 +16,31 @@ import { productRequiresVariant } from '../../utils/match-variant';
 import { visibleLineProperties } from '../../utils/line-properties';
 import { Image } from '../image';
 
+/** The standard visually-hidden recipe, inline because the kit ships no CSS for the cart page. */
+const VISUALLY_HIDDEN: CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  margin: -1,
+  padding: 0,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+};
+
 /**
  * An amount the server charges, with the list amount struck through when the
- * server charges less. Both are server decimal strings printed as received;
- * the accessible label states the pair once and hides the two visual fragments
- * (a strike-through alone is not reliably announced).
+ * server charges less. Both are server decimal strings printed as received.
+ *
+ * Assistive technology reads ONE visually hidden sentence ("Was X, now Y", a
+ * plain text node, so it is read in browse mode too) and the visible `<del>` /
+ * `<ins>` pair is hidden from it: a deletion's semantics are announced
+ * unevenly across screen readers and an `aria-label` on a generic wrapper can
+ * be skipped, while a text node cannot. Themes style the pair through
+ * `core-cart-item__was` / `core-cart-item__now`; the inline `text-decoration`
+ * is the fallback for a theme without those classes (it sets nothing else, so
+ * a theme's colour rule still applies).
  */
 function ChargedPrice({ amount, list, currency }: { amount: string; list: string | null; currency: string }): JSX.Element {
   const t = useThemeStrings();
@@ -33,10 +53,11 @@ function ChargedPrice({ amount, list, currency }: { amount: string; list: string
   const original = formatWireMoney(list, currency);
 
   return (
-    <span role="group" aria-label={t('cart.item.discounted', { original, price: charged })}>
-      <del aria-hidden="true">{original}</del>{' '}
-      <ins aria-hidden="true" style={{ textDecoration: 'none' }}>{charged}</ins>
-    </span>
+    <>
+      <span style={VISUALLY_HIDDEN}>{t('cart.item.discounted', { original, price: charged })}</span>
+      <del className="core-cart-item__was" aria-hidden="true">{original}</del>{' '}
+      <ins className="core-cart-item__now" aria-hidden="true" style={{ textDecoration: 'none' }}>{charged}</ins>
+    </>
   );
 }
 

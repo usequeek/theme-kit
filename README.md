@@ -144,8 +144,8 @@ they keep the data already on screen. They return `isLoading`, except
 `useShopCart(shopId)` and `CartPanelController` also return `pricing`: what the
 server charges for exactly the lines on screen (quantity-break and spend-gate
 discounts included), or `null`. Amounts are decimal strings as the server sent
-them; print them with `formatWireMoney(amount, currency)` and never compute a
-discount in a theme. When `pricing` is `null`, print `unit_price x quantity` as
+them; print them with `formatWireMoney(amount, currency)` (from
+`utils/format`) and never compute a discount in a theme. When `pricing` is `null`, print `unit_price x quantity` as
 before.
 
 ```tsx
@@ -154,15 +154,22 @@ const { items, total, pricing } = useShopCart(vendor.id);
 items.map((item) => {
   const line = cartLinePricing(pricing, item.id); // from utils/cart-pricing
   return line ? (
-    <>
+    <Fragment key={item.id}>
       {line.list_line_total ? <del>{formatWireMoney(line.list_line_total, currency)}</del> : null}
       <ins>{formatWireMoney(line.line_total, currency)}</ins>
-    </>
+    </Fragment>
   ) : (
     formatMoney(item.unit_price * item.quantity, currency)
   );
 });
 ```
+
+`formatWireMoney` hands the string to Intl at the currency's own precision, so a
+zero-decimal currency prints no decimals and an amount with more digits than the
+currency has is rounded by Intl; it returns an empty string for anything that is
+not a plain non-negative decimal. The storefront app keeps a different
+`formatWireMoney` (it accepts numbers and negatives and returns an em dash for a
+missing amount); the wiring item must converge on one of them.
 
 The host app supplies the server pricing once, above every theme, with
 `<CartServerPricingProvider value={pricing}>` (`hooks/use-cart-server-pricing`).

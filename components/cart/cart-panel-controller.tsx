@@ -16,8 +16,8 @@ export interface CartPanelControllerRenderProps {
   isOpen: boolean;
   items: CartItem[];
   total: number;
-  /** What the server charges for these lines (decimal strings; print them with `formatWireMoney`), or `null`: print list prices. Never compute a discount. */
-  pricing: CartServerPricing | null;
+  /** What the server charges for these lines (decimal strings; print them with `formatWireMoney`), or `null`/absent: print list prices. Never compute a discount. The controller always passes it; it is optional in the type so a hand-built props object (a test, a story) stays valid. */
+  pricing?: CartServerPricing | null;
   currency: string;
   onClose: () => void;
   onCheckout: () => void;

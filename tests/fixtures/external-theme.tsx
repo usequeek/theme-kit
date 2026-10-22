@@ -12,7 +12,7 @@ import { cartLinePricing } from '@usequeek/theme-kit/utils/cart-pricing';
 import type { CartServerPricing } from '@usequeek/theme-kit/utils/cart-pricing';
 import { useShopCart } from '@usequeek/theme-kit/hooks/use-shop-cart';
 import { CartServerPricingProvider, useCartServerPricing } from '@usequeek/theme-kit/hooks/use-cart-server-pricing';
-import { CartPanelController } from '@usequeek/theme-kit/components/cart/cart-panel-controller';
+import { CartPanelController, type CartPanelControllerRenderProps } from '@usequeek/theme-kit/components/cart/cart-panel-controller';
 import { Image } from '@usequeek/theme-kit/components/image';
 import { LanguageSwitcher } from '@usequeek/theme-kit/components/language-switcher';
 import { useLocales } from '@usequeek/theme-kit/hooks/use-locales';
@@ -60,7 +60,7 @@ export function CartDrawer(): JSX.Element {
   return (
     <CartPanelController>
       {({ isOpen, items, total, pricing, currency }) => {
-        const charged: CartServerPricing | null = pricing;
+        const charged: CartServerPricing | null | undefined = pricing;
 
         return isOpen ? (
           <ul>
@@ -81,6 +81,20 @@ export function CartDrawer(): JSX.Element {
     </CartPanelController>
   );
 }
+
+/** Props built by hand, the way a theme's own test or story does, before `pricing` existed: must still type. */
+export const HAND_BUILT_PANEL_PROPS: CartPanelControllerRenderProps = {
+  isOpen: false,
+  items: [],
+  total: 0,
+  currency: 'NGN',
+  onClose: () => {},
+  onCheckout: () => {},
+  onViewCart: () => {},
+  onBrowseCollections: () => {},
+  onSetQuantity: () => {},
+  onRemove: () => {},
+};
 
 export function CartCount({ shopId }: { shopId: string }): JSX.Element {
   const { count, pricing } = useShopCart(shopId);
