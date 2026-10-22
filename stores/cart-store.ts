@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { CartAddon, CartItem } from '../types/cart';
 import type { Product, ProductVariant } from '../types/product';
 import { toast } from './toast-store';
-import { normalizeCurrencyCode, PLATFORM_DEFAULT_CURRENCY } from '../utils/format';
+import { normalizeCurrencyCode, PLATFORM_DEFAULT_CURRENCY, roundAmount } from '../utils/format';
 import { trackStorefrontEvent } from '../apps/storefront-events';
 import { getActivePlatform, platformScopedStorage } from '../sdk/platform';
 import { productRequiresVariant } from '../utils/match-variant';
@@ -156,12 +156,6 @@ export const useCartStore = create<CartState>()(
         }
         const addedQuantity = Math.max(1, quantity);
 
-        trackStorefrontEvent('product_added_to_cart', {
-          currency: get().currency,
-          value: unitPrice * addedQuantity,
-          items: [{ item_id: product.id, item_name: product.title, price: unitPrice, quantity: addedQuantity }],
-        });
-
         set((state) => {
           const existing = state.items.findIndex(
             (entry) => entry.id === itemId && entry.shop_id === product.shop_id,
@@ -198,6 +192,12 @@ export const useCartStore = create<CartState>()(
               },
             ],
           };
+        });
+
+        trackStorefrontEvent('product_added_to_cart', {
+          currency: get().currency,
+          value: roundAmount(unitPrice * addedQuantity),
+          items: [{ item_id: product.id, item_name: product.title, price: unitPrice, quantity: addedQuantity }],
         });
       },
       removeItem: (id, shopId) => {

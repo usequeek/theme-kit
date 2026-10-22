@@ -172,6 +172,15 @@ export function formatMoney(
 }
 
 /** A whole-number percentage string, e.g. `toPercent(12.4)` is `"12%"`. */
+/**
+ * The one rounding for an amount the kit computes (event values, line totals):
+ * three decimals, enough for KWD/BHD/OMR, and it strips float noise such as
+ * 59.970000000000006. A non-finite input stays non-finite so callers can omit it.
+ */
+export function roundAmount(amount: number): number {
+  return Number(amount.toFixed(3));
+}
+
 export function toPercent(value: number): string {
   return `${Math.max(0, Math.round(value))}%`;
 }

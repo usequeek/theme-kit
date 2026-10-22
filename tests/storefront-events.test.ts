@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../stores/toast-store', () => ({ toast: vi.fn() }));
 
-import { pushPurchase, pushViewItem } from '../apps/analytics-events';
 import {
   onStorefrontEvent,
   registerGoogleAnalyticsSubscriber,
@@ -23,6 +22,10 @@ function dataLayer(): unknown[][] {
 
 beforeEach(() => {
   window.dataLayer = [];
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('GA4 subscriber', () => {
@@ -118,43 +121,93 @@ describe('GA4 subscriber', () => {
     expect(dataLayer()).toHaveLength(1);
   });
 
-  it('never pushes a customer field', () => {
-    trackStorefrontEvent('product_viewed', { currency: 'NGN', value: 1, items: [MUG] });
-    trackStorefrontEvent('checkout_started', { currency: 'NGN', value: 1, num_items: 1, items: [MUG] });
+  it('purchase value is the discounted subtotal when given, not the pre-discount items sum', () => {
     trackStorefrontEvent('checkout_completed', {
-      order_no: 'QK-1',
+      order_no: 'QK-1003',
       currency: 'NGN',
-      value: 1,
+      value: 5000, // grand total
       paid: true,
-      items: [MUG],
-      tax: 1,
-      shipping: 1,
+      items: [MUG, CAP], // pre-coupon prices: 2500.5
+      subtotal: 2000,
+      tax: 100,
+      shipping: 2900,
     });
 
-    const keys = new Set<string>();
-    const walk = (node: unknown): void => {
-      if (Array.isArray(node)) {
-        node.forEach(walk);
-      } else if (node && typeof node === 'object') {
-        for (const [key, value] of Object.entries(node)) {
-          keys.add(key);
-          walk(value);
-        }
-      }
+    expect(dataLayer()[0][2]).toMatchObject({ transaction_id: 'QK-1003', value: 2000, tax: 100, shipping: 2900 });
+  });
+
+  it('a non-finite price omits value but keeps the event', () => {
+    trackStorefrontEvent('checkout_completed', {
+      order_no: 'QK-1004',
+      currency: 'NGN',
+      value: 3000,
+      paid: true,
+      items: [MUG, { ...CAP, price: Number.NaN }],
+    });
+
+    expect(dataLayer()).toHaveLength(1);
+    expect(dataLayer()[0][1]).toBe('purchase');
+    expect(dataLayer()[0][2]).not.toHaveProperty('value');
+    expect(dataLayer()[0][2]).toMatchObject({ transaction_id: 'QK-1004', currency: 'NGN' });
+  });
+
+  it('rounds a value to the one money precision (no float noise)', () => {
+    trackStorefrontEvent('product_added_to_cart', {
+      currency: 'NGN',
+      value: 19.99 * 3,
+      items: [{ ...MUG, price: 19.99, quantity: 3 }],
+    });
+
+    expect(dataLayer()[0][2]).toMatchObject({ value: 59.97 });
+  });
+
+  it('never delivers a customer field: extras on items and payloads are stripped for every subscriber and the dataLayer', () => {
+    const seen: StorefrontEvent[] = [];
+    const off = onStorefrontEvent((event) => {
+      seen.push(event);
+    });
+    const dirtyItem = {
+      ...MUG,
+      properties: { 'app.engraving.text': 'Ada 0803 123 4567' },
+      email: 'ada@example.com',
+      phone: '08031234567',
     };
+    const dirty = <T extends object>(data: T): T => ({ ...data, email: 'ada@example.com', phone: '08031234567', name: 'Ada' });
 
-    walk(dataLayer());
+    trackStorefrontEvent('product_viewed', dirty({ currency: 'NGN', value: 1, items: [dirtyItem] }));
+    trackStorefrontEvent('product_added_to_cart', dirty({ currency: 'NGN', value: 1, items: [dirtyItem] }));
+    trackStorefrontEvent('checkout_started', dirty({ currency: 'NGN', value: 1, num_items: 1, items: [dirtyItem] }));
+    trackStorefrontEvent(
+      'checkout_completed',
+      dirty({ order_no: 'QK-1', currency: 'NGN', value: 1, paid: true, items: [dirtyItem], tax: 1, shipping: 1 }),
+    );
+    trackStorefrontEvent('search_submitted', dirty({ search_term: 'mug' }));
+    off();
 
-    for (const forbidden of ['email', 'phone', 'name', 'first_name', 'last_name', 'address', 'customer', 'user_data']) {
-      expect(keys.has(forbidden)).toBe(false);
+    expect(seen).toHaveLength(5);
+
+    for (const payload of [JSON.stringify(seen), JSON.stringify(dataLayer())]) {
+      for (const forbidden of ['email', 'phone', 'Ada', 'properties', 'ada@', '0803', 'engraving']) {
+        expect(payload).not.toContain(forbidden);
+      }
     }
+
+    expect(Object.keys(seen[0].data).sort()).toEqual(['currency', 'items', 'value']);
+    expect(Object.keys((seen[0].data as { items: object[] }).items[0]).sort()).toEqual([
+      'item_id',
+      'item_name',
+      'price',
+      'quantity',
+    ]);
   });
 });
 
 describe('the bus', () => {
   it('delivers {name, data} to subscribers and stops after unsubscribe', () => {
     const seen: StorefrontEvent[] = [];
-    const off = onStorefrontEvent((event) => seen.push(event));
+    const off = onStorefrontEvent((event) => {
+      seen.push(event);
+    });
 
     trackStorefrontEvent('product_viewed', { currency: 'NGN', value: 1, items: [MUG] });
     off();
@@ -191,16 +244,36 @@ describe('the bus', () => {
     offSecond();
   });
 
-  it('is a no-op without a window (server render)', async () => {
+  it('is a no-op without a window (server render), and subscribing stores nothing', async () => {
     vi.resetModules();
     vi.stubGlobal('window', undefined);
     const fresh = await import('../apps/storefront-events');
     const seen = vi.fn();
-    fresh.onStorefrontEvent(seen);
+    const off = fresh.onStorefrontEvent(seen);
 
     expect(() => fresh.trackStorefrontEvent('search_submitted', { search_term: 'mug' })).not.toThrow();
     expect(seen).not.toHaveBeenCalled();
+    expect(off).not.toThrow();
+
     vi.unstubAllGlobals();
+    fresh.trackStorefrontEvent('search_submitted', { search_term: 'mug' });
+    expect(seen).not.toHaveBeenCalled(); // never stored, even once a window exists
+  });
+
+  it('an async subscriber that rejects is caught', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const off = onStorefrontEvent(() => Promise.reject(new Error('late boom')));
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+
+    trackStorefrontEvent('search_submitted', { search_term: 'mug' });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    process.off('unhandledRejection', unhandled);
+
+    expect(unhandled).not.toHaveBeenCalled();
+    expect(errors).toHaveBeenCalled();
+    off();
+    errors.mockRestore();
   });
 });
 
@@ -232,6 +305,14 @@ describe('search_submitted scrub (inside the bus)', () => {
     ['7 digits exactly', '1234567'],
     ['empty', ''],
     ['whitespace only', '   '],
+    ['a full-width @', 'ada＠example.com'],
+    ['a small @', 'ada﹫example.com'],
+    ['an encoded @', 'ada%40example.com'],
+    ['an upper-case encoded @', 'ada%40EXAMPLE.com'],
+    ['superscript digits', '⁰⁸⁰³¹²³⁴⁵⁶⁷'],
+    ['circled digits', '①②③④⑤⑥⑦'],
+    ['full-width digits', '０８０３１２３４５６７'],
+    ['Arabic-Indic digits', '٠٨٠٣١٢٣٤٥٦٧'],
   ])('drops %s entirely (no subscriber, no GA push)', (_label, term) => {
     expect(delivered(term)).toEqual([]);
     expect(dataLayer()).toEqual([]);
@@ -264,24 +345,6 @@ describe('search_submitted scrub (inside the bus)', () => {
   });
 });
 
-describe('deprecated wrappers emit through the bus', () => {
-  it('pushViewItem -> view_item with a quantity', () => {
-    pushViewItem({ item_id: 'p1', item_name: 'Mug', price: 1000 }, 'NGN');
-
-    expect(dataLayer()).toEqual([
-      ['event', 'view_item', { currency: 'NGN', value: 1000, items: [{ item_id: 'p1', item_name: 'Mug', price: 1000, quantity: 1 }] }],
-    ]);
-  });
-
-  it('pushPurchase -> purchase keyed on the order number', () => {
-    pushPurchase({ transactionId: 'QK-9', value: 2000, currency: 'NGN', items: [{ item_id: 'p1', item_name: 'Mug', price: 1000, quantity: 2 }] });
-
-    expect(dataLayer()).toEqual([
-      ['event', 'purchase', { transaction_id: 'QK-9', value: 2000, currency: 'NGN', items: [{ item_id: 'p1', item_name: 'Mug', price: 1000, quantity: 2 }] }],
-    ]);
-  });
-});
-
 describe('cart store', () => {
   const product = {
     id: 'p1',
@@ -300,7 +363,9 @@ describe('cart store', () => {
 
   it('an add emits exactly one product_added_to_cart (and one GA add_to_cart)', () => {
     const seen: StorefrontEvent[] = [];
-    const off = onStorefrontEvent((event) => seen.push(event));
+    const off = onStorefrontEvent((event) => {
+      seen.push(event);
+    });
 
     useCartStore.getState().addItemWithAddons(product, 2, [{ id: 'a1', name: 'Gift wrap', price: 100 } as never]);
     off();
