@@ -199,9 +199,8 @@ async function onPress(): Promise<void> {
 
 Each line ends as `added`, `customise` (any required add-on group, pack groups
 included, or required line text: the shopper must choose on the product page),
-`variant_required`, `unavailable` (gone, inactive, out of stock, another store;
-for a tracked variant, fewer left than the quantity, read strictly because the
-payload does not say whether the store enforces stock), `failed` (the
+`variant_required`, `unavailable` (gone, inactive, `in_stock` false, another
+store; the quantity is never compared with stock, which checkout enforces), `failed` (the
 product could not be read; retry can help) or `over_limit` (past the 20th line).
 A line that is not added never stops the others. Say "added" only when
 `complete` is true. The statuses are what the kit can know from the product as

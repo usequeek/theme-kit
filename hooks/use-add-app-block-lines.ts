@@ -47,14 +47,11 @@ function resolveVariant(product: Product, line: AppBlockLine): ProductVariant | 
 
   const variant = product.variants?.find((entry) => entry.id === line.variant_id);
 
-  if (!variant || !variant.is_active || variant.inventory?.in_stock === false) {
-    return 'unavailable';
-  }
-
-  // The cart write refuses a tracked variant when the quantity exceeds its stock.
-  // Whether the store enforces stock or lets a shortfall through is not in the
-  // payload, so the kit takes the stricter reading.
-  return variant.inventory?.tracking === true && line.quantity > (variant.inventory.quantity ?? 0) ? 'unavailable' : variant;
+  // Only `in_stock` is read: the server folds the store's own stock setting into
+  // it. `tracking` and `quantity` are raw columns (a store that never enabled
+  // tracking sends every variant as tracked with 0 left), and stock is enforced
+  // at checkout, not by this helper, so a quantity is never compared with them.
+  return !variant || !variant.is_active || variant.inventory?.in_stock === false ? 'unavailable' : variant;
 }
 
 /**
@@ -62,8 +59,8 @@ function resolveVariant(product: Product, line: AppBlockLine): ProductVariant | 
  * It mirrors the cart write, which adds nothing for a variant product without a
  * valid variant and for a product with a required add-on group. A pack group
  * counts too: the server composes its items, and delivery checkout rejects a
- * line without them, so a bare line is never added. The kit itself cannot see that write (the host app syncs the cart);
- * these are the cases it can know here.
+ * line without them, so a bare line is never added. The kit itself cannot see
+ * that write (the host app syncs the cart); these are the cases it can know here.
  */
 function classify(product: Product | null, line: AppBlockLine, shopId: string): ProductVariant | AppBlockLineStatus | null {
   if (!product || product.id !== line.product_id || product.shop_id !== shopId || product.status === 'inactive') {

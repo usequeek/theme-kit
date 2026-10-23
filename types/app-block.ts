@@ -45,7 +45,8 @@ export interface AppBlockAddToCartRead {
  *   group, pack groups included, or a required line text field).
  * - `variant_required`: nothing added; a variant product with no variant on the line.
  * - `unavailable`: nothing added; the product or variant is gone, inactive, out of
- *   stock (a tracked variant with fewer left than the quantity too), from another store, or not the product the line named.
+ *   stock (`in_stock` false; the quantity is never checked, checkout enforces stock),
+ *   from another store, or not the product the line named.
  * - `failed`: nothing added; the product could not be read (network or server
  *   error) or the line is malformed. Trying again can help.
  * - `over_limit`: nothing added; the line is past the 20th of the press.

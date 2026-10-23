@@ -162,23 +162,26 @@ describe('addAppBlockLines outcomes', () => {
     expect(items()).toEqual([]);
   });
 
-  it('unavailable: a tracked variant with fewer left than the quantity; enough, untracked and untracked-product stock add', async () => {
-    const tracked = (quantity: number, tracking = true) =>
-      product('v', { variants_count: 1, variants: [variant('v1', { inventory: { in_stock: true, tracking, quantity } })] });
+  it('stock is not this helper\'s to enforce: only in_stock decides, never tracking or the quantity left', async () => {
+    const withStock = (inventory: Record<string, unknown>) =>
+      product('v', { variants_count: 1, variants: [variant('v1', { inventory: inventory as never })] });
+    const press = (inventory: Record<string, unknown>, quantity: number) =>
+      run([line('v', { variant_id: 'v1', quantity })], catalogue(withStock(inventory)));
 
-    const short = await run([line('v', { variant_id: 'v1', quantity: 5 })], catalogue(tracked(2)));
-    const exact = await run([line('v', { variant_id: 'v1', quantity: 2 })], catalogue(tracked(2)));
-    const untracked = await run([line('v', { variant_id: 'v1', quantity: 5 })], catalogue(tracked(0, false)));
-    const plainTracked = await run(
+    // What a store that never enabled tracking sends for every variant.
+    const defaults = await press({ in_stock: true, tracking: true, quantity: 0 }, 1);
+    const short = await press({ in_stock: true, tracking: true, quantity: 2 }, 5);
+    const out = await press({ in_stock: false, tracking: true, quantity: 0 }, 1);
+    const plain = await run(
       [line('a', { quantity: 5 })],
       catalogue(product('a', { inventory: { in_stock: true, tracking: true, quantity: 2 } })),
     );
 
-    expect(short.outcomes[0].status).toBe('unavailable');
-    expect(exact.outcomes[0].status).toBe('added');
-    expect(untracked.outcomes[0].status).toBe('added');
-    expect(plainTracked.outcomes[0].status).toBe('added');
-    expect(items().map((entry) => [entry.product_id, entry.quantity])).toEqual([['v', 7], ['a', 5]]);
+    expect(defaults.outcomes[0].status).toBe('added');
+    expect(short.outcomes[0].status).toBe('added');
+    expect(out.outcomes[0].status).toBe('unavailable');
+    expect(plain.outcomes[0].status).toBe('added');
+    expect(items().map((entry) => [entry.product_id, entry.quantity])).toEqual([['v', 6], ['a', 5]]);
   });
 
   it('unavailable: a variant sent for a product without variants', async () => {
