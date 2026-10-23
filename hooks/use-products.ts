@@ -168,6 +168,24 @@ export function useProducts(options?: ProductQuery & {
 }
 
 /**
+ * The `/products/{slug}` read behind {@link useProductBySlug}, for code that is
+ * not a hook (an event handler resolving several products). `null` when the
+ * response carries no product; a failed request throws.
+ */
+export async function fetchProductBySlug(
+  vendorSlug: string | null | undefined,
+  slug: string,
+  locale?: string | null,
+): Promise<Product | null> {
+  const client = createBrowserClient(vendorSlug ?? undefined);
+  const response = await client.get<ApiResponse<LegacyProductLike>>(`/products/${encodeURIComponent(slug)}`, withLocaleQuery(undefined, locale));
+  const products = extractProducts(response.data);
+  const payload = products[0] ?? response.data;
+
+  return payload ? normalizeProduct(payload as LegacyProductLike) : null;
+}
+
+/**
  * Fetch one product by slug: the same `/products/{slug}` request the product
  * page uses, including the full ordered `media.images` list. The list
  * endpoints behind {@link useProducts} return only a capped image list, so a
@@ -206,17 +224,14 @@ export function useProductBySlug(slug: string | null | undefined): { product: Pr
     }
 
     let cancelled = false;
-    const client = createBrowserClient(vendor.slug ?? undefined);
 
     async function run(): Promise<void> {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await client.get<ApiResponse<LegacyProductLike>>(`/products/${encodeURIComponent(slug as string)}`, withLocaleQuery(undefined, locale));
-        const products = extractProducts(response.data);
-        const payload = products[0] ?? response.data;
+        const fetched = await fetchProductBySlug(vendor.slug ?? undefined, slug as string, locale);
         if (!cancelled) {
-          setProduct(payload ? normalizeProduct(payload as LegacyProductLike) : null);
+          setProduct(fetched);
         }
       } catch (caught) {
         if (!cancelled) {

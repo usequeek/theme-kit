@@ -131,6 +131,7 @@ they keep the data already on screen. They return `isLoading`, except
 | `useReviews(block)` | `hooks/use-reviews` | Reviews and the rating summary |
 | `useProductQuestions(block)` | `hooks/use-product-questions` | Product questions and answers |
 | `useCart()` / `useShopCart(shopId)` | `hooks/use-cart`, `hooks/use-shop-cart` | The cart and its actions; one shop's lines and totals |
+| `useAddAppBlockLines(shopId)` | `hooks/use-add-app-block-lines` | Adds the products of an add-to-cart app block: `{ addLines, pending }` |
 | `useAuth()` | `hooks/use-auth` | The signed-in customer and sign-in modal controls |
 | `useVariantSelection(product)` | `hooks/use-variant-selection` | Option selection state and the add-to-cart gate |
 | `useSearch(query, products, collections)` | `hooks/use-search` | Instant search over data you hold |
@@ -173,6 +174,45 @@ missing amount); the wiring item must converge on one of them.
 
 The host app supplies the server pricing once, above every theme, with
 `<CartServerPricingProvider value={pricing}>` (`hooks/use-cart-server-pricing`).
+
+### Add-to-cart app blocks
+
+An add-to-cart app block puts the products its app named into the cart with one
+press. The storefront reads the block's lines (type `AppBlockAddToCartRead`, from
+`types/app-block`), then calls `useAddAppBlockLines(shopId)` and prints ONE notice
+from the result. No app code runs, the app never writes to the cart, and no price
+is touched: each line is priced like the same product added from its page.
+
+```tsx
+const { addLines, pending } = useAddAppBlockLines(vendor.id);
+
+async function onPress(): Promise<void> {
+  const result = await addLines(read.lines);
+  if (result.complete) {
+    notify('added');
+  } else {
+    // result.outcomes: one { index, status, title, ... } per line, in order
+    notifyNotAdded(result.outcomes.filter((outcome) => outcome.status !== 'added'));
+  }
+}
+```
+
+Each line ends as `added`, `customise` (a required add-on group or required line
+text: the shopper must choose on the product page), `variant_required`,
+`unavailable` (gone, inactive, out of stock, another store), `failed` (the
+product could not be read; retry can help) or `over_limit` (past the 20th line).
+A line that is not added never stops the others. Say "added" only when
+`complete` is true. The statuses are what the kit can know from the product as
+read; it cannot see the host's cart write, so the host keeps handling that
+write's own answers.
+
+While a press is pending, a second `addLines` call returns the pending result and
+adds nothing, so a double click adds the pack once (also disable the button on
+`pending`). Limits: a line's `properties` are not written to the cart (the
+outcome carries `properties_dropped`), and products are read fresh on every press.
+`addItemWithAddons` takes an optional fifth argument `{ silent: true }` that
+suppresses its toasts, and now returns `'added' | 'variant_required' |
+'text_required'`.
 
 ## Errors
 

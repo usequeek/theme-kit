@@ -29,6 +29,7 @@ export * from './types/theme';
 export * from './types/block';
 export * from './types/product';
 export * from './types/cart';
+export * from './types/app-block';
 export * from './types/order';
 export * from './types/page';
 export * from './types/menu';

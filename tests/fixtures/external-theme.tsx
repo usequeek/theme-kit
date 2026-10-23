@@ -18,6 +18,21 @@ import { LanguageSwitcher } from '@usequeek/theme-kit/components/language-switch
 import { useLocales } from '@usequeek/theme-kit/hooks/use-locales';
 import type { StoreLocale } from '@usequeek/theme-kit/utils/locale-switch';
 import { ThemeMount } from '@usequeek/theme-kit/theme-mount';
+import { useAddAppBlockLines } from '@usequeek/theme-kit/hooks/use-add-app-block-lines';
+import type { AppBlockAddToCartRead, AddAppBlockLinesResult } from '@usequeek/theme-kit/types/app-block';
+
+/** An add-to-cart app block button, written against the published package only. */
+export function AddPackButton({ shopId, read }: { shopId: string; read: AppBlockAddToCartRead }): JSX.Element {
+  const { addLines, pending } = useAddAppBlockLines(shopId);
+  const onPress = async (): Promise<void> => {
+    const result: AddAppBlockLinesResult = await addLines(read.lines);
+    if (!result.complete) {
+      result.outcomes.filter((outcome) => outcome.status !== 'added').map((outcome) => outcome.title);
+    }
+  };
+
+  return <button type="button" disabled={pending} onClick={() => void onPress()}>Add</button>;
+}
 
 export function Header({ menu, showCart }: HeaderProps): JSX.Element {
   const { vendor } = useStorefront();

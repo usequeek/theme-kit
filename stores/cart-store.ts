@@ -12,6 +12,14 @@ import { productRequiresVariant } from '../utils/match-variant';
 import { readLineText } from './line-text-store';
 import { isBlankText } from '../utils/blank-text';
 
+/** What `addItemWithAddons` did: `added` wrote or merged a line, anything else wrote nothing. */
+export type CartAddResult = 'added' | 'variant_required' | 'text_required';
+
+/** Options of `addItemWithAddons`. `silent` suppresses its toasts so a caller adding several lines can announce once. */
+export interface AddItemOptions {
+  silent?: boolean;
+}
+
 interface CartState {
   items: CartItem[];
   /** Set once per vendor mount by the storefront host. The store has no
@@ -22,7 +30,13 @@ interface CartState {
   currency: string;
   setCurrency: (currency: string) => void;
   addProduct: (product: Product, quantity?: number, variant?: ProductVariant | null) => void;
-  addItemWithAddons: (product: Product, quantity: number, addons: CartAddon[], variant?: ProductVariant | null) => void;
+  addItemWithAddons: (
+    product: Product,
+    quantity: number,
+    addons: CartAddon[],
+    variant?: ProductVariant | null,
+    options?: AddItemOptions,
+  ) => CartAddResult;
   removeItem: (id: string, shopId: string) => void;
   setQuantity: (id: string, shopId: string, quantity: number) => void;
   clearShopCart: (shopId: string) => void;
@@ -107,19 +121,21 @@ export const useCartStore = create<CartState>()(
       addProduct: (product, quantity = 1, variant = null) => {
         get().addItemWithAddons(product, quantity, [], variant);
       },
-      addItemWithAddons: (product, quantity = 1, addons = [], variant = null) => {
+      addItemWithAddons: (product, quantity = 1, addons = [], variant = null, options = {}) => {
         // A variant-enabled product has no valid "no selection" line: the cart
         // save fails server-side, so persisting one only moves the failure to
         // checkout. Themes gate
         // their add button too, but a theme is presentation — correctness
         // cannot depend on every theme getting it right.
         if (!variant && productRequiresVariant(product)) {
-          toast({
-            title: 'Select options',
-            description: `Choose an option for ${product.title} before adding it to your cart.`,
-          });
+          if (!options.silent) {
+            toast({
+              title: 'Select options',
+              description: `Choose an option for ${product.title} before adding it to your cart.`,
+            });
+          }
           console.error('[cart] refused a variant-enabled product added with no variant:', product.id);
-          return;
+          return 'variant_required';
         }
 
         // Text an app asked for on this product. A product with nothing
@@ -129,9 +145,11 @@ export const useCartStore = create<CartState>()(
         if (lineText.missingRequired.length > 0) {
           const missing = lineText.missingRequired[0];
 
-          toast({ title: `Add your ${missing.label} before adding to cart` });
+          if (!options.silent) {
+            toast({ title: `Add your ${missing.label} before adding to cart` });
+          }
           console.error('[cart] refused a product added without its required line text:', product.id, missing.key);
-          return;
+          return 'text_required';
         }
 
         const hasLineText = Object.keys(lineText.properties).length > 0;
@@ -146,7 +164,7 @@ export const useCartStore = create<CartState>()(
         // except on QR, which has its own persistent cart bar (QrCartBar)
         // always visible on screen, so a toast on top of it is redundant
         // (and its "View cart" action has nothing QR-specific to open).
-        if (getActivePlatform() !== 'instore_qr') {
+        if (getActivePlatform() !== 'instore_qr' && !options.silent) {
           toast({
             title: 'Added to cart',
             description: variant?.title ? `${product.title} (${variant.title})` : product.title,
@@ -199,6 +217,8 @@ export const useCartStore = create<CartState>()(
           value: roundAmount(unitPrice * addedQuantity),
           items: [{ item_id: product.id, item_name: product.title, price: unitPrice, quantity: addedQuantity }],
         });
+
+        return 'added';
       },
       removeItem: (id, shopId) => {
         set((state) => ({
