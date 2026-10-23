@@ -86,6 +86,7 @@ describe('addAppBlockLines outcomes', () => {
     expect(result).toEqual({
       added: 1,
       complete: true,
+      propertiesDropped: false,
       outcomes: [{ index: 0, status: 'added', product_id: 'a', variant_id: null, title: 'Product a' }],
     });
     expect(items()).toHaveLength(1);
@@ -102,7 +103,7 @@ describe('addAppBlockLines outcomes', () => {
     expect(items()[0]).toMatchObject({ product_id: 'v', variant_id: 'v1', unit_price: 2500 });
   });
 
-  it('customise: a required add-on group adds nothing; a pack-only required group adds', async () => {
+  it('customise: any required add-on group adds nothing, a pack group included; an optional group adds', async () => {
     const group = { id: 'g', title: 'Size', min: 1, max: 1, required: true, multiple_selection: false, items: [] };
     const needs = product('c', { addons: [group] });
     const pack = product('k', { addons: [{ ...group, id: 'pk', is_pack_group: true }] });
@@ -110,8 +111,8 @@ describe('addAppBlockLines outcomes', () => {
 
     const result = await run([line('c'), line('k'), line('o')], catalogue(needs, pack, optional));
 
-    expect(result.outcomes.map((outcome) => outcome.status)).toEqual(['customise', 'added', 'added']);
-    expect(items().map((entry) => entry.product_id)).toEqual(['k', 'o']);
+    expect(result.outcomes.map((outcome) => outcome.status)).toEqual(['customise', 'customise', 'added']);
+    expect(items().map((entry) => entry.product_id)).toEqual(['o']);
     expect(toastSpy).not.toHaveBeenCalled();
   });
 
@@ -159,6 +160,25 @@ describe('addAppBlockLines outcomes', () => {
 
     expect(result.outcomes[0].status).toBe('unavailable');
     expect(items()).toEqual([]);
+  });
+
+  it('unavailable: a tracked variant with fewer left than the quantity; enough, untracked and untracked-product stock add', async () => {
+    const tracked = (quantity: number, tracking = true) =>
+      product('v', { variants_count: 1, variants: [variant('v1', { inventory: { in_stock: true, tracking, quantity } })] });
+
+    const short = await run([line('v', { variant_id: 'v1', quantity: 5 })], catalogue(tracked(2)));
+    const exact = await run([line('v', { variant_id: 'v1', quantity: 2 })], catalogue(tracked(2)));
+    const untracked = await run([line('v', { variant_id: 'v1', quantity: 5 })], catalogue(tracked(0, false)));
+    const plainTracked = await run(
+      [line('a', { quantity: 5 })],
+      catalogue(product('a', { inventory: { in_stock: true, tracking: true, quantity: 2 } })),
+    );
+
+    expect(short.outcomes[0].status).toBe('unavailable');
+    expect(exact.outcomes[0].status).toBe('added');
+    expect(untracked.outcomes[0].status).toBe('added');
+    expect(plainTracked.outcomes[0].status).toBe('added');
+    expect(items().map((entry) => [entry.product_id, entry.quantity])).toEqual([['v', 7], ['a', 5]]);
   });
 
   it('unavailable: a variant sent for a product without variants', async () => {
@@ -242,7 +262,7 @@ describe('addAppBlockLines outcomes', () => {
   it('zero lines adds nothing and is not complete', async () => {
     const load = vi.fn();
 
-    expect(await run([], load)).toEqual({ added: 0, outcomes: [], complete: false });
+    expect(await run([], load)).toEqual({ added: 0, outcomes: [], complete: false, propertiesDropped: false });
     expect(load).not.toHaveBeenCalled();
   });
 
@@ -254,11 +274,59 @@ describe('addAppBlockLines outcomes', () => {
     expect(load).toHaveBeenCalledTimes(1);
   });
 
-  it('never writes line properties to the cart and says so', async () => {
+  it('never writes line properties to the cart and says so, on the line and on the result', async () => {
     const result = await run([line('a', { properties: { 'app.pack.id': 'x' } })], catalogue(product('a')));
 
     expect(result.outcomes[0]).toMatchObject({ status: 'added', properties_dropped: true });
+    expect(result.propertiesDropped).toBe(true);
     expect(items()[0].properties).toBeUndefined();
+  });
+
+  it('propertiesDropped is about added lines only', async () => {
+    const group = { id: 'g', title: 'Size', min: 1, max: 1, required: true, multiple_selection: false, items: [] };
+    const props = { 'app.pack.id': 'x' };
+    const refused = await run([line('c', { properties: props }), line('a')], catalogue(product('c', { addons: [group] }), product('a')));
+    const none = await run([line('a')], catalogue(product('a')));
+
+    expect(refused.outcomes[0]).toMatchObject({ status: 'customise', properties_dropped: true });
+    expect(refused.propertiesDropped).toBe(false);
+    expect(none.propertiesDropped).toBe(false);
+  });
+
+  it('a null, non-object or missing entry is failed and never throws; the others still add', async () => {
+    const lines = [null, line('a'), 'x', 5, undefined, [], line('b')] as unknown as AppBlockLine[];
+    const result = await run(lines, catalogue(product('a'), product('b')));
+
+    expect(result.outcomes.map((outcome) => outcome.status)).toEqual(['failed', 'added', 'failed', 'failed', 'failed', 'failed', 'added']);
+    expect(result.added).toBe(2);
+    expect(result.complete).toBe(false);
+    expect(items().map((entry) => entry.product_id)).toEqual(['a', 'b']);
+  });
+
+  it('lines that are not an array adds nothing', async () => {
+    expect(await run(null as unknown as AppBlockLine[], catalogue())).toEqual({ added: 0, outcomes: [], complete: false, propertiesDropped: false });
+  });
+
+  it('a throw while handling one line never loses the outcomes of the lines already added', async () => {
+    const broken = product('x');
+    Object.defineProperty(broken, 'addons', { get: () => { throw new TypeError('bad payload'); } });
+    const noPrice = product('n', { pricing: undefined as never });
+
+    const result = await run([line('a'), line('x'), line('n'), line('b')], catalogue(product('a'), broken, noPrice, product('b')));
+
+    expect(result.outcomes.map((outcome) => outcome.status)).toEqual(['added', 'failed', 'failed', 'added']);
+    expect(result).toMatchObject({ added: 2, complete: false });
+    expect(items().map((entry) => entry.product_id)).toEqual(['a', 'b']);
+  });
+
+  it('a throw after the store wrote the line (the analytics event) still reports it added', async () => {
+    eventSpy.mockImplementationOnce(() => { throw new Error('analytics down'); });
+
+    const result = await run([line('a'), line('b'), line('c')], catalogue(product('a'), product('b'), product('c')));
+
+    expect(result.outcomes.map((outcome) => outcome.status)).toEqual(['added', 'added', 'added']);
+    expect(result).toMatchObject({ added: 3, complete: true });
+    expect(items()).toHaveLength(3);
   });
 });
 
@@ -342,6 +410,60 @@ describe('useAddAppBlockLines', () => {
     expect(items()).toHaveLength(1);
     expect(items()[0].quantity).toBe(1);
     expect(container.querySelector('span')?.getAttribute('data-pending')).toBe('false');
+  });
+
+  it('a different pack while the first is pending runs on its own; pending lasts until both finish', async () => {
+    const releases: Record<string, (value: Product | null) => void> = {};
+    fetchSpy.mockImplementation((_vendor: string, slug: string) => new Promise<Product | null>((resolve) => { releases[slug] = resolve; }));
+    const { container } = mount(<Probe shopId={SHOP} />);
+    const flag = () => container.querySelector('span')?.getAttribute('data-pending');
+
+    let first!: Promise<AddAppBlockLinesResult>;
+    let other!: Promise<AddAppBlockLinesResult>;
+    let again!: Promise<AddAppBlockLinesResult>;
+    act(() => {
+      first = api.addLines([line('a')]);
+      other = api.addLines([line('b')]);
+      again = api.addLines([line('b')]);
+    });
+
+    expect(other).not.toBe(first);
+    expect(again).toBe(other);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      releases['slug-a'](product('a'));
+      await first;
+    });
+    expect(flag()).toBe('true');
+
+    await act(async () => {
+      releases['slug-b'](product('b'));
+      await other;
+    });
+
+    expect(flag()).toBe('false');
+    expect((await first).outcomes[0].status).toBe('added');
+    expect((await other).outcomes[0].status).toBe('added');
+    expect(items().map((entry) => [entry.product_id, entry.quantity])).toEqual([['a', 1], ['b', 1]]);
+  });
+
+  it('the same products in another quantity or order are another pack', async () => {
+    fetchSpy.mockImplementation(async (_vendor: string, slug: string) => product(slug.replace('slug-', '')));
+    mount(<Probe shopId={SHOP} />);
+
+    let one!: Promise<AddAppBlockLinesResult>;
+    let two!: Promise<AddAppBlockLinesResult>;
+    let three!: Promise<AddAppBlockLinesResult>;
+    act(() => {
+      one = api.addLines([line('a'), line('b')]);
+      two = api.addLines([line('a', { quantity: 2 }), line('b')]);
+      three = api.addLines([line('b'), line('a')]);
+    });
+    await act(async () => { await Promise.all([one, two, three]); });
+
+    expect(new Set([one, two, three]).size).toBe(3);
+    expect(items().find((entry) => entry.product_id === 'a')?.quantity).toBe(4);
   });
 
   it('a later press after the first finished adds again', async () => {

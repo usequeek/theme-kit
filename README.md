@@ -197,19 +197,27 @@ async function onPress(): Promise<void> {
 }
 ```
 
-Each line ends as `added`, `customise` (a required add-on group or required line
-text: the shopper must choose on the product page), `variant_required`,
-`unavailable` (gone, inactive, out of stock, another store), `failed` (the
+Each line ends as `added`, `customise` (any required add-on group, pack groups
+included, or required line text: the shopper must choose on the product page),
+`variant_required`, `unavailable` (gone, inactive, out of stock, another store;
+for a tracked variant, fewer left than the quantity, read strictly because the
+payload does not say whether the store enforces stock), `failed` (the
 product could not be read; retry can help) or `over_limit` (past the 20th line).
 A line that is not added never stops the others. Say "added" only when
 `complete` is true. The statuses are what the kit can know from the product as
 read; it cannot see the host's cart write, so the host keeps handling that
 write's own answers.
 
-While a press is pending, a second `addLines` call returns the pending result and
-adds nothing, so a double click adds the pack once (also disable the button on
-`pending`). Limits: a line's `properties` are not written to the cart (the
-outcome carries `properties_dropped`), and products are read fresh on every press.
+While a press is pending, an `addLines` call with the same lines in the same
+order returns the pending result and adds nothing, so a double click adds the
+pack once; a different pack runs on its own (also disable the button on
+`pending`). A malformed entry in `lines` is `failed`, and a throw while handling
+one line never loses the outcomes of the others.
+
+Limits: a line's `properties` are not written to the cart in this version (an app
+claim or other app text never reaches the line). The outcome carries
+`properties_dropped` and the result `propertiesDropped` (true when an added line
+had some), so the renderer can say so. Products are read fresh on every press.
 `addItemWithAddons` takes an optional fifth argument `{ silent: true }` that
 suppresses its toasts, and now returns `'added' | 'variant_required' |
 'text_required'`.

@@ -6,6 +6,7 @@ import { ApiRequestError } from '../sdk/client';
 import { useCartStore } from '../stores/cart-store';
 import type { Product, ProductVariant } from '../types/product';
 import type { AddAppBlockLinesResult, AppBlockLine, AppBlockLineOutcome, AppBlockLineStatus } from '../types/app-block';
+import { requiredAddonsSatisfied } from '../utils/addon-selection';
 import { productRequiresVariant } from '../utils/match-variant';
 import { fetchProductBySlug } from './use-products';
 
@@ -25,8 +26,10 @@ async function load(loadProduct: LoadProduct, slug: string): Promise<Loaded> {
   }
 }
 
-function validShape(line: AppBlockLine): boolean {
+function validShape(line: AppBlockLine | null | undefined): line is AppBlockLine {
   return (
+    typeof line === 'object' &&
+    line !== null &&
     typeof line.slug === 'string' &&
     line.slug !== '' &&
     typeof line.product_id === 'string' &&
@@ -44,14 +47,22 @@ function resolveVariant(product: Product, line: AppBlockLine): ProductVariant | 
 
   const variant = product.variants?.find((entry) => entry.id === line.variant_id);
 
-  return !variant || !variant.is_active || variant.inventory?.in_stock === false ? 'unavailable' : variant;
+  if (!variant || !variant.is_active || variant.inventory?.in_stock === false) {
+    return 'unavailable';
+  }
+
+  // The cart write refuses a tracked variant when the quantity exceeds its stock.
+  // Whether the store enforces stock or lets a shortfall through is not in the
+  // payload, so the kit takes the stricter reading.
+  return variant.inventory?.tracking === true && line.quantity > (variant.inventory.quantity ?? 0) ? 'unavailable' : variant;
 }
 
 /**
  * Whether the server would turn the line away, judged from the product as read.
  * It mirrors the cart write, which adds nothing for a variant product without a
- * valid variant and for a product with a required add-on group that is not
- * pack-only. The kit itself cannot see that write (the host app syncs the cart);
+ * valid variant and for a product with a required add-on group. A pack group
+ * counts too: the server composes its items, and delivery checkout rejects a
+ * line without them, so a bare line is never added. The kit itself cannot see that write (the host app syncs the cart);
  * these are the cases it can know here.
  */
 function classify(product: Product | null, line: AppBlockLine, shopId: string): ProductVariant | AppBlockLineStatus | null {
@@ -67,7 +78,7 @@ function classify(product: Product | null, line: AppBlockLine, shopId: string): 
     return 'unavailable';
   }
 
-  return (product.addons ?? []).some((group) => group.required && !group.is_pack_group) ? 'customise' : null;
+  return requiredAddonsSatisfied(product.addons ?? [], new Set()) ? null : 'customise';
 }
 
 /**
@@ -86,51 +97,90 @@ export async function addAppBlockLines(
   lines: AppBlockLine[],
   { shopId, loadProduct }: { shopId: string; loadProduct: LoadProduct },
 ): Promise<AddAppBlockLinesResult> {
-  const tried = lines.slice(0, APP_BLOCK_MAX_LINES);
+  const given: Array<AppBlockLine | null | undefined> = Array.isArray(lines) ? lines : [];
+  const tried = given.slice(0, APP_BLOCK_MAX_LINES);
   const slugs = [...new Set(tried.filter(validShape).map((line) => line.slug))];
   const loaded = new Map<string, Loaded>();
 
   await Promise.all(slugs.map(async (slug) => loaded.set(slug, await load(loadProduct, slug))));
 
-  const outcomes: AppBlockLineOutcome[] = lines.map((line, index) => {
+  const outcomes: AppBlockLineOutcome[] = given.map((line, index) => {
     const base = {
       index,
-      product_id: String(line?.product_id ?? ''),
-      variant_id: line?.variant_id ?? null,
+      product_id: typeof line?.product_id === 'string' ? line.product_id : '',
+      variant_id: typeof line?.variant_id === 'string' ? line.variant_id : null,
       title: null as string | null,
-      ...(line?.properties && Object.keys(line.properties).length > 0 ? { properties_dropped: true as const } : {}),
+      ...(line?.properties && typeof line.properties === 'object' && Object.keys(line.properties).length > 0 ? { properties_dropped: true as const } : {}),
     };
 
     if (index >= APP_BLOCK_MAX_LINES) {
       return { ...base, status: 'over_limit' };
     }
 
-    if (!line || !validShape(line)) {
+    if (!validShape(line)) {
       return { ...base, status: 'failed' };
     }
 
-    const entry = loaded.get(line.slug) as Loaded;
+    try {
+      return addOne(line, base, loaded.get(line.slug), shopId);
+    } catch (caught) {
+      // A throw before the store call leaves the cart as it was.
+      console.error('[cart] an add-to-cart app block line failed:', caught);
 
-    if ('failed' in entry) {
       return { ...base, status: 'failed' };
     }
-
-    const product = entry.product;
-    const verdict = classify(product, line, shopId);
-    const title = product?.title ?? null;
-
-    if (typeof verdict === 'string') {
-      return { ...base, title, status: verdict };
-    }
-
-    const result = useCartStore.getState().addItemWithAddons(product as Product, line.quantity, [], verdict, { silent: true });
-
-    return { ...base, title, status: result === 'added' ? 'added' : result === 'variant_required' ? 'variant_required' : 'customise' };
   });
 
   const added = outcomes.filter((outcome) => outcome.status === 'added').length;
 
-  return { added, outcomes, complete: outcomes.length > 0 && added === outcomes.length };
+  return {
+    added,
+    outcomes,
+    complete: outcomes.length > 0 && added === outcomes.length,
+    propertiesDropped: outcomes.some((outcome) => outcome.status === 'added' && outcome.properties_dropped === true),
+  };
+}
+
+function shopUnits(shopId: string): number {
+  return useCartStore.getState().items.reduce((sum, entry) => sum + (entry.shop_id === shopId ? entry.quantity : 0), 0);
+}
+
+function addOne(line: AppBlockLine, base: Omit<AppBlockLineOutcome, 'status'>, entry: Loaded | undefined, shopId: string): AppBlockLineOutcome {
+  if (!entry || 'failed' in entry) {
+    return { ...base, status: 'failed' };
+  }
+
+  const product = entry.product;
+  const verdict = classify(product, line, shopId);
+  const title = product?.title ?? null;
+
+  if (typeof verdict === 'string') {
+    return { ...base, title, status: verdict };
+  }
+
+  const before = shopUnits(shopId);
+  let result: ReturnType<ReturnType<typeof useCartStore.getState>['addItemWithAddons']>;
+
+  try {
+    result = useCartStore.getState().addItemWithAddons(product as Product, line.quantity, [], verdict, { silent: true });
+  } catch (caught) {
+    // The store writes the line before it reports the add (the analytics event
+    // comes last), so a throw is judged by what the cart holds, never guessed.
+    console.error('[cart] the cart store threw while adding an app block line:', caught);
+
+    return { ...base, title, status: shopUnits(shopId) >= before + line.quantity ? 'added' : 'failed' };
+  }
+
+  return { ...base, title, status: result === 'added' ? 'added' : result === 'variant_required' ? 'variant_required' : 'customise' };
+}
+
+/** What makes two presses the same pack: the same lines, in the same order. */
+function pressSignature(lines: AppBlockLine[]): string {
+  return JSON.stringify(
+    (Array.isArray(lines) ? lines : []).map((line) =>
+      typeof line === 'object' && line !== null ? [line.product_id, line.slug, line.variant_id ?? null, line.quantity] : null,
+    ),
+  );
 }
 
 /**
@@ -144,12 +194,13 @@ export async function addAppBlockLines(
  *
  * `shopId` is the store's id (`product.shop_id`); a line whose product belongs
  * to another store is `unavailable`. While a press is pending, `pending` is
- * true and another `addLines` call returns the pending result and adds nothing,
- * so a double click adds the pack once; disable the button on `pending` too.
+ * true and an `addLines` call with the same lines in the same order returns the
+ * pending result and adds nothing, so a double click adds the pack once; a
+ * different pack runs on its own. Disable the button on `pending` too.
  *
  * Limits: a line's `properties` are not written to the cart (the store has no
- * entry for them; the outcome says `properties_dropped`), and the products are
- * read fresh on every press.
+ * entry for them; the outcome says `properties_dropped` and the result
+ * `propertiesDropped`), and the products are read fresh on every press.
  *
  * @example
  * const { addLines, pending } = useAddAppBlockLines(shopId);
@@ -162,7 +213,7 @@ export function useAddAppBlockLines(shopId: string | null | undefined): {
   const { previewData, vendor } = useStorefront();
   const locale = useStorefrontLocale();
   const [pending, setPending] = useState(false);
-  const inFlight = useRef<Promise<AddAppBlockLinesResult> | null>(null);
+  const inFlight = useRef(new Map<string, Promise<AddAppBlockLinesResult>>());
   const mounted = useRef(true);
   const previewProducts = previewData?.products;
   const vendorSlug = vendor.slug;
@@ -177,8 +228,11 @@ export function useAddAppBlockLines(shopId: string | null | undefined): {
 
   const addLines = useCallback(
     (lines: AppBlockLine[]): Promise<AddAppBlockLinesResult> => {
-      if (inFlight.current) {
-        return inFlight.current;
+      const signature = pressSignature(lines);
+      const running = inFlight.current.get(signature);
+
+      if (running) {
+        return running;
       }
 
       const loadProduct: LoadProduct = async (slug) =>
@@ -189,14 +243,14 @@ export function useAddAppBlockLines(shopId: string | null | undefined): {
       setPending(true);
 
       const run = addAppBlockLines(lines, { shopId: shopId ?? '', loadProduct }).finally(() => {
-        inFlight.current = null;
+        inFlight.current.delete(signature);
 
         if (mounted.current) {
-          setPending(false);
+          setPending(inFlight.current.size > 0);
         }
       });
 
-      inFlight.current = run;
+      inFlight.current.set(signature, run);
 
       return run;
     },

@@ -41,11 +41,11 @@ export interface AppBlockAddToCartRead {
  * What happened to one line.
  *
  * - `added`: the line is on the cart (or its quantity grew).
- * - `customise`: nothing added; the shopper must choose first (a required add-on
- *   group, or a required line text field).
+ * - `customise`: nothing added; the shopper must choose first (any required add-on
+ *   group, pack groups included, or a required line text field).
  * - `variant_required`: nothing added; a variant product with no variant on the line.
  * - `unavailable`: nothing added; the product or variant is gone, inactive, out of
- *   stock, from another store, or not the product the line named.
+ *   stock (a tracked variant with fewer left than the quantity too), from another store, or not the product the line named.
  * - `failed`: nothing added; the product could not be read (network or server
  *   error) or the line is malformed. Trying again can help.
  * - `over_limit`: nothing added; the line is past the 20th of the press.
@@ -76,4 +76,10 @@ export interface AddAppBlockLinesResult {
    * added from `outcomes`.
    */
   complete: boolean;
+  /**
+   * True when a line that was added carried `properties` the kit did not write
+   * to the cart (it writes none in this version). A renderer whose app relies on
+   * them should say so instead of reporting a plain success.
+   */
+  propertiesDropped: boolean;
 }
