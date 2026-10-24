@@ -141,6 +141,10 @@ export const MARKET_ERROR_CODES = [
   'market_method_unavailable',
   'market_delivery_unavailable',
   'market_cart_required',
+  // A market order older than markets.order_rate_ttl_hours: GET orders/{id}/pay answers 422, no link, order again.
+  'market_rate_expired',
+  // 422 at the quote and the order (and cart `market.unavailable`): the market total is zero or below the provider minimum.
+  'market_total_unusable',
 ] as const;
 
 export type MarketErrorCode = (typeof MARKET_ERROR_CODES)[number];
