@@ -93,8 +93,13 @@ export function withMarketPath(path: string, marketId: number | null | undefined
  * shared data cache for a shopper in a market.
  */
 export function isMarketPricedPath(path: string): boolean {
-  const clean = path.split(/[?#]/)[0] ?? '';
-  return /\/(?:products|collections|categories|promotions|search|shipping-zones|fulfillment|shipping|checkout|payment-methods|cart|order|orders|wishlist-items)(?:\/|$)/.test(clean);
+  const clean = (path.split(/[?#]/)[0] ?? '').replace(/^(?:\/api\/v1)?(?:\/client\/store)?/, '');
+  // Anchored at the first segment: a page called "cart", a product's reviews or an order's pay link are not priced reads.
+  return (
+    /^\/products(?:\/[^/]+(?:\/related)?)?\/?$/.test(clean) ||
+    /^\/(?:collections|categories|promotions|search|shipping-zones|fulfillment|shipping|checkout|payment-methods|cart|wishlist-items)(?:\/|$)/.test(clean) ||
+    /^\/order\/checkout\/?$/.test(clean)
+  );
 }
 
 /**

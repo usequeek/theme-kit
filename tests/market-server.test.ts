@@ -29,11 +29,11 @@ afterEach(() => {
 
 type Captured = { next?: { revalidate: number; tags: string[] }; cache?: string };
 
-async function capturedGet(path: string): Promise<{ url: string; init: Captured }> {
+async function capturedGet(path: string, options?: { verifyMarket?: (id: number) => Promise<boolean> }): Promise<{ url: string; init: Captured }> {
   const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ data: {} }) }));
   vi.stubGlobal('fetch', fetchMock);
   const { createServerStoreClient } = await import('../sdk/server-store-client');
-  await createServerStoreClient('acme', 'http://origin.test').get(path);
+  await createServerStoreClient('acme', 'http://origin.test', options).get(path);
   const [[url, init]] = fetchMock.mock.calls as unknown as Array<[string, Captured]>;
   return { url, init };
 }
@@ -76,6 +76,27 @@ describe('server store reads with a market cookie', () => {
     const { url, init } = await capturedGet('/products');
     expect(url).toBe('http://127.0.0.1:8000/api/v1/client/store/products');
     expect(init.next).toEqual({ revalidate: 60, tags: ['v:acme', 'v:acme:products'] });
+  });
+
+  it('prices in the market only when the host confirms the cookie names a market the store offers', async () => {
+    request.cookie = 'queek_market_acme=1000';
+    const confirmed = await capturedGet('/products', { verifyMarket: async (id) => id === 1000 });
+    expect(confirmed.url).toContain('market=1000');
+    expect(confirmed.init.cache).toBe('no-store');
+
+    // Unconfirmed (unpublished, or the host could not read the list): the store currency, today's cached request.
+    for (const verifyMarket of [async () => false, async () => { throw new Error('list read failed'); }]) {
+      const refused = await capturedGet('/products', { verifyMarket });
+      expect(refused.url).toBe('http://127.0.0.1:8000/api/v1/client/store/products');
+      expect(refused.init.next).toEqual({ revalidate: 60, tags: ['v:acme', 'v:acme:products'] });
+    }
+  });
+
+  it('asks the host nothing when there is no cookie', async () => {
+    const verifyMarket = vi.fn(async () => true);
+    const { url } = await capturedGet('/products', { verifyMarket });
+    expect(url).toBe('http://127.0.0.1:8000/api/v1/client/store/products');
+    expect(verifyMarket).not.toHaveBeenCalled();
   });
 
   it('never throws outside a request scope', async () => {

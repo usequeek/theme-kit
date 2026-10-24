@@ -80,7 +80,7 @@ describe('getQueekClient (the SDK transport the cart, quote and order use)', () 
       '/api/v1/client/store/checkout/fees?market=1000',
       '/api/v1/client/store/order/checkout?market=1000',
       '/api/v1/client/store/info',
-      '/api/v1/client/store/orders/5?market=1000',
+      '/api/v1/client/store/orders/5',
     ]);
   });
 

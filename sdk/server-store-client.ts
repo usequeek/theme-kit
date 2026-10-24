@@ -194,19 +194,40 @@ export function withLocaleCachePolicy(
 /**
  * The market the shopper chose for this store (its cookie), for a server read.
  * Never throws: outside a request scope there is no cookie, which reads as the
- * store's own currency. Only the id's shape is checked here; the API answers in
- * the store's currency for an id it does not publish, so a stale cookie can
- * never price anything wrongly.
+ * store's own currency. `verify` (see {@link ServerStoreClientOptions}) lets the
+ * host confirm the id against the store's market list; without it only the id's
+ * shape is checked and the API answers in the store's currency for an id it does
+ * not offer, so a stale cookie can never price anything wrongly.
  */
-export async function readRequestMarket(vendorSlug: string): Promise<number | null> {
+export async function readRequestMarket(vendorSlug: string, verify?: (marketId: number) => Promise<boolean>): Promise<number | null> {
+  let marketId: number | null;
   try {
-    return readMarketFromCookieString((await cookies()).toString(), vendorSlug);
+    marketId = readMarketFromCookieString((await cookies()).toString(), vendorSlug);
+  } catch {
+    return null;
+  }
+
+  if (marketId === null || !verify) return marketId;
+
+  try {
+    return (await verify(marketId)) ? marketId : null;
   } catch {
     return null;
   }
 }
 
-export function createServerStoreClient(vendorSlug: string, origin?: string): {
+/** Options of {@link createServerStoreClient}. */
+export interface ServerStoreClientOptions {
+  /**
+   * Decides, per request, whether the shopper's market cookie names a market the store really offers. A host that
+   * reads the store's market list passes it, so the server prices in a market only when the page and the browser
+   * will: a cookie the host cannot confirm (an unpublished market, a failed list read) reads as the store currency.
+   * Omitted: the cookie's shape is all that is checked and the API answers in the store currency for an unknown id.
+   */
+  verifyMarket?: (marketId: number) => Promise<boolean>;
+}
+
+export function createServerStoreClient(vendorSlug: string, origin?: string, options: ServerStoreClientOptions = {}): {
   get: <T>(path: string, query?: RequestOptions['query'], locale?: string) => Promise<T>;
   post: <T>(path: string, body?: unknown) => Promise<T>;
 } {
@@ -230,7 +251,7 @@ export function createServerStoreClient(vendorSlug: string, origin?: string): {
       // A shopper in a market gets prices in its currency: `?market=<id>` on the priced reads, and those reads
       // leave the shared data cache. The cache is shared by every visitor, its key is the URL, and a rate moves
       // without any revalidation tag, so a market price is never stored there. No market: today's request.
-      const marketId = isMarketPricedPath(path) ? await readRequestMarket(vendorSlug) : null;
+      const marketId = isMarketPricedPath(path) ? await readRequestMarket(vendorSlug, options.verifyMarket) : null;
       return request<T>(
         API_BASE_URL,
         `/client/store${path}`,

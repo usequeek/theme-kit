@@ -82,14 +82,15 @@ describe('isMarketPricedPath', () => {
       '/products', '/products/oak-chair', '/products/oak-chair/related', '/collections/summer/products', '/collections',
       '/categories/x/products', '/promotions/1/products', '/search/autocomplete', '/shipping-zones', '/fulfillment/quote',
       '/shipping/couriers', '/checkout/fees', '/payment-methods?delivery_mode=pickup', '/cart', '/cart/items/9', '/order/checkout',
-      '/orders/5/pay', '/wishlist-items', '/client/store/cart?x=1',
+      '/wishlist-items', '/client/store/cart?x=1', '/api/v1/client/store/products?page=2',
     ]) {
       expect(isMarketPricedPath(path), path).toBe(true);
     }
   });
 
   it('is false for content and store-level reads', () => {
-    for (const path of ['/info', '/config', '/bootstrap', '/pages/about', '/posts', '/locales', '/markets', '/menus', '/theme', '/reviews', '/follow']) {
+    for (const path of ['/info', '/config', '/bootstrap', '/pages/about', '/pages/cart', '/posts', '/locales', '/markets', '/menus', '/theme', '/reviews', '/follow',
+      '/products/oak-chair/reviews', '/products/oak-chair/questions', '/orders/5', '/orders/5/pay', '/orders']) {
       expect(isMarketPricedPath(path), path).toBe(false);
     }
   });
