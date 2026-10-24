@@ -227,6 +227,19 @@ function pickReadableTextColor(hex: string): string {
   return onWhite >= onBlack ? '#ffffff' : '#000000';
 }
 
+/** How far a failing white-on-accent pairing may be deepened before it stops being the vendor's colour: past
+ *  this the label flips to black instead (a pale yellow keeps its look, with black text). */
+const MAX_ACCENT_DEEPENING = 0.25;
+
+/** The smallest deepening of `accent` (by `shade`) at which `onAccent` reads at the AA minimum, or null within the bound. */
+function deepenAccentFor(accent: string, onAccent: string): string | null {
+  for (let step = 1; step <= MAX_ACCENT_DEEPENING * 100; step += 1) {
+    const candidate = shade(accent, step / 100);
+    if ((contrastRatio(candidate, onAccent) ?? 0) >= MIN_ON_ACCENT_CONTRAST) return candidate;
+  }
+  return null;
+}
+
 /**
  * Guards against `on_accent` silently pairing with an `accent` it was never
  * designed for. `accent` and `on_accent` are independent fields (see
@@ -236,12 +249,23 @@ function pickReadableTextColor(hex: string): string {
  * shape at all, so `on_accent` falls through to the THEME's own default,
  * tuned for the theme's own accent color, not the vendor's. Only corrects
  * when the pairing actually fails contrast; a theme's own (already-tuned)
- * accent/on_accent pair is never touched. */
-function ensureReadableOnAccent(color: DesignTokenColor & { accent: string; on_accent: string }): void {
+ * accent/on_accent pair is never touched.
+ *
+ * A light label on a mid-tone accent (the default theme's white on #229879) keeps its label: the FILL a button
+ * paints under it is deepened just enough to read, and returned. `--brand-accent` itself is never changed, so
+ * links, rings and tints keep the vendor's colour. Otherwise the label flips to black or white, as before.
+ * Returns the fill (the accent itself when nothing was deepened; only a deepened fill is emitted as `--brand-accent-fill`). */
+function ensureReadableOnAccent(color: DesignTokenColor & { accent: string; on_accent: string }): string {
   const ratio = contrastRatio(color.accent, color.on_accent);
-  if (ratio !== null && ratio < MIN_ON_ACCENT_CONTRAST) {
-    color.on_accent = pickReadableTextColor(color.accent);
+  if (ratio === null || ratio >= MIN_ON_ACCENT_CONTRAST) return color.accent;
+
+  if ((relativeLuminance(color.on_accent) ?? 0) > (relativeLuminance(color.accent) ?? 0)) {
+    const deepened = deepenAccentFor(color.accent, color.on_accent);
+    if (deepened !== null) return deepened;
   }
+
+  color.on_accent = pickReadableTextColor(color.accent);
+  return color.accent;
 }
 
 function px(value: number): string {
@@ -370,7 +394,7 @@ function emitImageVars(
  */
 export function expandDesignTokens(tokens?: DesignTokens | null): Record<string, string> {
   const color = { ...DEFAULT_COLOR, ...tokens?.color };
-  ensureReadableOnAccent(color);
+  const accentFill = ensureReadableOnAccent(color);
   const type = { ...DEFAULT_TYPE, ...tokens?.type };
   const space = { ...DEFAULT_SPACE, ...tokens?.space };
   const shape = { ...DEFAULT_SHAPE, ...tokens?.shape };
@@ -382,6 +406,8 @@ export function expandDesignTokens(tokens?: DesignTokens | null): Record<string,
 
   // COLOR — every role, fixing the missing-12 bug.
   emitColorVars(color, vars);
+  // Only when the fill had to deepen: every other store's markup is byte-identical, and the CSS falls back to --brand-accent.
+  if (accentFill !== color.accent) vars['--brand-accent-fill'] = accentFill;
 
   // TYPE
   emitTypeVars(type, vars);
