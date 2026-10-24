@@ -85,4 +85,25 @@ describe('button label on the accent fill', () => {
     expect(vars['--brand-accent-fill']).toBeDefined();
     expect(vars['--brand-button-text']).toBe('#ffffff');
   });
+
+  it('keeps the button bg/text pair readable too: the primary under the white label is deepened, hover follows it', () => {
+    const vars = expandDesignTokens({ color: { primary: '#229879', accent: '#229879', on_accent: '#ffffff' } });
+
+    expect(vars['--brand-button-text']).toBe('#ffffff');
+    expect(vars['--brand-button-bg']).not.toBe('#229879');
+    expect(contrast(vars['--brand-button-bg'], '#ffffff')).toBeGreaterThanOrEqual(4.5);
+    expect(vars['--brand-primary']).toBe('#229879');
+    expect(vars['--brand-button-hover-bg']).toMatch(/^#[0-9a-f]{6}$/);
+    expect(vars['--brand-button-hover-bg']).not.toBe(vars['--brand-button-bg']);
+  });
+
+  it('leaves a primary that already reads untouched, and an explicit button_text keeps the plain primary', () => {
+    const plain = expandDesignTokens({ color: { primary: '#111111', accent: '#111111', on_accent: '#ffffff' } });
+    expect(plain['--brand-button-bg']).toBe('#111111');
+
+    const config = { colors: { primary: '#229879', accent: '#229879', button_text: '#000000' } } as Parameters<typeof getBrandCssVariables>[1];
+    const vars = getBrandCssVariables(null, config) as Record<string, string>;
+    expect(vars['--brand-button-bg']).toBe('#229879');
+    expect(vars['--brand-accent-fill']).toBeUndefined();
+  });
 });

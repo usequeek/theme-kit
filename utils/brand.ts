@@ -240,6 +240,16 @@ function deepenAccentFor(accent: string, onAccent: string): string | null {
   return null;
 }
 
+/** `fill` itself, or its deepened form when a lighter `label` fails 4.5:1 on it and a bounded deepening fixes that. */
+function readableFill(fill: string, label: string): string {
+  // A legacy colour set can leave the primary unset: nothing to deepen.
+  if (!fill || !label) return fill;
+  const ratio = contrastRatio(fill, label);
+  if (ratio === null || ratio >= MIN_ON_ACCENT_CONTRAST) return fill;
+  if ((relativeLuminance(label) ?? 0) <= (relativeLuminance(fill) ?? 0)) return fill;
+  return deepenAccentFor(fill, label) ?? fill;
+}
+
 /**
  * Guards against `on_accent` silently pairing with an `accent` it was never
  * designed for. `accent` and `on_accent` are independent fields (see
@@ -255,11 +265,11 @@ function deepenAccentFor(accent: string, onAccent: string): string | null {
  * paints under it is deepened just enough to read, and returned. `--brand-accent` itself is never changed, so
  * links, rings and tints keep the vendor's colour. Otherwise the label flips to black or white, as before.
  * Returns the fill (the accent itself when nothing was deepened; only a deepened fill is emitted as `--brand-accent-fill`). */
-function ensureReadableOnAccent(color: DesignTokenColor & { accent: string; on_accent: string }): string {
+function ensureReadableOnAccent(color: DesignTokenColor & { accent: string; on_accent: string }, deepen = true): string {
   const ratio = contrastRatio(color.accent, color.on_accent);
   if (ratio === null || ratio >= MIN_ON_ACCENT_CONTRAST) return color.accent;
 
-  if ((relativeLuminance(color.on_accent) ?? 0) > (relativeLuminance(color.accent) ?? 0)) {
+  if (deepen && (relativeLuminance(color.on_accent) ?? 0) > (relativeLuminance(color.accent) ?? 0)) {
     const deepened = deepenAccentFor(color.accent, color.on_accent);
     if (deepened !== null) return deepened;
   }
@@ -392,9 +402,12 @@ function emitImageVars(
  * entire groups (or being `null`/`undefined` altogether) still produces
  * every var with a sane value — never throws, never omits a role.
  */
-export function expandDesignTokens(tokens?: DesignTokens | null): Record<string, string> {
+export function expandDesignTokens(tokens?: DesignTokens | null, { explicitLabel = false }: { explicitLabel?: boolean } = {}): Record<string, string> {
   const color = { ...DEFAULT_COLOR, ...tokens?.color };
-  const accentFill = ensureReadableOnAccent(color);
+  // A label the merchant chose is theirs: no fill is deepened under it (the derived label flip still applies to --brand-on-accent).
+  const accentFill = ensureReadableOnAccent(color, !explicitLabel);
+  // --brand-button-bg / --brand-button-text are one pair too (the bg is the primary): the same rule keeps that pair readable.
+  const buttonBg = explicitLabel ? color.primary : readableFill(color.primary, color.on_accent);
   const type = { ...DEFAULT_TYPE, ...tokens?.type };
   const space = { ...DEFAULT_SPACE, ...tokens?.space };
   const shape = { ...DEFAULT_SHAPE, ...tokens?.shape };
@@ -408,6 +421,10 @@ export function expandDesignTokens(tokens?: DesignTokens | null): Record<string,
   emitColorVars(color, vars);
   // Only when the fill had to deepen: every other store's markup is byte-identical, and the CSS falls back to --brand-accent.
   if (accentFill !== color.accent) vars['--brand-accent-fill'] = accentFill;
+  if (buttonBg !== color.primary) {
+    vars['--brand-button-bg'] = buttonBg;
+    vars['--brand-button-hover-bg'] = shade(buttonBg, 0.08);
+  }
 
   // TYPE
   emitTypeVars(type, vars);
@@ -529,17 +546,13 @@ export function getBrandCssVariables(
   config?: StorefrontConfig | null,
 ): CSSProperties {
   const tokens = resolveEffectiveTokens(brand, config);
-  const vars = expandDesignTokens(tokens);
+  const vars = expandDesignTokens(tokens, { explicitLabel: !!config?.colors?.button_text });
 
   if (config?.footer?.bg) vars['--brand-footer-bg'] = config.footer.bg;
   if (config?.footer?.text) vars['--brand-footer-text'] = config.footer.text;
   if (config?.footer?.muted) vars['--brand-footer-muted'] = config.footer.muted;
   if (config?.colors?.button) vars['--brand-button-bg'] = config.colors.button;
-  if (config?.colors?.button_text) {
-    vars['--brand-button-text'] = config.colors.button_text;
-    // The merchant chose that label: the fill under it stays the accent they chose, never a deepened one tuned for the derived label.
-    delete vars['--brand-accent-fill'];
-  }
+  if (config?.colors?.button_text) vars['--brand-button-text'] = config.colors.button_text;
 
   return vars as CSSProperties;
 }
