@@ -3,7 +3,7 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
-## Unreleased
+## 0.1.31 - 2026-10-24
 
 ### Added
 
