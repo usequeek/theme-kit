@@ -61,3 +61,41 @@ describe('createBrowserClient with a market', () => {
     expect(urlOf(1)).toBe('/api/v1/client/store/checkout/fees');
   });
 });
+
+describe('getQueekClient (the SDK transport the cart, quote and order use)', () => {
+  it('puts market on priced store calls, GET and POST, and leaves the rest alone', async () => {
+    const { getQueekClient } = await import('../sdk/queek-client');
+    const client = getQueekClient('acme');
+    setBrowserMarketId(1000);
+
+    await client.get('/client/store/cart');
+    await client.post('/client/store/checkout/fees', { delivery_mode: 'pickup' });
+    await client.post('/client/store/order/checkout', { vendor_id: 'v' });
+    await client.get('/client/store/info');
+    await client.get('/client/store/orders/5');
+
+    const urls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(urls).toEqual([
+      '/api/v1/client/store/cart?market=1000',
+      '/api/v1/client/store/checkout/fees?market=1000',
+      '/api/v1/client/store/order/checkout?market=1000',
+      '/api/v1/client/store/info',
+      '/api/v1/client/store/orders/5?market=1000',
+    ]);
+  });
+
+  it('sends nothing extra with no market, or on the in-store QR channel', async () => {
+    const { getQueekClient } = await import('../sdk/queek-client');
+    const client = getQueekClient('acme');
+
+    await client.get('/client/store/cart');
+    setBrowserMarketId(1000);
+    setActivePlatform('instore_qr');
+    await client.get('/client/store/cart');
+
+    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
+      '/api/v1/client/store/cart',
+      '/api/v1/client/store/cart',
+    ]);
+  });
+});
