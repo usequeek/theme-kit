@@ -3,6 +3,15 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.32 - 2026-10-24
+
+### Fixed
+
+- A light button label that fails 4.5:1 on a mid-tone accent (the default theme's white on `#229879`) keeps its
+  colour: the fill under it is deepened by the smallest step that reads (at most 25%) and emitted as
+  `--brand-accent-fill`. `--brand-accent` is unchanged. A pale accent that would need more still gets a black
+  label. Nothing is emitted when the pairing already reads, so existing markup is byte-identical.
+
 ## 0.1.31 - 2026-10-24
 
 ### Added
