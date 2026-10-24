@@ -3,6 +3,23 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## Unreleased
+
+### Added
+
+- Markets (a store's published countries-and-currency sets): `MarketSwitcher` (one select: the store's own
+  currency plus each published market), `useMarkets()` and `useDisplayCurrency()`. The `StorefrontProvider`
+  takes `markets` and `market` (the host resolves both) and renders nothing market-related when a store has no
+  published market. The choice is explicit and stored in a per-store cookie; choosing reloads the page so every
+  price is in the new currency.
+- The browser transports (`createBrowserClient`, `getQueekClient`) send `?market=<id>` on priced store calls
+  (reads, cart, quote, order), never on the in-store QR channel. `createServerStoreClient` does the same from the
+  market cookie and takes those reads out of the shared data cache.
+- `asMarketRefusal(error)` reads the market refusal codes (`market_rate_changed` with its fresh market block and
+  quote, `market_unavailable`, `market_payment_unavailable`, `market_price_unusable`, ...).
+- `ThemeManifest.marketSwitcher: 'theme'`, like `languageSwitcher`.
+- `CartPanelController` hands `currency` as the shopper's display currency.
+
 ## 0.1.25 - 2026-10-14
 
 ### Packaging

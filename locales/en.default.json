@@ -181,5 +181,9 @@
   "embed": {
     "placeholder": "Paste the link or embed code of the content you want to show",
     "title": "Embedded content"
+  },
+  "market": {
+    "label": "Currency",
+    "named": "Currency: {name}"
   }
 }

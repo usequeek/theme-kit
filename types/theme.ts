@@ -389,6 +389,13 @@ export interface ThemeManifest {
    * it keeps the storefront's control for multi-language stores.
    */
   languageSwitcher?: 'theme';
+  /**
+   * Set to `'theme'` when the theme places the kit's `MarketSwitcher` itself.
+   * The storefront then does not also render its own floating market control.
+   * Optional — a manifest without it keeps the storefront's control, which
+   * shows only on a store with a published market.
+   */
+  marketSwitcher?: 'theme';
 }
 
 /**

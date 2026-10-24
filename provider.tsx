@@ -1,7 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
-import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { Menu } from './types/menu';
 import type { ReviewItem } from './types/block';
 import type { Post } from './types/page';
@@ -10,6 +10,8 @@ import type { StorefrontConfig, VendorProfile } from './types/vendor';
 import { getBrandCssVariables } from './utils/brand';
 import { parseLocaleCode } from './utils/locale';
 import { normalizeStoreLocales, type StoreLocale, type StoreLocaleInput } from './utils/locale-switch';
+import { normalizeStoreMarkets, parseMarketId, setBrowserMarketId, type StoreMarket } from './utils/market';
+import { reconcileMarketChoice } from './utils/market-choice';
 import {
   defaultThemeStrings,
   t as translateThemeStrings,
@@ -59,6 +61,10 @@ interface StorefrontContextValue {
    * `LanguageSwitcher` renders nothing. Optional so hand-built context values
    * keep compiling without it. */
   locales?: StoreLocale[];
+  /** The store's published markets (empty or omitted = the store sells in its own currency only: no picker, no `?market`). */
+  markets?: StoreMarket[];
+  /** The market the shopper chose, only when it is one of `markets`; null = the store's own currency. */
+  activeMarketId?: number | null;
 }
 
 /** The context behind {@link StorefrontProvider}. Read it through the hooks; use it directly only to test for a provider without throwing. */
@@ -88,6 +94,8 @@ export function StorefrontProvider({
   locale,
   strings,
   locales,
+  markets,
+  market,
   children,
 }: {
   vendor: VendorProfile;
@@ -122,6 +130,19 @@ export function StorefrontProvider({
    * owns it, like `basePath`.
    */
   locales?: readonly StoreLocaleInput[] | null;
+  /**
+   * The store's published markets, as `GET /client/store/markets` lists them,
+   * resolved by the host. Optional — absent or empty means no market choice:
+   * `MarketSwitcher` renders nothing and every request stays as before. Themes
+   * never set this; the host owns it.
+   */
+  markets?: readonly unknown[] | null;
+  /**
+   * The market id the shopper chose (the host reads it from the store's market
+   * cookie). Honoured only when it names one of `markets`; anything else is the
+   * store's own currency.
+   */
+  market?: number | string | null;
   children: ReactNode;
 }): JSX.Element {
   const resolvedBasePath = basePath ?? `/${vendor.slug ?? ''}`;
@@ -136,6 +157,18 @@ export function StorefrontProvider({
     [strings],
   );
   const resolvedLocales = useMemo(() => normalizeStoreLocales(locales), [locales]);
+  const resolvedMarkets = useMemo(() => normalizeStoreMarkets(markets), [markets]);
+  const marketsKnown = Array.isArray(markets);
+  const requestedMarket = parseMarketId(market);
+  const activeMarketId = resolvedMarkets.some((m) => m.id === requestedMarket) ? requestedMarket : null;
+  // Browser transports read the market per request. Idempotent and a no-op on the server.
+  setBrowserMarketId(activeMarketId);
+  const vendorSlug = vendor.slug ?? '';
+  const vendorId = vendor.id;
+  useEffect(() => {
+    // A cookie naming a market the store no longer publishes: drop it (and the lines priced under it) once.
+    reconcileMarketChoice(vendorSlug, vendorId, marketsKnown ? resolvedMarkets : null);
+  }, [vendorSlug, vendorId, resolvedMarkets, marketsKnown]);
   const value = useMemo(
     () => ({
       vendor,
@@ -147,8 +180,10 @@ export function StorefrontProvider({
       locale: resolvedLocale,
       strings: resolvedStrings,
       locales: resolvedLocales,
+      markets: resolvedMarkets,
+      activeMarketId,
     }),
-    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale, resolvedStrings, resolvedLocales],
+    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale, resolvedStrings, resolvedLocales, resolvedMarkets, activeMarketId],
   );
   const brandRootRef = useRef<HTMLDivElement>(null);
 

@@ -8,7 +8,7 @@ import { useStorefront } from '../../provider';
 import { useHref } from '../../hooks/use-href';
 import { useShopCart } from '../../hooks/use-shop-cart';
 import { useCartPanelStore } from '../../stores/cart-panel-store';
-import { normalizeCurrencyCode } from '../../utils/format';
+import { useDisplayCurrency } from '../../hooks/use-markets';
 import type { CartServerPricing } from '../../utils/cart-pricing';
 
 /** What {@link CartPanelController} hands to your render function: the panel state, this shop's lines, and the actions that change them. */
@@ -45,6 +45,7 @@ export function CartPanelController({
   children: (props: CartPanelControllerRenderProps) => ReactNode;
 }): JSX.Element {
   const { vendor } = useStorefront();
+  const currency = useDisplayCurrency();
   const href = useHref();
   const router = useRouter();
   const isOpen = useCartPanelStore((state) => state.isOpen);
@@ -75,9 +76,9 @@ export function CartPanelController({
     items,
     total,
     pricing,
-    // Store-wide display uses the vendor's currency; item rows carry their own.
+    // Store-wide display uses the shopper's market currency, else the vendor's; item rows carry their own.
     // List-level meta.currency is never read (platform default, wrong per store).
-    currency: normalizeCurrencyCode(vendor.currency),
+    currency,
     onClose: closePanel,
     onCheckout: () => navigate('/checkout'),
     onViewCart: () => navigate('/cart'),

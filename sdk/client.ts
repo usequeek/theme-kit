@@ -1,4 +1,5 @@
 import { getActivePlatform } from './platform';
+import { getBrowserMarketId, isMarketPricedPath, withMarketQuery } from '../utils/market';
 
 const LOCAL_API_URL = 'http://127.0.0.1:8000/api/v1';
 const API_URL_FROM_ENV = process.env.QUEEK_API_URL ?? process.env.NEXT_PUBLIC_QUEEK_API_URL;
@@ -356,12 +357,16 @@ export function createBrowserClient(vendorSlug?: string, token?: string): {
     return headers;
   };
 
+  // The shopper's market, on priced paths only; no market leaves the query untouched.
+  const marketFor = (path: string): number | null => (isMarketPricedPath(path) ? getBrowserMarketId() : null);
+
   return {
     get: <T>(path: string, query?: RequestOptions['query']) =>
-      request<T>(PUBLIC_API_BASE_URL, `/client/store${path}`, { query, timeoutMs: BROWSER_GET_TIMEOUT_MS }, buildHeaders()),
+      request<T>(PUBLIC_API_BASE_URL, `/client/store${path}`, { query: withMarketQuery(query, marketFor(path)), timeoutMs: BROWSER_GET_TIMEOUT_MS }, buildHeaders()),
     post: <T>(path: string, body?: unknown) =>
       request<T>(PUBLIC_API_BASE_URL, `/client/store${path}`, {
         method: 'POST',
+        query: withMarketQuery(undefined, marketFor(path)),
         body: body ? JSON.stringify(body) : undefined,
         timeoutMs: BROWSER_POST_TIMEOUT_MS,
       }, buildHeaders()),

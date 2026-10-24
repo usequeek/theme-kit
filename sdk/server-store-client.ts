@@ -1,6 +1,7 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { resolveCustomDomainVendorSlug, resolveCustomDomainVendorSlugRemote, resolveSubdomainVendorSlug } from '../utils/vendor-host';
 import { LOCALE_CODE_HEADER, parseLocaleCode, withLocaleQuery, withLocaleTags } from '../utils/locale';
+import { isMarketPricedPath, readMarketFromCookieString, withMarketQuery } from '../utils/market';
 import { API_BASE_URL, request, type RequestCachePolicy, type RequestOptions } from './client';
 import { getActivePlatform } from './platform';
 
@@ -190,6 +191,21 @@ export function withLocaleCachePolicy(
   return { revalidate: policy.revalidate, tags: withLocaleTags(policy.tags, locale) };
 }
 
+/**
+ * The market the shopper chose for this store (its cookie), for a server read.
+ * Never throws: outside a request scope there is no cookie, which reads as the
+ * store's own currency. Only the id's shape is checked here; the API answers in
+ * the store's currency for an id it does not publish, so a stale cookie can
+ * never price anything wrongly.
+ */
+export async function readRequestMarket(vendorSlug: string): Promise<number | null> {
+  try {
+    return readMarketFromCookieString((await cookies()).toString(), vendorSlug);
+  } catch {
+    return null;
+  }
+}
+
 export function createServerStoreClient(vendorSlug: string, origin?: string): {
   get: <T>(path: string, query?: RequestOptions['query'], locale?: string) => Promise<T>;
   post: <T>(path: string, body?: unknown) => Promise<T>;
@@ -211,13 +227,17 @@ export function createServerStoreClient(vendorSlug: string, origin?: string): {
     // suffix on every cache tag).
     get: async <T>(path: string, query?: RequestOptions['query'], locale?: string) => {
       const code = await resolveRequestLocale(locale);
+      // A shopper in a market gets prices in its currency: `?market=<id>` on the priced reads, and those reads
+      // leave the shared data cache. The cache is shared by every visitor, its key is the URL, and a rate moves
+      // without any revalidation tag, so a market price is never stored there. No market: today's request.
+      const marketId = isMarketPricedPath(path) ? await readRequestMarket(vendorSlug) : null;
       return request<T>(
         API_BASE_URL,
         `/client/store${path}`,
         {
-          query: withLocaleQuery(query, code),
+          query: withMarketQuery(withLocaleQuery(query, code), marketId),
           timeoutMs: SSR_TIMEOUT_MS,
-          cachePolicy: (await isPreviewRender())
+          cachePolicy: marketId !== null || (await isPreviewRender())
             ? null
             : withLocaleCachePolicy(resolveCachePolicy(vendorSlug, path, query), code),
         },

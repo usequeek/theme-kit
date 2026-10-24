@@ -3,6 +3,7 @@
 import { createQueekClient, type QueekClientInstance, type StorageAdapter } from '@usequeek/client-sdk';
 import { triggerReauth } from './error-handler';
 import { getActivePlatform } from './platform';
+import { getBrowserMarketId, isMarketPricedPath, withMarketPath } from '../utils/market';
 
 // This file is 'use client' — every export here only ever runs in the browser.
 // ALWAYS same-origin-relative, on purpose: the host app's `next.config` rewrite
@@ -35,7 +36,8 @@ const localStorageAdapter: StorageAdapter = {
  * the rest of the site stays `storefront`. Reads the holder per request, so a
  * single cached client serves both platforms.
  */
-const platformFetch: typeof fetch = (input, init) => {
+const platformFetch: typeof fetch = (rawInput, init) => {
+  const input = withActiveMarket(rawInput);
   if (init?.headers) {
     const headers = new Headers(init.headers);
     headers.set('X-Platform', getActivePlatform());
@@ -43,6 +45,20 @@ const platformFetch: typeof fetch = (input, init) => {
   }
   return fetch(input, init).then(captureRequestId);
 };
+
+/**
+ * The shopper's market rides every priced store call as `?market=<id>` (reads,
+ * cart writes, the quote and the order): the one place the SDK-backed client
+ * learns it, so no caller can forget it. No market chosen: the URL is untouched.
+ * The SDK always hands `fetch` a string URL; anything else passes through.
+ */
+function withActiveMarket(input: RequestInfo | URL): RequestInfo | URL {
+  const marketId = getBrowserMarketId();
+  if (marketId === null || typeof input !== 'string' || !input.includes('/client/store/') || !isMarketPricedPath(input)) {
+    return input;
+  }
+  return withMarketPath(input, marketId);
+}
 
 /**
  * Every API response carries a request id. The SDK's `request()` returns only

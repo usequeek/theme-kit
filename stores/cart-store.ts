@@ -107,6 +107,34 @@ function propertiesSuffix(properties?: Record<string, unknown> | null): string {
   return `~p-${(fnv1a(json, 0x811c9dc5) + fnv1a(json, 0x9e3779b9)).slice(0, 12)}`;
 }
 
+const CART_STORAGE_NAME = 'queek-storefront-cart';
+
+/**
+ * Removes one shop's lines from the PERSISTED cart without touching the live
+ * store, for a page that is about to reload. A shopper who changes market gets
+ * every price in another currency, and a line keeps the unit price it was added
+ * at, so it must not survive into the new currency; the server cart still holds
+ * the lines and the reload adopts them re-priced. Changing the live store here
+ * would make the cart sync delete that server copy, so this writes storage only.
+ */
+export function dropPersistedShopLines(shopId: string): void {
+  const storage = platformScopedStorage();
+
+  try {
+    const raw = storage.getItem(CART_STORAGE_NAME);
+    if (!raw) return;
+
+    const persisted = JSON.parse(raw) as { state?: { items?: CartItem[] } };
+    if (!Array.isArray(persisted.state?.items)) return;
+
+    persisted.state.items = persisted.state.items.filter((entry) => entry.shop_id !== shopId);
+    storage.setItem(CART_STORAGE_NAME, JSON.stringify(persisted));
+  } catch {
+    // Unreadable storage holds nothing worth keeping; the reload starts from the server cart.
+    storage.removeItem(CART_STORAGE_NAME);
+  }
+}
+
 /**
  * The cart store. Prefer the `useCart()` and `useShopCart()` hooks; read this
  * directly only from non-React code (`useCartStore.getState()`). Lines persist
@@ -254,7 +282,7 @@ export const useCartStore = create<CartState>()(
       },
     }),
     {
-      name: 'queek-storefront-cart',
+      name: CART_STORAGE_NAME,
       storage: createJSONStorage(platformScopedStorage),
     },
   ),

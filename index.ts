@@ -48,6 +48,7 @@ export * from './utils/cart-pricing';
 export * from './utils/announcement';
 export * from './utils/locale';
 export * from './utils/locale-switch';
+export * from './utils/market';
 
 // Theme strings — the pure/server-safe i18n core (no next/*, no React).
 export * from './strings/theme-strings';
