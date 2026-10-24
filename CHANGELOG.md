@@ -11,6 +11,9 @@ policy. Versions before this file started are in the git tags.
   colour: the fill under it is deepened by the smallest step that reads (at most 25%) and emitted as
   `--brand-accent-fill`. `--brand-accent` is unchanged. A pale accent that would need more still gets a black
   label. Nothing is emitted when the pairing already reads, so existing markup is byte-identical.
+- The same rule covers the primary button: `--brand-button-bg` (and its hover) deepens under a light label that
+  fails 4.5:1.
+- An explicit merchant `button_text` opts out of every deepening: the fill stays the plain accent under it.
 
 ## 0.1.31 - 2026-10-24
 
