@@ -535,7 +535,11 @@ export function getBrandCssVariables(
   if (config?.footer?.text) vars['--brand-footer-text'] = config.footer.text;
   if (config?.footer?.muted) vars['--brand-footer-muted'] = config.footer.muted;
   if (config?.colors?.button) vars['--brand-button-bg'] = config.colors.button;
-  if (config?.colors?.button_text) vars['--brand-button-text'] = config.colors.button_text;
+  if (config?.colors?.button_text) {
+    vars['--brand-button-text'] = config.colors.button_text;
+    // The merchant chose that label: the fill under it stays the accent they chose, never a deepened one tuned for the derived label.
+    delete vars['--brand-accent-fill'];
+  }
 
   return vars as CSSProperties;
 }

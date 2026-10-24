@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { expandDesignTokens } from '../utils/brand';
+import { expandDesignTokens, getBrandCssVariables } from '../utils/brand';
 
 function contrast(a: string, b: string): number {
   const lum = (hex: string): number => {
@@ -67,5 +67,22 @@ describe('button label on the accent fill', () => {
 
     expect(Math.max(...drop)).toBeLessThanOrEqual(Math.round(255 * 0.25));
     expect(Math.min(...drop)).toBeGreaterThanOrEqual(0);
+  });
+
+  it('keeps the plain accent fill under a label the merchant chose (config.colors.button_text)', () => {
+    const config = { colors: { accent: '#229879', button_text: '#000000' } } as Parameters<typeof getBrandCssVariables>[1];
+    const vars = getBrandCssVariables(null, config) as Record<string, string>;
+
+    expect(vars['--brand-button-text']).toBe('#000000');
+    expect(vars['--brand-accent']).toBe('#229879');
+    expect(vars['--brand-accent-fill']).toBeUndefined();
+  });
+
+  it('still deepens under a derived label when the merchant set no button_text', () => {
+    const config = { colors: { accent: '#229879' } } as Parameters<typeof getBrandCssVariables>[1];
+    const vars = getBrandCssVariables(null, config) as Record<string, string>;
+
+    expect(vars['--brand-accent-fill']).toBeDefined();
+    expect(vars['--brand-button-text']).toBe('#ffffff');
   });
 });
