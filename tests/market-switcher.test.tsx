@@ -90,7 +90,7 @@ describe('MarketSwitcher', () => {
     const options = [...select.options].map((o) => [o.value, o.textContent]);
 
     expect(options).toEqual([
-      ['', 'Nigerian Naira · NGN'],
+      ['', 'NGN'],
       ['1000', 'Ghana · GHS'],
       ['1001', 'Kenya · KES'],
     ]);

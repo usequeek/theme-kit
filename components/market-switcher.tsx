@@ -18,15 +18,6 @@ export interface MarketSwitcherProps {
   children?: (state: MarketsState & { label: string; labelFor: (market: StoreMarket | null) => string; displayName: (market: StoreMarket | null) => string }) => ReactNode;
 }
 
-/** The currency's own name in the shopper's language ("Nigerian Naira"), or its code when the runtime has no name for it. */
-function currencyName(code: string, locale: string | null): string {
-  try {
-    return new Intl.DisplayNames(locale ?? 'en', { type: 'currency' }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
-
 /**
  * The storefront's market control: the store's own currency plus each published
  * market, one native select. Renders nothing outside a storefront or on a store
@@ -47,16 +38,15 @@ export function MarketSwitcher(props: MarketSwitcherProps): JSX.Element | null {
 
 function MarketSwitcherInner({ className, children }: MarketSwitcherProps): JSX.Element | null {
   const t = useThemeStrings();
-  const context = useContext(StorefrontContext);
   const state = useMarkets();
   const { markets, hasMarkets, active, shopCurrency, select } = state;
 
   if (!hasMarkets) return null;
 
-  const locale = context?.locale ?? null;
   const label = t('market.label');
-  const displayName = (market: StoreMarket | null): string =>
-    market ? `${market.name} · ${market.currency}` : `${currencyName(shopCurrency, locale)} · ${shopCurrency}`;
+  // The store's own currency is its bare ISO code: a localized currency name can differ between the server's ICU and
+  // the browser's, and a select whose text differs between the two does not hydrate cleanly.
+  const displayName = (market: StoreMarket | null): string => (market ? `${market.name} · ${market.currency}` : shopCurrency);
   const labelFor = (market: StoreMarket | null): string => t('market.named', { name: displayName(market) });
 
   if (children) return <>{children({ ...state, label, labelFor, displayName })}</>;
