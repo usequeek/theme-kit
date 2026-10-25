@@ -16,8 +16,17 @@ import type { Product } from '../types/product';
 const MUG = { item_id: 'p1', item_name: 'Mug', price: 1000, quantity: 2 };
 const CAP = { item_id: 'p2', item_name: 'Cap', price: 500.5, quantity: 1 };
 
+/**
+ * What gtag.js reads: it only processes `arguments` objects on dataLayer, so a
+ * plain array is a dropped event. Fail the helper (and so every GA assertion)
+ * when an entry has any other shape, and return the entries as arrays to compare.
+ */
 function dataLayer(): unknown[][] {
-  return (window.dataLayer ?? []) as unknown[][];
+  return (window.dataLayer ?? []).map((entry) => {
+    expect(Object.prototype.toString.call(entry)).toBe('[object Arguments]');
+
+    return Array.from(entry as ArrayLike<unknown>);
+  });
 }
 
 beforeEach(() => {

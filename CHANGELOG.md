@@ -3,6 +3,18 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.33 - 2026-10-25
+
+### Fixed
+
+- Google Analytics events were never sent. `gtagPush` pushed a plain array onto `dataLayer`, and gtag.js only
+  processes `arguments` objects (the shape of Google's own `function gtag(){dataLayer.push(arguments);}`), so every
+  storefront event (`view_item`, `search`, `add_to_cart`, `begin_checkout`, `purchase`) and every Consent Mode
+  `consent update` made through it was silently dropped. It now pushes the real `arguments` object, with typed
+  overloads for `js`, `config`, `set`, `event` and `consent`, and still queues correctly before gtag.js loads.
+  Verified in a real browser against the live gtag.js: a `gtagPush('event', 'add_to_cart', ...)` now reaches
+  `google-analytics.com/g/collect` with `en=add_to_cart`.
+
 ## 0.1.32 - 2026-10-24
 
 ### Fixed
