@@ -1,4 +1,5 @@
 import type { GalleryBlockData } from '../types/block';
+import { isBlankText } from './blank-text';
 
 type HeroSlide = GalleryBlockData['images'][number];
 
@@ -21,15 +22,38 @@ export function heroImageMode(images: GalleryBlockData['images']): 'zero' | 'sin
   return images.length === 1 ? 'single' : 'multi';
 }
 
+/**
+ * A merchant's own slide shows exactly what they typed: a blank title, subtitle or
+ * button label renders nothing (busy slide images need bare slides). The store
+ * name, slogan and "Shop now" fill in only for the zero-image placeholder hero,
+ * where `slide` is undefined. Callers render each part only when it is non-empty.
+ */
 export function resolveHeroContent(
   slide: HeroSlide | undefined,
   fallback: HeroFallbacks,
 ): ResolvedHeroContent {
+  const ctaHref = text(slide?.cta_url) || fallback.shopHref;
+  const slideHref = text(slide?.link) || null;
+
+  if (slide === undefined) {
+    return {
+      title: fallback.title,
+      subtitle: text(fallback.subtitle) || null,
+      ctaLabel: 'Shop now',
+      ctaHref,
+      slideHref,
+    };
+  }
+
   return {
-    title: slide?.title?.trim() || fallback.title,
-    subtitle: slide?.subtitle?.trim() || fallback.subtitle?.trim() || null,
-    ctaLabel: slide?.cta_label?.trim() || 'Shop now',
-    ctaHref: slide?.cta_url?.trim() || fallback.shopHref,
-    slideHref: slide?.link?.trim() || null,
+    title: text(slide.title),
+    subtitle: text(slide.subtitle) || null,
+    ctaLabel: text(slide.cta_label),
+    ctaHref,
+    slideHref,
   };
+}
+
+function text(value: string | null | undefined): string {
+  return isBlankText(value) ? '' : (value as string).trim();
 }

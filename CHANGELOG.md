@@ -3,6 +3,17 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.34 - 2026-10-28
+
+### Fixed
+
+- A merchant's own hero/slideshow slide shows exactly what they typed. `resolveHeroContent(slide, fallback)` no
+  longer fills a blank slide title, subtitle or button label with the store name, the slogan or "Shop now": a blank
+  field (empty, whitespace, or only zero-width/format characters) comes back as `title: ''`, `subtitle: null`,
+  `ctaLabel: ''`, so a busy slide image can stay bare. The store name, slogan and "Shop now" still fill the
+  zero-image placeholder hero (`slide` undefined). `ctaHref` and `slideHref` are unchanged. A theme renders the
+  heading, subtitle and button only when each is non-empty.
+
 ## 0.1.33 - 2026-10-25
 
 ### Fixed
