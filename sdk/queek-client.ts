@@ -90,6 +90,12 @@ export function getLastRequestId(): string | null {
 
 let cachedClient: QueekClientInstance | null = null;
 let cachedSlug: string | null = null;
+let cachedTokens: string | null = null;
+
+/** The stored token pair, as one comparable value. */
+function storedTokens(): string {
+  return `${localStorageAdapter.getItem(ACCESS_KEY) ?? ''}\n${localStorageAdapter.getItem(REFRESH_KEY) ?? ''}`;
+}
 
 /**
  * The Queek customer SDK client for this store, created once and reused.
@@ -97,14 +103,22 @@ let cachedSlug: string | null = null;
  * every request to the same-origin `/api/v1`. A 401 signs the customer out and
  * opens the sign-in modal (see `triggerReauth`).
  *
+ * The SDK reads the tokens once, when the client is created, so the cached
+ * client is rebuilt whenever the stored pair changed under it. Another tab
+ * signing in writes the tokens here too, and the user store syncs across tabs:
+ * a client still holding no token would send a signed-in shopper's request
+ * bare, its 401 would sign them out, and that sign-out would sync back to the
+ * tab they had just signed in on.
+ *
  * @example
  * const client = getQueekClient(vendor.slug);
  * const orders = await client.get('/client/store/orders');
  */
 export function getQueekClient(vendorSlug?: string): QueekClientInstance {
   const slug = vendorSlug ?? null;
+  const tokens = storedTokens();
 
-  if (cachedClient && cachedSlug === slug) {
+  if (cachedClient && cachedSlug === slug && cachedTokens === tokens) {
     return cachedClient;
   }
 
@@ -121,6 +135,7 @@ export function getQueekClient(vendorSlug?: string): QueekClientInstance {
     },
   });
   cachedSlug = slug;
+  cachedTokens = tokens;
 
   return cachedClient;
 }
@@ -155,4 +170,5 @@ export function setAuthTokens(accessToken: string, refreshToken: string): void {
   // Reset cache so the next getQueekClient() reads the new tokens from localStorage.
   cachedClient = null;
   cachedSlug = null;
+  cachedTokens = null;
 }

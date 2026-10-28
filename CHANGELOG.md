@@ -3,6 +3,17 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.35 - 2026-10-28
+
+### Fixed
+
+- Signing in no longer signs the shopper straight back out when the store is open in another tab.
+  `getQueekClient()` rebuilds its cached SDK client whenever the stored token pair changed since it was
+  created (another tab signing in, out, or refreshing writes the same `localStorage` keys). Before, a tab
+  whose client predated the sign-in kept sending requests without a token while the user store had already
+  synced the signed-in user across tabs; the first such request (the follow card's status check) answered
+  401, `triggerReauth` signed the shopper out, and that sign-out synced back to the tab they signed in on.
+
 ## 0.1.34 - 2026-10-28
 
 ### Fixed
