@@ -185,5 +185,19 @@
   "market": {
     "label": "Currency",
     "named": "Currency: {name}"
+  },
+  "follow": {
+    "aria": "Follow this store",
+    "dismiss": "Don't show again",
+    "title": "Follow {name}",
+    "thisstore": "this store",
+    "tagline": "Get notified about new arrivals and exclusive offers.",
+    "count": {
+      "one": "{n} follower",
+      "other": "{n} followers"
+    },
+    "share": "Optional: share my name, email and phone number with {name}, so they can contact me.",
+    "action": "Follow",
+    "busy": "Following…"
   }
 }

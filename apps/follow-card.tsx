@@ -1,8 +1,8 @@
 'use client';
 
 import type { JSX } from 'react';
-import { useState, useCallback, useEffect } from 'react';
-import { useStorefront } from '../provider';
+import { useState, useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useStorefront, useThemeStrings } from '../provider';
 import { useUserStore } from '../stores/user-store';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { getQueekClient } from '../sdk/queek-client';
@@ -42,26 +42,69 @@ const POSITION_CLASS: Record<string, string> = {
 };
 
 /**
- * The store's follow card, shown when the merchant has turned it on. It is
- * floating by default; `display="inline"` places it in the page flow. Renders
- * nothing when the app is off.
+ * Where the merchant put the card: `footer` is the inline mount a theme places in its footer, anything else
+ * (`floating`, and the retired `block`) is the floating mount the shell places.
+ */
+function settingFor(display: string | undefined): 'floating' | 'footer' {
+  return display === 'footer' ? 'footer' : 'floating';
+}
+
+/**
+ * The inline mounts currently rendered by a theme, so the floating mount can tell that a theme has no footer mount
+ * and take the card itself: a card the merchant switched on is always reachable, and never shown twice.
+ */
+let inlineMounts = 0;
+const mountListeners = new Set<() => void>();
+
+function subscribeToMounts(listener: () => void): () => void {
+  mountListeners.add(listener);
+  return () => {
+    mountListeners.delete(listener);
+  };
+}
+
+function registerInlineMount(): () => void {
+  inlineMounts += 1;
+  mountListeners.forEach((notify) => notify());
+  return () => {
+    inlineMounts -= 1;
+    mountListeners.forEach((notify) => notify());
+  };
+}
+
+/**
+ * The store's follow card, shown when the merchant has turned it on, in the one place they chose: the shell mounts
+ * `display="floating"` and a theme's footer mounts `display="inline"`; each renders only when the merchant's setting
+ * matches its mount, and a theme with no footer mount shows the floating card instead. Renders nothing when the app
+ * is off.
+ *
+ * Sharing contact details is the shopper's own choice: the box starts unticked and nothing is sent unless it is ticked.
  */
 export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}): JSX.Element | null {
   const { config, vendor } = useStorefront();
+  const t = useThemeStrings();
   const followConfig = config.apps?.follow_card;
-  const resolvedDisplay = display ?? followConfig?.display ?? 'floating';
+  const mount = display === 'inline' ? 'inline' : 'floating';
+  const setting = settingFor(followConfig?.display);
+  const registersInline = mount === 'inline' && setting === 'footer' && !!followConfig?.enabled;
+  // The server answer is "a footer mount exists" so a footer-placed card is never painted floating before hydration.
+  const footerMountExists = useSyncExternalStore(subscribeToMounts, () => inlineMounts > 0, () => true);
+  const shows = mount === 'inline' ? setting === 'footer' : setting === 'floating' || !footerMountExists;
   const user = useUserStore((s) => s.user);
   const openAuth = useAuthModalStore((s) => s.open);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(config.followers_count ?? 0);
-  const [shareContact, setShareContact] = useState(true);
+  const [shareContact, setShareContact] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [checked, setChecked] = useState(false);
 
+  useEffect(() => (registersInline ? registerInlineMount() : undefined), [registersInline]);
+
   // Check follow status when user is logged in
   useEffect(() => {
+    if (!shows) return;
     if (!user || !vendor.slug) {
       setChecked(true);
       return;
@@ -74,7 +117,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
       })
       .catch(() => {})
       .finally(() => setChecked(true));
-  }, [user, vendor.slug]);
+  }, [user, vendor.slug, shows]);
 
   // Check persistent dismiss
   useEffect(() => {
@@ -125,11 +168,12 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
     if (vendor.id) persistDismiss(vendor.id);
   }, [vendor.id]);
 
-  if (!followConfig?.enabled || dismissed || !checked) return null;
+  if (!followConfig?.enabled || !shows || dismissed || !checked) return null;
   // Don't show to users already following
   if (isFollowing) return null;
 
-  const isFloating = resolvedDisplay === 'floating';
+  const storeName = vendor.name ?? t('follow.thisstore');
+  const isFloating = mount === 'floating';
   const posClass = isFloating
     ? POSITION_CLASS[followConfig.position ?? 'bottom-right'] ?? POSITION_CLASS['bottom-right']
     : '';
@@ -138,15 +182,15 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
     <div
       className={`core-follow-card ${isFloating ? `core-follow-card--floating ${posClass}` : 'core-follow-card--inline'}`}
       role="complementary"
-      aria-label="Follow this store"
+      aria-label={t('follow.aria')}
     >
       {isFloating && (
         <button
           type="button"
           className="core-follow-card__dismiss"
           onClick={handleDismiss}
-          aria-label="Don't show again"
-          title="Don't show again"
+          aria-label={t('follow.dismiss')}
+          title={t('follow.dismiss')}
         >
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" width="12" height="12">
             <path d="M3 3l10 10M13 3L3 13" />
@@ -164,14 +208,14 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
         )}
         <div className="core-follow-card__text">
           <p className="core-follow-card__title">
-            Follow {vendor.name ?? 'this store'}
+            {t('follow.title', { name: storeName })}
           </p>
           <p className="core-follow-card__sub">
-            Get notified about new arrivals and exclusive offers.
+            {t('follow.tagline')}
           </p>
           {followersCount > 0 && (
             <p className="core-follow-card__count">
-              {formatCount(followersCount)} {followersCount === 1 ? 'follower' : 'followers'}
+              {t('follow.count', { count: followersCount, n: formatCount(followersCount) })}
             </p>
           )}
         </div>
@@ -184,7 +228,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
           onChange={(e) => setShareContact(e.target.checked)}
           className="core-follow-card__checkbox"
         />
-        <span>Share my contact info with this store</span>
+        <span>{t('follow.share', { name: storeName })}</span>
       </label>
       <button
         type="button"
@@ -192,7 +236,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
         onClick={handleFollow}
         disabled={loading}
       >
-        {loading ? 'Following...' : 'Follow'}
+        {loading ? t('follow.busy') : t('follow.action')}
       </button>
     </div>
   );

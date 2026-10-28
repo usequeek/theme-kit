@@ -239,12 +239,13 @@ describe('default English dictionary budget (64-character stored key)', () => {
   const pairs: Array<[string, string]> = [];
   flatten(enDefault, '', pairs);
 
-  it('ships the ~106-string core dictionary (intentional growth, still budgeted)', () => {
-    // Dictionary budget: the ceiling stays tight (+9 headroom): any further
+  it('ships the ~123-string core dictionary (intentional growth, still budgeted)', () => {
+    // Dictionary budget: the ceiling stays tight (+7 headroom): any further
     // growth must bump it here deliberately with its own justification, which
     // guards against uncontrolled growth (64-character stored-key budget below).
+    // 115 -> 130: the follow card's words (`follow.*`, 10 leaves) became theme strings.
     expect(pairs.length).toBeGreaterThanOrEqual(70);
-    expect(pairs.length).toBeLessThanOrEqual(115);
+    expect(pairs.length).toBeLessThanOrEqual(130);
   });
 
   it('every key fits the dotted-lowercase grammar and the 40-char budget', () => {
