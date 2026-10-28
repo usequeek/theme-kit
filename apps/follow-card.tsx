@@ -79,6 +79,7 @@ function registerInlineMount(): () => void {
  * is off.
  *
  * Sharing contact details is the shopper's own choice: the box starts unticked and nothing is sent unless it is ticked.
+ * A shopper who follows sees a compact "Following · Unfollow" state instead of the prompt.
  */
 export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}): JSX.Element | null {
   const { config, vendor } = useStorefront();
@@ -168,19 +169,32 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
     if (vendor.id) persistDismiss(vendor.id);
   }, [vendor.id]);
 
-  if (!followConfig?.enabled || !shows || dismissed || !checked) return null;
-  // Don't show to users already following
-  if (isFollowing) return null;
+  if (!followConfig?.enabled || !shows || !checked) return null;
 
   const storeName = vendor.name ?? t('follow.thisstore');
   const isFloating = mount === 'floating';
   const posClass = isFloating
     ? POSITION_CLASS[followConfig.position ?? 'bottom-right'] ?? POSITION_CLASS['bottom-right']
     : '';
+  const placement = isFloating ? `core-follow-card--floating ${posClass}` : 'core-follow-card--inline';
+
+  // A shopper who follows still sees the card, compact, with the way out: Unfollow. Dismissing the prompt never hides it.
+  if (isFollowing) {
+    return (
+      <div className={`core-follow-card core-follow-card--compact ${placement}`} role="complementary" aria-label={t('follow.following')}>
+        <span className="core-follow-card__state">{t('follow.following')}</span>
+        <button type="button" className="core-follow-card__unfollow" onClick={handleUnfollow} disabled={loading}>
+          {loading ? t('follow.leaving') : t('follow.unfollow')}
+        </button>
+      </div>
+    );
+  }
+
+  if (dismissed) return null;
 
   return (
     <div
-      className={`core-follow-card ${isFloating ? `core-follow-card--floating ${posClass}` : 'core-follow-card--inline'}`}
+      className={`core-follow-card ${placement}`}
       role="complementary"
       aria-label={t('follow.aria')}
     >

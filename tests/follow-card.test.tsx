@@ -195,6 +195,64 @@ describe('FollowCard: shown once, where the merchant chose', () => {
   });
 });
 
+describe('FollowCard: a shopper who follows can unfollow', () => {
+  beforeEach(() => {
+    sdk.get.mockResolvedValue({ data: { following: true, shared_contact: false, followers_count: 1200 } });
+    sdk.post.mockResolvedValue({ data: { following: false, followers_count: 1199 } });
+  });
+
+  it('shows a compact Following state with Unfollow instead of hiding', async () => {
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    expect(cards()).toHaveLength(1);
+    expect(cards()[0]?.className).toContain('core-follow-card--compact');
+    expect(container.querySelector('.core-follow-card__state')?.textContent).toBe('Following');
+    expect(container.querySelector('.core-follow-card__unfollow')?.textContent).toBe('Unfollow');
+    expect(container.querySelector('.core-follow-card__checkbox')).toBeNull();
+  });
+
+  it('unfollows through the follow endpoint and offers the prompt again, box unticked', async () => {
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('.core-follow-card__unfollow')?.click();
+    });
+
+    expect(sdk.post).toHaveBeenCalledWith('/client/store/follow?_method=DELETE', {});
+    expect(container.querySelector('.core-follow-card__unfollow')).toBeNull();
+    expect(container.querySelector<HTMLInputElement>('.core-follow-card__checkbox')?.checked).toBe(false);
+  });
+
+  it('keeps the Following state even after the prompt was dismissed', async () => {
+    window.localStorage.setItem('queek_follow_card_dismissed', JSON.stringify(['v1']));
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    expect(container.querySelector('.core-follow-card__unfollow')).not.toBeNull();
+  });
+
+  it('shows the Following state once, in the footer, when that is where the merchant put the card', async () => {
+    await mount(
+      { enabled: true, display: 'footer' },
+      <>
+        <FollowCard display="floating" />
+        <FollowCard display="inline" />
+      </>,
+    );
+
+    expect(container.querySelectorAll('.core-follow-card__unfollow')).toHaveLength(1);
+    expect(cards()[0]?.className).toContain('core-follow-card--inline');
+  });
+
+  it('says Following and Unfollow in the shopper\'s language', async () => {
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />, {
+      follow: { following: 'Abonné', unfollow: 'Se désabonner', leaving: 'Désabonnement…' },
+    });
+
+    expect(container.textContent).toContain('Abonné');
+    expect(container.textContent).toContain('Se désabonner');
+  });
+});
+
 describe('FollowCard: every word is a theme string', () => {
   it('reads the words from the dictionary the host supplies, with CLDR plurals', async () => {
     const fr = {

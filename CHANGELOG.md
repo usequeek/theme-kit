@@ -15,6 +15,8 @@ policy. Versions before this file started are in the git tags.
   `<FollowCard display="inline" />` renders only when it is `footer`. A theme with no footer mount shows the floating
   card instead, so an enabled card is never missing and never doubled. `display` on the component now names the mount,
   no longer overrides the merchant's setting.
+- A shopper who already follows no longer sees the card vanish: it shows a compact "Following · Unfollow" state (in
+  the same place the merchant chose), so they can always withdraw. Dismissing the prompt does not hide it.
 - Every word of the card is a theme string (`follow.*` in `locales/en.default.json`, with a CLDR plural for the
   follower count), so it translates with the rest of the storefront.
 

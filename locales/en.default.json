@@ -198,6 +198,9 @@
     },
     "share": "Optional: share my name, email and phone number with {name}, so they can contact me.",
     "action": "Follow",
-    "busy": "Following…"
+    "busy": "Following…",
+    "following": "Following",
+    "unfollow": "Unfollow",
+    "leaving": "Unfollowing…"
   }
 }
