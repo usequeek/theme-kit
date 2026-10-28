@@ -9,7 +9,9 @@ policy. Versions before this file started are in the git tags.
 
 - The follow card no longer pre-ticks "share my contact": `shareContact` starts `false`, so following a store shares
   nothing unless the shopper ticks the box, and the label says what is shared and with whom (name, email and phone
-  number, with the store). `POST /client/store/follow` still carries `share_contact` explicitly.
+  number, with the store). `POST /client/store/follow` now carries the choice as `contact_opt_in` (a boolean); the API
+  reads only that key as consent and treats the older `share_contact` as not shared, so an old and a new storefront
+  can both run against the same backend.
 - The follow card shows once, where the merchant chose. The shell's `<FollowCard display="floating" />` renders only
   when the setting is `floating` (the retired `block` reads as `floating`); a theme footer's
   `<FollowCard display="inline" />` renders only when it is `footer`. A theme with no footer mount shows the floating
@@ -17,6 +19,8 @@ policy. Versions before this file started are in the git tags.
   no longer overrides the merchant's setting.
 - A shopper who already follows no longer sees the card vanish: it shows a compact "Following · Unfollow" state (in
   the same place the merchant chose), so they can always withdraw. Dismissing the prompt does not hide it.
+- The follower count is formatted in the shopper's locale (`useStorefrontLocale()`), and the dismiss button and the
+  compact chip sit on the inline end (`inset-inline-end`), so right-to-left stores mirror them.
 - Every word of the card is a theme string (`follow.*` in `locales/en.default.json`, with a CLDR plural for the
   follower count), so it translates with the rest of the storefront.
 

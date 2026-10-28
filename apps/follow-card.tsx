@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react';
 import { useState, useCallback, useEffect, useSyncExternalStore } from 'react';
-import { useStorefront, useThemeStrings } from '../provider';
+import { useStorefront, useStorefrontLocale, useThemeStrings } from '../provider';
 import { useUserStore } from '../stores/user-store';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { getQueekClient } from '../sdk/queek-client';
@@ -84,6 +84,7 @@ function registerInlineMount(): () => void {
 export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}): JSX.Element | null {
   const { config, vendor } = useStorefront();
   const t = useThemeStrings();
+  const locale = useStorefrontLocale();
   const followConfig = config.apps?.follow_card;
   const mount = display === 'inline' ? 'inline' : 'floating';
   const setting = settingFor(followConfig?.display);
@@ -136,8 +137,9 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
     setLoading(true);
     try {
       const client = getQueekClient(vendor.slug ?? undefined);
+      // `contact_opt_in` is the only consent the API reads; the older `share_contact` is ignored as not consent.
       const res = await client.post<FollowData>('/client/store/follow', {
-        share_contact: shareContact,
+        contact_opt_in: shareContact,
       });
       setIsFollowing(res.data?.following ?? true);
       setFollowersCount(res.data?.followers_count ?? followersCount + 1);
@@ -229,7 +231,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
           </p>
           {followersCount > 0 && (
             <p className="core-follow-card__count">
-              {t('follow.count', { count: followersCount, n: formatCount(followersCount) })}
+              {t('follow.count', { count: followersCount, n: formatCount(followersCount, locale) })}
             </p>
           )}
         </div>

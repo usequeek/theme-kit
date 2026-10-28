@@ -96,7 +96,7 @@
 .core-follow-card__dismiss {
   position: absolute;
   top: 0.5rem;
-  right: 0.5rem;
+  inset-inline-end: 0.5rem;
   width: 24px;
   height: 24px;
   border: 0;
@@ -207,8 +207,8 @@
   }
   /* The compact following state stays a small chip at the right edge. */
   .core-follow-card--compact.core-follow-card--floating {
-    left: auto;
-    right: 1rem;
+    inset-inline-start: auto;
+    inset-inline-end: 1rem;
     width: auto;
   }
   /* Reset position overrides on mobile — always full-width bottom */

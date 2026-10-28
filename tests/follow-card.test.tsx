@@ -33,10 +33,12 @@ interface Setting {
 function Store({
   follow,
   strings,
+  locale,
   children,
 }: {
   follow: Setting;
   strings?: Record<string, unknown>;
+  locale?: string;
   children: ReactNode;
 }) {
   return (
@@ -44,6 +46,7 @@ function Store({
       vendor={{ id: 'v1', slug: 'acme', name: 'Acme' } as never}
       config={{ apps: { follow_card: follow }, followers_count: 1200 } as never}
       menus={[]}
+      {...(locale ? { locale } : {})}
       {...(strings ? { strings: strings as never } : {})}
     >
       {children}
@@ -54,10 +57,10 @@ function Store({
 let container: HTMLDivElement;
 let root: Root;
 
-async function mount(follow: Setting, nodes: ReactNode, strings?: Record<string, unknown>): Promise<void> {
+async function mount(follow: Setting, nodes: ReactNode, strings?: Record<string, unknown>, locale?: string): Promise<void> {
   await act(async () => {
     root.render(
-      <Store follow={follow} {...(strings ? { strings } : {})}>
+      <Store follow={follow} {...(strings ? { strings } : {})} {...(locale ? { locale } : {})}>
         {nodes}
       </Store>,
     );
@@ -98,7 +101,7 @@ describe('FollowCard: contact sharing is the shopper\'s own choice', () => {
       container.querySelector<HTMLButtonElement>('.core-follow-card__btn')?.click();
     });
 
-    expect(sdk.post).toHaveBeenCalledWith('/client/store/follow', { share_contact: false });
+    expect(sdk.post).toHaveBeenCalledWith('/client/store/follow', { contact_opt_in: false });
   });
 
   it('sends the contact only after the shopper ticks the box', async () => {
@@ -111,7 +114,17 @@ describe('FollowCard: contact sharing is the shopper\'s own choice', () => {
       container.querySelector<HTMLButtonElement>('.core-follow-card__btn')?.click();
     });
 
-    expect(sdk.post).toHaveBeenCalledWith('/client/store/follow', { share_contact: true });
+    expect(sdk.post).toHaveBeenCalledWith('/client/store/follow', { contact_opt_in: true });
+  });
+
+  it('never sends the older share_contact key, which the API does not read as consent', async () => {
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('.core-follow-card__btn')?.click();
+    });
+
+    expect(sdk.post.mock.calls[0]?.[1]).not.toHaveProperty('share_contact');
   });
 
   it('says what is shared and with whom', async () => {
@@ -278,6 +291,16 @@ describe('FollowCard: every word is a theme string', () => {
     expect(text).toContain('Facultatif : partager mon nom avec Acme.');
     expect(container.querySelector('.core-follow-card')?.getAttribute('aria-label')).toBe('Suivre cette boutique');
     expect(container.querySelector('.core-follow-card__dismiss')?.getAttribute('aria-label')).toBe('Ne plus afficher');
+  });
+
+  it('formats the follower count in the shopper\'s locale', async () => {
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />, undefined, 'fr');
+
+    const count = container.querySelector('.core-follow-card__count')?.textContent ?? '';
+
+    expect(count).toContain('1');
+    expect(count).not.toContain('1,200');
+    expect(count).toMatch(/1[\u202f\u00a0 ]200/);
   });
 
   it('keeps no English literal in the component', async () => {
