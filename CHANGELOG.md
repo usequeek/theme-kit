@@ -3,6 +3,14 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## Unreleased
+
+### Added
+
+- `market_coupon_unavailable` joins `MARKET_ERROR_CODES`: the 422 a fixed-price market answers when a discount code is on
+  the cart, the quote or the order. `asMarketRefusal` now reads it, so a storefront can say "remove the code" in the
+  shopper's language instead of showing the API's English sentence.
+
 ## 0.1.36 - 2026-10-28
 
 ### Changed

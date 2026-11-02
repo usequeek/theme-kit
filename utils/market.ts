@@ -150,6 +150,8 @@ export const MARKET_ERROR_CODES = [
   'market_rate_expired',
   // 422 at the quote and the order (and cart `market.unavailable`): the market total is zero or below the provider minimum.
   'market_total_unusable',
+  // 422 at the cart code, the quote and the order: a discount code is refused in a fixed-price market (codes are shop-currency money). Remove the code.
+  'market_coupon_unavailable',
 ] as const;
 
 export type MarketErrorCode = (typeof MARKET_ERROR_CODES)[number];

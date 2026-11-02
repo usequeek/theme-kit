@@ -140,7 +140,7 @@ describe('asMarketRefusal', () => {
   });
 
   it('reads the 422 refusals', () => {
-    for (const code of ['market_payment_unavailable', 'market_price_unusable', 'market_method_unavailable', 'market_delivery_unavailable', 'market_cart_required', 'market_rate_expired', 'market_total_unusable']) {
+    for (const code of ['market_payment_unavailable', 'market_price_unusable', 'market_method_unavailable', 'market_delivery_unavailable', 'market_cart_required', 'market_rate_expired', 'market_total_unusable', 'market_coupon_unavailable']) {
       expect(asMarketRefusal({ status: 422, code, message: 'm', details: null })?.code, code).toBe(code);
     }
   });
