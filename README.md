@@ -250,7 +250,8 @@ Themes set none of these; the storefront host does.
 | --- | --- |
 | `QUEEK_API_URL` (or `NEXT_PUBLIC_QUEEK_API_URL`) | Origin of the Queek API for server-side reads. Without it the kit falls back to `http://127.0.0.1:8000/api/v1` and warns once in production builds. |
 | `NEXT_PUBLIC_QUEEK_AUTH_URL` | Origin of the sign-in service (default `https://auth.usequeek.com`). |
-| `STOREFRONT_DOMAIN` | Domain whose subdomains are store slugs (default `queek.com.ng`). |
+| `STOREFRONT_DOMAIN` | The primary store domain: stores live at `{slug}.<domain>` and the URLs the storefront emits use it (default `queek.com.ng`). |
+| `STOREFRONT_LEGACY_DOMAINS` | Comma list of former store domains that still resolve a store (e.g. `queek.com.ng` after a move). The host app redirects them to the primary domain; the kit names the primary one in canonical URLs. Unset = none. |
 | `CUSTOM_DOMAIN_VENDOR_MAP` | JSON object mapping a custom domain to a store slug. |
 
 Browser requests are always same-origin (`/api/v1/client/*`), so the host needs

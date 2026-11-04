@@ -44,9 +44,98 @@ export function shouldBypassVendorProxy(pathname: string): boolean {
   return pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.');
 }
 
+/** The store domain an unset `STOREFRONT_DOMAIN` has always meant. */
+export const DEFAULT_STOREFRONT_DOMAIN = 'queek.com.ng';
+
+const HOST_LABEL = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const DOMAIN_FORMAT = /^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)+$/;
+
+/**
+ * The primary store domain: stores live at `{slug}.<this>` and every URL the
+ * storefront emits uses it. `STOREFRONT_DOMAIN`, else `queek.com.ng` — an unset
+ * env keeps today's behaviour exactly.
+ */
+export function getStorefrontDomain(): string {
+  const configured = process.env.STOREFRONT_DOMAIN?.trim().toLowerCase().replace(/^\.+|\.+$/g, '');
+
+  return configured || DEFAULT_STOREFRONT_DOMAIN;
+}
+
+/**
+ * Store domains that still RESOLVE a store but are no longer the address:
+ * `STOREFRONT_LEGACY_DOMAINS`, a comma list (`queek.com.ng`). Empty when unset,
+ * so nothing is a legacy host until the new domain is switched on. The primary
+ * domain, duplicates and anything that is not a bare hostname are dropped.
+ */
+export function getLegacyStorefrontDomains(): string[] {
+  const raw = process.env.STOREFRONT_LEGACY_DOMAINS;
+  if (!raw) return [];
+
+  const primary = getStorefrontDomain();
+  const domains = new Set<string>();
+  for (const entry of raw.split(',')) {
+    const domain = entry.trim().toLowerCase().replace(/^\*?\.+|\.+$/g, '');
+    if (domain !== primary && DOMAIN_FORMAT.test(domain)) domains.add(domain);
+  }
+
+  return [...domains];
+}
+
+/** Primary first, then the legacy domains: every suffix a store host may end in. */
+export function getStoreDomains(): string[] {
+  return [getStorefrontDomain(), ...getLegacyStorefrontDomains()];
+}
+
+/** The suffixes (with the leading dot) a hostname is matched against; `.localhost` is the dev host. */
+function storeHostSuffixes(): string[] {
+  return [...getStoreDomains().map((domain) => `.${domain}`), '.localhost'];
+}
+
+/** The one label in front of a legacy domain, when `hostname` is `<label>.<legacy domain>`. */
+function legacyHostLabel(hostname: string): string | null {
+  const host = hostname.toLowerCase();
+  for (const domain of getLegacyStorefrontDomains()) {
+    const suffix = `.${domain}`;
+    if (!host.endsWith(suffix)) continue;
+
+    const label = host.slice(0, -suffix.length);
+
+    return HOST_LABEL.test(label) ? label : null;
+  }
+
+  return null;
+}
+
+/**
+ * Where a request for `{label}.<legacy domain>` belongs: the same label on the
+ * primary store domain (`acme.queek.com.ng` → `acme.queek.app`), or `null` when
+ * the host is not on a legacy domain (the primary domain, a custom domain,
+ * `localhost`, a bare apex, anything else) — so there is never a loop, and with
+ * `STOREFRONT_LEGACY_DOMAINS` unset there is never a redirect.
+ *
+ * It is every single label, not only store slugs: `preview.`, `themes.` and the
+ * reserved names move with their domain, so a link to any of them keeps working.
+ */
+export function legacyHostRedirectTarget(hostname: string): string | null {
+  const label = legacyHostLabel(hostname);
+
+  return label === null ? null : `${label}.${getStorefrontDomain()}`;
+}
+
+/**
+ * Re-points a URL's host from a legacy store domain to the primary one, so what
+ * the storefront emits (canonical, sitemap, OG, JSON-LD) never names the old
+ * address. A URL on any other host is returned unchanged.
+ */
+export function toPrimaryStoreHost(host: string): string {
+  const [hostname, ...port] = host.split(':');
+  const target = legacyHostRedirectTarget(hostname);
+
+  return target === null ? host : [target, ...port].join(':');
+}
+
 export function resolveSubdomainVendorSlug(hostname: string): string | null {
-  const storefrontDomain = process.env.STOREFRONT_DOMAIN ?? 'queek.com.ng';
-  const domains = [`.${storefrontDomain}`, '.localhost'];
+  const domains = storeHostSuffixes();
 
   const matchedDomain = domains.find((d) => hostname.endsWith(d));
   if (!matchedDomain) {
@@ -132,8 +221,7 @@ function logRemoteFailure(reason: string): void {
 }
 
 export function isPreviewSubdomain(hostname: string): boolean {
-  const storefrontDomain = process.env.STOREFRONT_DOMAIN ?? 'queek.com.ng';
-  const domains = [`.${storefrontDomain}`, '.localhost'];
+  const domains = storeHostSuffixes();
 
   return domains.some((d) => {
     if (!hostname.endsWith(d)) return false;

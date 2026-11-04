@@ -3,6 +3,23 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.38 - 2026-11-04
+
+### Added
+
+- `STOREFRONT_LEGACY_DOMAINS` (comma list): store domains that still resolve a store after `STOREFRONT_DOMAIN` moves.
+  `resolveSubdomainVendorSlug` and `isPreviewSubdomain` accept the primary domain, every legacy domain and `.localhost`;
+  the reserved-slug list is unchanged. New exports in `utils/vendor-host`: `getStorefrontDomain`,
+  `getLegacyStorefrontDomains`, `getStoreDomains`, `legacyHostRedirectTarget` (the host a legacy-domain request belongs
+  on, `null` everywhere else, so a host app can redirect without looping) and `toPrimaryStoreHost`.
+
+### Changed
+
+- `resolveStoreBaseUrl` names the primary store domain when the request arrived on a legacy one, so canonical URLs,
+  sitemaps and structured data never carry the old address.
+- With both variables unset nothing changes: the store domain is still `queek.com.ng`. An empty `STOREFRONT_DOMAIN` now
+  counts as unset instead of producing a `.` suffix.
+
 ## 0.1.37 - 2026-11-02
 
 ### Added

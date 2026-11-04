@@ -1,5 +1,5 @@
 import { cookies, headers } from 'next/headers';
-import { resolveCustomDomainVendorSlug, resolveCustomDomainVendorSlugRemote, resolveSubdomainVendorSlug } from '../utils/vendor-host';
+import { resolveCustomDomainVendorSlug, resolveCustomDomainVendorSlugRemote, resolveSubdomainVendorSlug, toPrimaryStoreHost } from '../utils/vendor-host';
 import { LOCALE_CODE_HEADER, parseLocaleCode, withLocaleQuery, withLocaleTags } from '../utils/locale';
 import { isMarketPricedPath, readMarketFromCookieString, withMarketQuery } from '../utils/market';
 import { API_BASE_URL, request, type RequestCachePolicy, type RequestOptions } from './client';
@@ -28,6 +28,9 @@ export async function getRequestOrigin(): Promise<string | undefined> {
  * storefronts serve at the bare origin; path-based access serves under
  * `/vendor-slug`). Every canonical URL, sitemap entry, and JSON-LD `url` field
  * must derive from this instead of re-deriving `basePath` inline.
+ *
+ * The host is the request's, except that a legacy store domain is named by the
+ * primary one (see `STOREFRONT_LEGACY_DOMAINS`).
  */
 export async function resolveStoreBaseUrl(vendor: string): Promise<string | null> {
   const origin = await getRequestOrigin();
@@ -42,7 +45,11 @@ export async function resolveStoreBaseUrl(vendor: string): Promise<string | null
   );
   const basePath = isSubdomain ? '' : `/${vendor}`;
 
-  return `${origin}${basePath}`;
+  // A store reached on a legacy store domain (`STOREFRONT_LEGACY_DOMAINS`) is still
+  // addressed by the primary one: the URL we emit must be the one to index and share.
+  const canonicalOrigin = origin.replace(/^([a-z][a-z0-9+.-]*:\/\/)(.+)$/i, (_match, scheme: string, authority: string) => `${scheme}${toPrimaryStoreHost(authority)}`);
+
+  return `${canonicalOrigin}${basePath}`;
 }
 
 /**
