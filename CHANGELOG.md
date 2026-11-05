@@ -3,6 +3,24 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.39 - 2026-11-05
+
+### Added
+
+- `utils/vendor-host`: `lookupStoreByHost(hostname)` reports what `resolve-by-host` said as one of three answers
+  (`HostLookup`): `store` (with the slug), `not-store` (200 with `slug: null`, or a 404) or `unknown` (429, 5xx, any other
+  status, a timeout, a network error, an unreadable body, no API URL). Only `not-store` is a definite answer: an
+  outage must never read as "no store here".
+- `resolveVendorHost({ host, searchVendor, lookup? })` returns `{ slug, outcome }`, so a host app can answer 404 for a
+  host that is definitely not a store. It checks a `{label}.<store domain>` host exists through the same lookup (a
+  subdomain used to be trusted without a check), takes the slug the API returns, and keeps the label while the lookup is
+  `unknown`. `lookup` lets the host app pass a cached lookup.
+
+### Unchanged
+
+- `resolveVendorSlug` and `resolveCustomDomainVendorSlugRemote` behave exactly as before (any non-OK answer is still
+  `null`), so existing callers need no change.
+
 ## 0.1.38 - 2026-11-04
 
 ### Added
