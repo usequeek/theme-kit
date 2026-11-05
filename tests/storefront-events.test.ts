@@ -394,3 +394,102 @@ describe('cart store', () => {
     ]);
   });
 });
+
+describe('catalog ids (p_id) on the bus', () => {
+  const tee = {
+    id: 'tee-uuid',
+    p_id: 4197,
+    shop_id: 's1',
+    title: 'Tee',
+    slug: 'tee',
+    pricing: { sale_amount: 1000 },
+    media: { thumbnail: null, image: null },
+    variants: [] as unknown[],
+    variants_count: 0,
+  };
+  const red = {
+    id: 'red-uuid',
+    p_id: 5102,
+    title: 'Red',
+    pricing: { sale_amount: 1200 },
+    media: { thumbnail: null, image: null },
+    option_values: [{ option_name: 'Colour', value: 'Red' }],
+  };
+
+  beforeEach(() => {
+    useCartStore.setState({ items: [], currency: 'NGN' });
+  });
+
+  function addedItems(run: () => void): StorefrontEvent[] {
+    const seen: StorefrontEvent[] = [];
+    const off = onStorefrontEvent((event) => {
+      seen.push(event);
+    });
+    run();
+    off();
+
+    return seen;
+  }
+
+  it('a product without variants adds under its product p_id, and the line remembers it', () => {
+    const [event] = addedItems(() => useCartStore.getState().addItemWithAddons(tee as never, 1, []));
+
+    expect(event).toMatchObject({ name: 'product_added_to_cart', data: { items: [{ item_id: '4197', item_name: 'Tee', price: 1000, quantity: 1 }] } });
+    expect(useCartStore.getState().items[0]).toMatchObject({ product_p_id: 4197 });
+    expect('variant_p_id' in useCartStore.getState().items[0]).toBe(false);
+  });
+
+  it('a chosen variant adds under "product p_id_variant p_id", at the variant price', () => {
+    const withVariants = { ...tee, variants: [red], variants_count: 1 };
+    const [event] = addedItems(() => useCartStore.getState().addItemWithAddons(withVariants as never, 2, [], red as never));
+
+    expect(event).toMatchObject({ data: { value: 2400, items: [{ item_id: '4197_5102', price: 1200, quantity: 2 }] } });
+    expect(useCartStore.getState().items[0]).toMatchObject({ product_id: 'tee-uuid', variant_id: 'red-uuid', product_p_id: 4197, variant_p_id: 5102 });
+    expect(dataLayer().at(-1)).toEqual(['event', 'add_to_cart', { currency: 'NGN', value: 2400, items: [{ item_id: '4197_5102', item_name: 'Tee', price: 1200, quantity: 2 }] }]);
+  });
+
+  it('a variant without a p_id (older payload) falls back to the product p_id as a group id, never the UUID', () => {
+    const { p_id: _gone, ...bare } = red;
+    const withVariants = { ...tee, variants: [bare], variants_count: 1 };
+    const [event] = addedItems(() => useCartStore.getState().addItemWithAddons(withVariants as never, 1, [], bare as never));
+
+    expect(event).toMatchObject({ data: { items: [{ item_id: '4197', is_group: true }] } });
+    // GA4 never sees `is_group`.
+    expect(dataLayer().at(-1)).toEqual(['event', 'add_to_cart', { currency: 'NGN', value: 1200, items: [{ item_id: '4197', item_name: 'Tee', price: 1200, quantity: 1 }] }]);
+  });
+
+  it('a product with no p_id at all falls back to its UUID (what it sent before)', () => {
+    const { p_id: _gone, ...bare } = tee;
+    const [event] = addedItems(() => useCartStore.getState().addItemWithAddons(bare as never, 1, []));
+
+    expect(event).toMatchObject({ data: { items: [{ item_id: 'tee-uuid' }] } });
+    expect((event as { data: { items: Array<{ is_group?: boolean }> } }).data.items[0].is_group).toBeUndefined();
+  });
+
+  it('merging into an existing line keeps (and fills in) the p_ids', () => {
+    useCartStore.setState({
+      items: [{ id: 'tee-uuid', product_id: 'tee-uuid', shop_id: 's1', title: 'Tee', image: null, unit_price: 1000, quantity: 1, addons: [] }],
+    });
+    useCartStore.getState().addItemWithAddons(tee as never, 1, []);
+
+    expect(useCartStore.getState().items[0]).toMatchObject({ quantity: 2, product_p_id: 4197 });
+  });
+
+  it('the bus keeps is_group only when it is true', () => {
+    const seen = addedItems(() => {
+      trackStorefrontEvent('product_viewed', {
+        currency: 'NGN',
+        value: 1,
+        items: [
+          { item_id: '4197', item_name: 'Tee', price: 1, quantity: 1, is_group: true },
+          { item_id: '5102', item_name: 'Red', price: 1, quantity: 1, is_group: false },
+        ],
+      });
+    });
+
+    const items = (seen[0] as unknown as { data: { items: Array<Record<string, unknown>> } }).data.items;
+
+    expect(items[0].is_group).toBe(true);
+    expect('is_group' in items[1]).toBe(false);
+  });
+});

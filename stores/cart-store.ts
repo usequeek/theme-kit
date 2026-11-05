@@ -7,6 +7,7 @@ import type { Product, ProductVariant } from '../types/product';
 import { toast } from './toast-store';
 import { normalizeCurrencyCode, PLATFORM_DEFAULT_CURRENCY, roundAmount } from '../utils/format';
 import { trackStorefrontEvent } from '../apps/storefront-events';
+import { catalogItemId, toPId } from '../utils/catalog-id';
 import { getActivePlatform, platformScopedStorage } from '../sdk/platform';
 import { productRequiresVariant } from '../utils/match-variant';
 import { readLineText } from './line-text-store';
@@ -201,6 +202,9 @@ export const useCartStore = create<CartState>()(
           });
         }
         const addedQuantity = Math.max(1, quantity);
+        // The catalog ids of this line (what the pixel sends); null when the payload carries none.
+        const productPId = toPId(product.p_id);
+        const variantPId = toPId(variant?.p_id);
 
         set((state) => {
           const existing = state.items.findIndex(
@@ -214,6 +218,8 @@ export const useCartStore = create<CartState>()(
               ...current,
               quantity: current.quantity + Math.max(1, quantity),
               unit_price: unitPrice,
+              ...(productPId !== null ? { product_p_id: productPId } : {}),
+              ...(variantPId !== null ? { variant_p_id: variantPId } : {}),
             };
 
             return { items };
@@ -234,6 +240,9 @@ export const useCartStore = create<CartState>()(
                 addons,
                 variant_id: variant?.id ?? null,
                 variant_title: variant?.title ?? null,
+                // Like `properties`: a payload without a p_id leaves the key off, so a line keeps the shape it always had.
+                ...(productPId !== null ? { product_p_id: productPId } : {}),
+                ...(variantPId !== null ? { variant_p_id: variantPId } : {}),
                 ...(hasLineText ? { properties: lineText.properties, property_labels: lineText.labels } : {}),
               },
             ],
@@ -243,7 +252,14 @@ export const useCartStore = create<CartState>()(
         trackStorefrontEvent('product_added_to_cart', {
           currency: get().currency,
           value: roundAmount(unitPrice * addedQuantity),
-          items: [{ item_id: product.id, item_name: product.title, price: unitPrice, quantity: addedQuantity }],
+          items: [
+            {
+              ...catalogItemId({ variantPId, productPId, hasVariant: variant !== null, fallbackId: product.id }),
+              item_name: product.title,
+              price: unitPrice,
+              quantity: addedQuantity,
+            },
+          ],
         });
 
         return 'added';

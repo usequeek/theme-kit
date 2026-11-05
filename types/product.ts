@@ -101,6 +101,11 @@ export interface ProductVariantOptionValue {
 
 export interface ProductVariant {
   id: string;
+  /**
+   * The variant's `p_id`, the id ad-platform catalog feeds use for it (feed `id`) and so the id
+   * the pixel must send. Absent on a payload that predates it: read it through `catalogItemId`.
+   */
+  p_id?: number;
   sku: string | null;
   /** Printed barcode / GTIN (EAN-13/8, UPC-A/E) for in-store scan-to-cart. */
   barcode: string | null;

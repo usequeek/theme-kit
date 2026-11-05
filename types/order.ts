@@ -25,6 +25,15 @@ export interface OrderItem {
   unit_price: number | string;
   addons: Array<Record<string, unknown>>;
   product?: { id: string; thumbnail_image?: string | null } | null;
+  /**
+   * What the API sends on an order line to identify it in a catalog: the product's and the variant's
+   * `p_id` and the variant's name. All optional: older answers lack them, and the variant's `p_id` is
+   * null for a line whose variant was deleted.
+   */
+  product_p_id?: number | null;
+  variant_id?: string | null;
+  variant_p_id?: number | null;
+  variant_title?: string | null;
 }
 
 export interface OrderTimeline {
