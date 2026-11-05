@@ -3,6 +3,32 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.39 - 2026-11-05
+
+### Changed
+
+- Shopping events now identify an item by the id an ad-platform catalog feed uses: the variant's `p_id`, else the
+  product's `p_id`, else (only when no `p_id` is known) the product's UUID. Before, every event sent the product UUID
+  and ignored the chosen variant, and the purchase event sent the order line's id. GA4 `item_id`, Meta `content_ids`
+  / `contents[].id`, TikTok `contents[].content_id` and Pinterest `product_id` all read it from
+  `StorefrontEventItem.item_id`, which stays a string. The one rule lives in the new `catalogItemId` helper.
+- **Id continuity:** a store that already has pixel or GA4 history keyed by UUID will see its item ids change at this
+  release. Reports and audiences that join on the old UUID ids split at the release date; new events match the store's
+  catalog feed. The UUID is still sent for a line with no `p_id` (a cart saved before this release, or an API answer
+  that predates `p_id` on variants, cart lines and order lines), so those carry the old id until they are replaced.
+
+### Added
+
+- `catalogItemId`, `catalogItemIdForCartLine` and `toPId` (`utils/catalog-id`, re-exported from
+  `apps/storefront-events`).
+- `StorefrontEventItem.is_group`: set when the `item_id` is a product-group id (a product `p_id` for a product with
+  variants, used when the variant is not known). Meta and TikTok take it as `content_type: 'product_group'`. It is
+  never sent to GA4.
+- `ProductVariant.p_id`, carried by `normalizeProduct` when the API sends it.
+- `CartItem.product_p_id` / `variant_p_id`, written by `addItemWithAddons` when the product / variant has a `p_id`
+  (the key is left off a line otherwise).
+- `OrderItem.product_id` / `product_p_id` / `variant_id` / `variant_p_id` and `OrderItem.product.p_id` (optional types).
+
 ## 0.1.38 - 2026-11-04
 
 ### Added
