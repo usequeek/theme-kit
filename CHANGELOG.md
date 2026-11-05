@@ -19,6 +19,16 @@ policy. Versions before this file started are in the git tags.
   subdomain used to be trusted without a check), takes the slug the API returns, and keeps the label while the lookup is
   `unknown`. `lookup` lets the host app pass a cached lookup. One trailing root dot on the host is ignored
   (`acme.queek.app.` is `acme.queek.app`).
+- `sdk/storefront-proxy-auth` (server-only, pure): `storefrontProxyHeaders({ shopperIp? })` builds the two headers a storefront
+  server sends the API (S8-B): `X-Storefront-Proxy-Secret` (env `STOREFRONT_PROXY_SECRET`, the same value as on the API)
+  and `X-Shopper-IP`. `STOREFRONT_PROXY_SECRET` unset or blank: nothing is sent, exactly as before. A missing or
+  malformed shopper address is never sent (no `x-forwarded-for` / `x-real-ip` fallback).
+- `getStorefrontApiHeaders({ cached })` in `sdk/server-store-client`: `cached: true` → the secret only (a per-shopper
+  header would split Next's data cache, whose key includes request headers); `cached: false` → the secret plus the
+  request's `cf-connecting-ip` when present. Call it outside a Next cache scope.
+- `createServerStoreClient` sends them: cached GETs the secret only, `no-store` GETs and every POST both.
+- `lookupStoreByHost(host, { shopperIp })`: with `cache: 'no-store'` the lookup also names the shopper; every lookup
+  carries the secret.
 
 ### Unchanged
 

@@ -5,6 +5,8 @@
  * server fetchers and a host app's proxy can both import it.
  */
 
+import { storefrontProxyHeaders } from '../sdk/storefront-proxy-auth';
+
 // Mirrors the API's reserved store slugs. Keep in sync.
 // These are subdomains the storefront proxy must NOT treat as vendor slugs.
 export const RESERVED_VENDOR_SLUGS = new Set([
@@ -191,6 +193,12 @@ export interface LookupStoreByHostOptions {
    * Omitted: the fetch is revalidated every 5 minutes and tagged `host:<hostname>`, as it always was.
    */
   cache?: 'no-store';
+  /**
+   * The shopper this lookup is made for (the request's `cf-connecting-ip`), sent as `X-Shopper-IP` so a scanner
+   * rotating random hosts spends its own per-address budget, not the storefront server's. Only used with
+   * `cache: 'no-store'`: a cached read must not carry a per-shopper header (it would split the data cache).
+   */
+  shopperIp?: string | null;
 }
 
 /**
@@ -219,7 +227,8 @@ export async function lookupStoreByHost(hostname: string, options: LookupStoreBy
   try {
     const response = await fetch(url, {
       method: 'GET',
-      headers: { Accept: 'application/json' },
+      // The S8-B secret rides every lookup (when configured); the shopper only the uncached one.
+      headers: { Accept: 'application/json', ...storefrontProxyHeaders(options.cache === 'no-store' ? { shopperIp: options.shopperIp } : {}) },
       signal: controller.signal,
       ...(options.cache === 'no-store'
         ? { cache: 'no-store' as const }
