@@ -4,6 +4,7 @@ import { LOCALE_CODE_HEADER, parseLocaleCode, withLocaleQuery, withLocaleTags } 
 import { isMarketPricedPath, readMarketFromCookieString, withMarketQuery } from '../utils/market';
 import { API_BASE_URL, request, type RequestCachePolicy, type RequestOptions } from './client';
 import { getActivePlatform } from './platform';
+import { readProxySecret, storefrontProxyHeaders } from './storefront-proxy-auth';
 
 /**
  * Origin of the incoming storefront request, forwarded to the API so it
@@ -223,6 +224,30 @@ export async function readRequestMarket(vendorSlug: string, verify?: (marketId: 
   }
 }
 
+/**
+ * The S8-B headers for one server-side API call (see `./storefront-proxy-auth`).
+ *
+ * `cached: true` — the read goes through Next's data cache (`next.revalidate`): the secret only, never the
+ * shopper (the cache key includes request headers). `cached: false` — a `no-store` call: the secret plus the
+ * incoming request's `cf-connecting-ip` when it has one. No secret configured: `{}`.
+ *
+ * Reads `headers()` on the uncached path, so call it OUTSIDE a Next cache scope, like `getRequestOrigin`. Outside
+ * a request (build, tests) it quietly sends the secret alone.
+ */
+export async function getStorefrontApiHeaders(options: { cached: boolean }): Promise<Record<string, string>> {
+  if (options.cached) return storefrontProxyHeaders();
+  if (!readProxySecret()) return {};
+
+  let shopperIp: string | null = null;
+  try {
+    shopperIp = (await headers()).get('cf-connecting-ip');
+  } catch {
+    shopperIp = null;
+  }
+
+  return storefrontProxyHeaders({ shopperIp });
+}
+
 /** Options of {@link createServerStoreClient}. */
 export interface ServerStoreClientOptions {
   /**
@@ -259,25 +284,28 @@ export function createServerStoreClient(vendorSlug: string, origin?: string, opt
       // leave the shared data cache. The cache is shared by every visitor, its key is the URL, and a rate moves
       // without any revalidation tag, so a market price is never stored there. No market: today's request.
       const marketId = isMarketPricedPath(path) ? await readRequestMarket(vendorSlug, options.verifyMarket) : null;
+      const cachePolicy =
+        marketId !== null || (await isPreviewRender())
+          ? null
+          : withLocaleCachePolicy(resolveCachePolicy(vendorSlug, path, query), code);
       return request<T>(
         API_BASE_URL,
         `/client/store${path}`,
         {
           query: withMarketQuery(withLocaleQuery(query, code), marketId),
           timeoutMs: SSR_TIMEOUT_MS,
-          cachePolicy: marketId !== null || (await isPreviewRender())
-            ? null
-            : withLocaleCachePolicy(resolveCachePolicy(vendorSlug, path, query), code),
+          cachePolicy,
         },
-        buildHeaders(),
+        // A cached read carries only the secret; an uncached one also names the shopper.
+        { ...buildHeaders(), ...(await getStorefrontApiHeaders({ cached: !!cachePolicy })) },
       );
     },
-    post: <T>(path: string, body?: unknown) =>
+    post: async <T>(path: string, body?: unknown) =>
       request<T>(API_BASE_URL, `/client/store${path}`, {
         method: 'POST',
         body: body ? JSON.stringify(body) : undefined,
         timeoutMs: SSR_TIMEOUT_MS,
         cachePolicy: null,
-      }, buildHeaders()),
+      }, { ...buildHeaders(), ...(await getStorefrontApiHeaders({ cached: false })) }),
   };
 }

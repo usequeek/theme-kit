@@ -3,7 +3,7 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
-## 0.1.39 - 2026-11-05
+## 0.1.40 - 2026-11-05
 
 ### Changed
 
@@ -48,6 +48,40 @@ policy. Versions before this file started are in the git tags.
   (the key is left off a line otherwise).
 - `OrderItem.product_p_id` / `variant_id` / `variant_p_id` / `variant_title` (optional types of what an order line
   carries).
+
+## 0.1.39 - 2026-11-05
+
+### Added
+
+- `utils/vendor-host`: `lookupStoreByHost(hostname)` reports what `resolve-by-host` said as one of three answers
+  (`HostLookup`): `store` (with the slug), `not-store` (HTTP 200, `status: 'success'` and `data.slug: null` — the only
+  way the API says "no store here") or `unknown` (404, 429, 5xx, any other status, a timeout, a network error, an
+  unreadable or off-contract body, no API URL). Only `not-store` is a definite answer: an outage, or a wrong API URL
+  answering 404, must never read as "no store here". `lookupStoreByHost(host, { cache: 'no-store' })` skips Next's Data
+  Cache (no `revalidate`, no tags) for a caller that does its own caching; without it the fetch is revalidated every 5
+  minutes and tagged `host:<hostname>` as before.
+- `resolveVendorHost({ host, searchVendor, lookup? })` returns `{ slug, outcome }`, so a host app can answer 404 for a
+  host that is definitely not a store. It checks a `{label}.<store domain>` host exists through the same lookup (a
+  subdomain used to be trusted without a check), takes the slug the API returns, and keeps the label while the lookup is
+  `unknown`. `lookup` lets the host app pass a cached lookup. One trailing root dot on the host is ignored
+  (`acme.queek.app.` is `acme.queek.app`).
+- `sdk/storefront-proxy-auth` (server-only, pure): `storefrontProxyHeaders({ shopperIp? })` builds the two headers a storefront
+  server sends the API (S8-B): `X-Storefront-Proxy-Secret` (env `STOREFRONT_PROXY_SECRET`, the same value as on the API)
+  and `X-Shopper-IP`. `STOREFRONT_PROXY_SECRET` unset or blank: nothing is sent, exactly as before. A missing or
+  malformed shopper address is never sent (no `x-forwarded-for` / `x-real-ip` fallback).
+- `getStorefrontApiHeaders({ cached })` in `sdk/server-store-client`: `cached: true` → the secret only (a per-shopper
+  header would split Next's data cache, whose key includes request headers); `cached: false` → the secret plus the
+  request's `cf-connecting-ip` when present. Call it outside a Next cache scope.
+- `createServerStoreClient` sends them: cached GETs the secret only, `no-store` GETs and every POST both.
+- `HostLookup` `unknown` carries `rateLimited: { retryAfterSeconds }` when the API answered 429 (still `unknown` for every other
+  purpose), so a host app can tell a 429 from other outages (e.g. retry once without a shopper address).
+- `lookupStoreByHost(host, { shopperIp })`: with `cache: 'no-store'` the lookup also names the shopper; every lookup
+  carries the secret.
+
+### Unchanged
+
+- `resolveVendorSlug` and `resolveCustomDomainVendorSlugRemote` behave exactly as before (any non-OK answer is still
+  `null`), so existing callers need no change.
 
 ## 0.1.38 - 2026-11-04
 
