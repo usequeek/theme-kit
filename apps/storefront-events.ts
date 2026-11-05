@@ -30,9 +30,9 @@ export { catalogItemId, catalogItemIdForCartLine, toPId, type CatalogItemRef, ty
 
 export interface StorefrontEventItem {
   /**
-   * The catalog id: the variant `p_id`, else the product `p_id`, else the product UUID (see
-   * `catalogItemId`; build it with that helper, never from a raw id). A string even though a
-   * `p_id` is a number: GA4, Meta and TikTok all take string ids.
+   * The catalog id: a variant is `"{product_p_id}_{variant_p_id}"`, a product without variants is
+   * `"{product_p_id}"`, and with no `p_id` the product UUID (see `catalogItemId`; build it with that
+   * helper, never from a raw id). A string: GA4, Meta and TikTok all take string ids.
    */
   item_id: string;
   /**
