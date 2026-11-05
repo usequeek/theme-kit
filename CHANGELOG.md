@@ -17,7 +17,8 @@ policy. Versions before this file started are in the git tags.
 - `resolveVendorHost({ host, searchVendor, lookup? })` returns `{ slug, outcome }`, so a host app can answer 404 for a
   host that is definitely not a store. It checks a `{label}.<store domain>` host exists through the same lookup (a
   subdomain used to be trusted without a check), takes the slug the API returns, and keeps the label while the lookup is
-  `unknown`. `lookup` lets the host app pass a cached lookup.
+  `unknown`. `lookup` lets the host app pass a cached lookup. One trailing root dot on the host is ignored
+  (`acme.queek.app.` is `acme.queek.app`).
 
 ### Unchanged
 

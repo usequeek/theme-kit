@@ -222,6 +222,17 @@ describe('resolveVendorHost', () => {
     expect(never).not.toHaveBeenCalled();
   });
 
+  it('strips one trailing root dot (and the port), so a fully qualified host resolves like the plain one', async () => {
+    const lookup = answering({ kind: 'store', slug: 'acme' });
+
+    expect(await resolveVendorHost({ host: 'Acme.Queek.App.', searchVendor: null, lookup })).toEqual({ slug: 'acme', outcome: 'store' });
+    expect(await resolveVendorHost({ host: 'acme.queek.app.:443', searchVendor: null, lookup })).toEqual({ slug: 'acme', outcome: 'store' });
+    expect(lookup.mock.calls.map(([host]) => host)).toEqual(['acme.queek.app', 'acme.queek.app']);
+    // Only one dot: a malformed name is not "fixed" into a valid one.
+    await resolveVendorHost({ host: 'acme.queek.app..', searchVendor: null, lookup });
+    expect(lookup).toHaveBeenLastCalledWith('acme.queek.app.');
+  });
+
   it('keeps a bracketed IPv6 host whole when stripping the port', async () => {
     const lookup = answering({ kind: 'unknown' });
     await resolveVendorHost({ host: '[::1]:3001', searchVendor: null, lookup });

@@ -305,9 +305,12 @@ export async function resolveVendorSlug(options: {
   return options.searchVendor;
 }
 
-/** The host without its port; keeps a bracketed IPv6 literal whole (`[::1]:3001` → `[::1]`). */
+/**
+ * The host without its port or one trailing root dot (`acme.queek.app.:443` is `acme.queek.app`: a fully
+ * qualified name is the same host); keeps a bracketed IPv6 literal whole (`[::1]:3001` → `[::1]`).
+ */
 function hostnameOf(host: string | null): string {
-  return (host ?? '').trim().toLowerCase().replace(/:\d+$/, '');
+  return (host ?? '').trim().toLowerCase().replace(/:\d+$/, '').replace(/\.$/, '');
 }
 
 export interface VendorHostResolution {
