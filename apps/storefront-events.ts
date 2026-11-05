@@ -3,6 +3,8 @@
 import { roundAmount } from '../utils/format';
 import { gtagPush } from './gtag';
 
+export { catalogItemId, catalogItemIdForCartLine, toPId, type CatalogItemRef, type CatalogItemSource } from '../utils/catalog-id';
+
 /**
  * The one place a storefront announces a shopping event.
  *
@@ -27,7 +29,17 @@ import { gtagPush } from './gtag';
  */
 
 export interface StorefrontEventItem {
+  /**
+   * The catalog id: the variant `p_id`, else the product `p_id`, else the product UUID (see
+   * `catalogItemId`; build it with that helper, never from a raw id). A string even though a
+   * `p_id` is a number: GA4, Meta and TikTok all take string ids.
+   */
   item_id: string;
+  /**
+   * True when `item_id` is a product-group id (see `CatalogItemRef.is_group`). Meta and TikTok
+   * get `content_type: 'product_group'` for it. Never sent to GA4.
+   */
+  is_group?: boolean;
   item_name: string;
   /** The unit price actually charged, after discounts. Providers sum price * quantity as revenue. */
   price: number;
@@ -128,6 +140,7 @@ function normalizeItems(items: unknown): StorefrontEventItem[] {
     item_name: String(item?.item_name ?? ''),
     price: Number(item?.price),
     quantity: Number(item?.quantity),
+    ...(item?.is_group === true ? { is_group: true } : {}),
   }));
 }
 
@@ -216,6 +229,10 @@ export function trackStorefrontEvent<K extends StorefrontEventName>(name: K, dat
 
 const finite = (value: number): boolean => Number.isFinite(value);
 
+/** GA4's items: the bus item without `is_group`, which only Meta and TikTok read. */
+const gaItems = (items: StorefrontEventItem[]): Array<Omit<StorefrontEventItem, 'is_group'>> =>
+  items.map(({ is_group: _isGroup, ...item }) => item);
+
 /** `{ value }` when it is a real number, nothing otherwise: GA gets no `NaN`. */
 const valueParam = (value: number): { value: number } | Record<string, never> => (finite(value) ? { value } : {});
 
@@ -232,16 +249,16 @@ const valueParam = (value: number): { value: number } | Record<string, never> =>
 function googleAnalyticsSubscriber(event: StorefrontEvent): void {
   switch (event.name) {
     case 'product_viewed':
-      gtagPush('event', 'view_item', { currency: event.data.currency, ...valueParam(event.data.value), items: event.data.items });
+      gtagPush('event', 'view_item', { currency: event.data.currency, ...valueParam(event.data.value), items: gaItems(event.data.items) });
       return;
     case 'search_submitted':
       gtagPush('event', 'search', { search_term: event.data.search_term });
       return;
     case 'product_added_to_cart':
-      gtagPush('event', 'add_to_cart', { currency: event.data.currency, ...valueParam(event.data.value), items: event.data.items });
+      gtagPush('event', 'add_to_cart', { currency: event.data.currency, ...valueParam(event.data.value), items: gaItems(event.data.items) });
       return;
     case 'checkout_started':
-      gtagPush('event', 'begin_checkout', { currency: event.data.currency, ...valueParam(event.data.value), items: event.data.items });
+      gtagPush('event', 'begin_checkout', { currency: event.data.currency, ...valueParam(event.data.value), items: gaItems(event.data.items) });
       return;
     case 'checkout_completed': {
       const { order_no, currency, items, subtotal, tax, shipping } = event.data;
@@ -256,7 +273,7 @@ function googleAnalyticsSubscriber(event: StorefrontEvent): void {
         currency,
         ...(typeof tax === 'number' && finite(tax) ? { tax } : {}),
         ...(typeof shipping === 'number' && finite(shipping) ? { shipping } : {}),
-        items,
+        items: gaItems(items),
       });
     }
   }

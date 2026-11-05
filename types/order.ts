@@ -24,7 +24,12 @@ export interface OrderItem {
   total_price: number | string;
   unit_price: number | string;
   addons: Array<Record<string, unknown>>;
-  product?: { id: string; thumbnail_image?: string | null } | null;
+  product?: { id: string; p_id?: number | null; thumbnail_image?: string | null } | null;
+  /** The product's id and `p_id`, and the variant's, as the API sends them on a line (all optional: older answers lack them). */
+  product_id?: string | null;
+  product_p_id?: number | null;
+  variant_id?: string | null;
+  variant_p_id?: number | null;
 }
 
 export interface OrderTimeline {

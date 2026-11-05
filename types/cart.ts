@@ -16,6 +16,13 @@ export interface CartItem {
   quantity: number;
   addons: CartAddon[];
   variant_id?: string | null;
+  /**
+   * The product's and the variant's `p_id`, the ids a catalog feed uses, kept so the pixel
+   * can send them. Absent on a line saved before they existed or read from a cart the API
+   * answered without them: `catalogItemIdForCartLine` then falls back.
+   */
+  product_p_id?: number | null;
+  variant_p_id?: number | null;
   /** e.g. "Denim" — the selected variant's display name, when this line has one. */
   variant_title?: string | null;
   /**

@@ -9,6 +9,7 @@ import type {
   ProductVariantOptionValue,
 } from '../types/product';
 import { normalizeCurrencyCode } from './format';
+import { toPId } from './catalog-id';
 
 const KIND_SET = new Set(['physical', 'service', 'digital']);
 const STATUS_SET = new Set(['active', 'inactive']);
@@ -331,6 +332,8 @@ export function normalizeProduct(raw: LegacyProductLike): Product {
 
         return {
           id: String(variant.id ?? `variant-${index}`),
+          // Only a real `p_id` (a positive whole number) is carried; a payload without one keeps its shape.
+          ...(toPId(variant.p_id) !== null ? { p_id: toPId(variant.p_id) as number } : {}),
           sku: variant.sku ?? null,
           barcode: typeof variant.barcode === 'string' && variant.barcode !== '' ? variant.barcode : null,
           title: variant.title ?? null,
