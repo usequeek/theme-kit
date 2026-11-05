@@ -45,19 +45,28 @@ describe('lookupStoreByHost: the three answers', () => {
     expect(String(fetchMock.mock.calls[0][0])).toBe('https://api.example.test/api/v1/client/resolve-by-host?host=shop.acme.com');
   });
 
-  it('200 with slug: null is DEFINITELY not a store', async () => {
+  it("200 + status 'success' + slug: null is DEFINITELY not a store", async () => {
     stubFetch(() => json({ status: 'success', data: { slug: null } }));
 
     expect(await lookupStoreByHost('webmail.queek.app')).toEqual({ kind: 'not-store' });
   });
 
-  it('404 is DEFINITELY not a store', async () => {
-    stubFetch(() => json({ message: 'Not found' }, 404));
+  it.each([
+    ['status missing', { data: { slug: null } }],
+    ["status not 'success'", { status: 'error', data: { slug: null } }],
+  ])('200 with slug: null but %s is unknown (off the API contract)', async (_label, body) => {
+    stubFetch(() => json(body));
 
-    expect(await lookupStoreByHost('owncloud.queek.app')).toEqual({ kind: 'not-store' });
+    expect(await lookupStoreByHost('webmail.queek.app')).toEqual({ kind: 'unknown' });
   });
 
-  it.each([429, 500, 502, 503, 504, 401, 403, 400])('status %i is unknown, never not-store', async (status) => {
+  it('404 is NOT a definite answer: the API never sends one for a host, so it means something is wrong', async () => {
+    stubFetch(() => json({ message: 'Not found' }, 404));
+
+    expect(await lookupStoreByHost('owncloud.queek.app')).toEqual({ kind: 'unknown' });
+  });
+
+  it.each([404, 429, 500, 502, 503, 504, 401, 403, 400])('status %i is unknown, never not-store', async (status) => {
     stubFetch(() => json({ message: 'nope' }, status));
 
     expect(await lookupStoreByHost('shop.acme.com')).toEqual({ kind: 'unknown' });
@@ -102,12 +111,32 @@ describe('lookupStoreByHost: the three answers', () => {
   });
 });
 
+describe('lookupStoreByHost: cache option', () => {
+  it("default: Next-revalidated for 5 minutes and tagged host:<hostname> (as it always was)", async () => {
+    const fetchMock = stubFetch(() => json({ status: 'success', data: { slug: 'acme' } }));
+    await lookupStoreByHost('shop.acme.com');
+
+    const init = fetchMock.mock.calls[0][1] as Record<string, unknown>;
+    expect(init.next).toEqual({ revalidate: 300, tags: ['host:shop.acme.com'] });
+    expect(init.cache).toBeUndefined();
+  });
+
+  it("{ cache: 'no-store' }: no Data Cache — no next.revalidate, no tags", async () => {
+    const fetchMock = stubFetch(() => json({ status: 'success', data: { slug: null } }));
+    expect(await lookupStoreByHost('shop.acme.com', { cache: 'no-store' })).toEqual({ kind: 'not-store' });
+
+    const init = fetchMock.mock.calls[0][1] as Record<string, unknown>;
+    expect(init.cache).toBe('no-store');
+    expect(init.next).toBeUndefined();
+  });
+});
+
 describe('existing exports keep their behaviour', () => {
   it('resolveCustomDomainVendorSlugRemote: slug for a store, null for not-store AND for unknown', async () => {
     stubFetch(() => json({ data: { slug: 'acme' } }));
     expect(await resolveCustomDomainVendorSlugRemote('shop.acme.com')).toBe('acme');
 
-    stubFetch(() => json({ data: { slug: null } }));
+    stubFetch(() => json({ status: 'success', data: { slug: null } }));
     expect(await resolveCustomDomainVendorSlugRemote('shop.acme.com')).toBeNull();
 
     stubFetch(() => json({}, 429));
@@ -115,7 +144,7 @@ describe('existing exports keep their behaviour', () => {
   });
 
   it('resolveVendorSlug still trusts a subdomain without any request (other callers are unchanged)', async () => {
-    const fetchMock = stubFetch(() => json({ data: { slug: null } }));
+    const fetchMock = stubFetch(() => json({ status: 'success', data: { slug: null } }));
 
     expect(await resolveVendorSlug({ host: 'acme.queek.com.ng', searchVendor: null })).toBe('acme');
     expect(fetchMock).not.toHaveBeenCalled();

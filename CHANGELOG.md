@@ -8,9 +8,12 @@ policy. Versions before this file started are in the git tags.
 ### Added
 
 - `utils/vendor-host`: `lookupStoreByHost(hostname)` reports what `resolve-by-host` said as one of three answers
-  (`HostLookup`): `store` (with the slug), `not-store` (200 with `slug: null`, or a 404) or `unknown` (429, 5xx, any other
-  status, a timeout, a network error, an unreadable body, no API URL). Only `not-store` is a definite answer: an
-  outage must never read as "no store here".
+  (`HostLookup`): `store` (with the slug), `not-store` (HTTP 200, `status: 'success'` and `data.slug: null` — the only
+  way the API says "no store here") or `unknown` (404, 429, 5xx, any other status, a timeout, a network error, an
+  unreadable or off-contract body, no API URL). Only `not-store` is a definite answer: an outage, or a wrong API URL
+  answering 404, must never read as "no store here". `lookupStoreByHost(host, { cache: 'no-store' })` skips Next's Data
+  Cache (no `revalidate`, no tags) for a caller that does its own caching; without it the fetch is revalidated every 5
+  minutes and tagged `host:<hostname>` as before.
 - `resolveVendorHost({ host, searchVendor, lookup? })` returns `{ slug, outcome }`, so a host app can answer 404 for a
   host that is definitely not a store. It checks a `{label}.<store domain>` host exists through the same lookup (a
   subdomain used to be trusted without a check), takes the slug the API returns, and keeps the label while the lookup is

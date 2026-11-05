@@ -171,8 +171,9 @@ export function resolveCustomDomainVendorSlug(hostname: string): string | null {
  * What `resolve-by-host` said about a host. Three answers, never two:
  *
  *  - `store`      a store lives on this host (`slug`);
- *  - `not-store`  DEFINITELY no store: the API answered 200 with `slug: null`, or 404;
- *  - `unknown`    the API did not answer usefully: 429, 5xx, any other status, a timeout, a
+ *  - `not-store`  DEFINITELY no store: the API answered 200, `status: 'success'` and `data.slug: null`;
+ *  - `unknown`    the API did not answer usefully: 404 (the API never sends one for a host), 429, 5xx, any
+ *                 other status, a timeout, a
  *                 network error, an unreadable body, no API URL configured.
  *
  * Only `not-store` may become a 404 for the visitor. `unknown` is an outage, not an answer, and
@@ -183,8 +184,23 @@ export type HostLookup =
   | { kind: 'not-store' }
   | { kind: 'unknown' };
 
-/** Asks `resolve-by-host` about one host and reports which of the three answers came back. Never throws. */
-export async function lookupStoreByHost(hostname: string): Promise<HostLookup> {
+export interface LookupStoreByHostOptions {
+  /**
+   * `'no-store'` keeps Next's Data Cache out of this call (no `next.revalidate`, no tags), for a caller that
+   * does its own caching and must see a fresh answer when its own entry expires (the host app's proxy).
+   * Omitted: the fetch is revalidated every 5 minutes and tagged `host:<hostname>`, as it always was.
+   */
+  cache?: 'no-store';
+}
+
+/**
+ * Asks `resolve-by-host` about one host and reports which of the three answers came back. Never throws.
+ *
+ * The API ALWAYS answers a known or unknown host with 200 `{ status: 'success', data: { slug: <slug|null> } }`.
+ * So `not-store` is exactly that: HTTP 200, `status === 'success'`, `data.slug === null`. A 404 (a wrong API URL,
+ * a gateway answering during a deploy) or anything else off-contract is `unknown`.
+ */
+export async function lookupStoreByHost(hostname: string, options: LookupStoreByHostOptions = {}): Promise<HostLookup> {
   if (!hostname) {
     return { kind: 'unknown' };
   }
@@ -205,22 +221,17 @@ export async function lookupStoreByHost(hostname: string): Promise<HostLookup> {
       method: 'GET',
       headers: { Accept: 'application/json' },
       signal: controller.signal,
-      next: {
-        revalidate: REMOTE_RESOLVE_REVALIDATE_SECONDS,
-        tags: [`host:${hostname}`],
-      },
+      ...(options.cache === 'no-store'
+        ? { cache: 'no-store' as const }
+        : { next: { revalidate: REMOTE_RESOLVE_REVALIDATE_SECONDS, tags: [`host:${hostname}`] } }),
     });
-
-    if (response.status === 404) {
-      return { kind: 'not-store' };
-    }
 
     if (!response.ok) {
       logRemoteFailure(`status ${response.status}`);
       return { kind: 'unknown' };
     }
 
-    const payload = (await response.json()) as { data?: { slug?: unknown } } | null;
+    const payload = (await response.json()) as { status?: unknown; data?: { slug?: unknown } } | null;
     const data = payload?.data;
     if (!data || typeof data !== 'object' || !('slug' in data)) {
       // 200 without the field the API always sends (a CDN or captive page in front of it):
@@ -234,7 +245,8 @@ export async function lookupStoreByHost(hostname: string): Promise<HostLookup> {
       return { kind: 'store', slug };
     }
 
-    return slug === null ? { kind: 'not-store' } : { kind: 'unknown' };
+    // The one definite "no": the API's own success envelope carrying a null slug.
+    return slug === null && payload?.status === 'success' ? { kind: 'not-store' } : { kind: 'unknown' };
   } catch (error) {
     logRemoteFailure(error instanceof Error ? error.message : 'unknown');
     return { kind: 'unknown' };
