@@ -184,7 +184,15 @@ export function resolveCustomDomainVendorSlug(hostname: string): string | null {
 export type HostLookup =
   | { kind: 'store'; slug: string }
   | { kind: 'not-store' }
-  | { kind: 'unknown' };
+  | {
+      kind: 'unknown';
+      /**
+       * Set only when the API answered 429: this caller's own budget (or the server's) is spent. `retryAfterSeconds`
+       * is the API's `Retry-After`, or null when it sent none or an unreadable one. Still `unknown` for every
+       * purpose that treats an outage as one; it is here so a host app can tell the caller to slow down.
+       */
+      rateLimited?: { retryAfterSeconds: number | null };
+    };
 
 export interface LookupStoreByHostOptions {
   /**
@@ -237,6 +245,11 @@ export async function lookupStoreByHost(hostname: string, options: LookupStoreBy
 
     if (!response.ok) {
       logRemoteFailure(`status ${response.status}`);
+      if (response.status === 429) {
+        const raw = response.headers.get('retry-after');
+        const seconds = raw === null || raw.trim() === '' ? NaN : Number(raw);
+        return { kind: 'unknown', rateLimited: { retryAfterSeconds: Number.isFinite(seconds) && seconds >= 0 ? Math.ceil(seconds) : null } };
+      }
       return { kind: 'unknown' };
     }
 

@@ -66,10 +66,24 @@ describe('lookupStoreByHost: the three answers', () => {
     expect(await lookupStoreByHost('owncloud.queek.app')).toEqual({ kind: 'unknown' });
   });
 
-  it.each([404, 429, 500, 502, 503, 504, 401, 403, 400])('status %i is unknown, never not-store', async (status) => {
+  it.each([404, 500, 502, 503, 504, 401, 403, 400])('status %i is unknown, never not-store', async (status) => {
     stubFetch(() => json({ message: 'nope' }, status));
 
     expect(await lookupStoreByHost('shop.acme.com')).toEqual({ kind: 'unknown' });
+  });
+
+  it('429 is unknown too, and says so with the API\'s Retry-After (rounded up), null when absent or unreadable', async () => {
+    const answer = (retryAfter: string | null) =>
+      new Response('{}', { status: 429, headers: retryAfter === null ? {} : { 'Retry-After': retryAfter } });
+
+    stubFetch(() => answer('17'));
+    expect(await lookupStoreByHost('shop.acme.com')).toEqual({ kind: 'unknown', rateLimited: { retryAfterSeconds: 17 } });
+    stubFetch(() => answer('2.2'));
+    expect(await lookupStoreByHost('shop.acme.com')).toEqual({ kind: 'unknown', rateLimited: { retryAfterSeconds: 3 } });
+    for (const raw of [null, '', 'soon', '-5']) {
+      stubFetch(() => answer(raw));
+      expect(await lookupStoreByHost('shop.acme.com'), String(raw)).toEqual({ kind: 'unknown', rateLimited: { retryAfterSeconds: null } });
+    }
   });
 
   it('a network error is unknown', async () => {

@@ -27,6 +27,8 @@ policy. Versions before this file started are in the git tags.
   header would split Next's data cache, whose key includes request headers); `cached: false` → the secret plus the
   request's `cf-connecting-ip` when present. Call it outside a Next cache scope.
 - `createServerStoreClient` sends them: cached GETs the secret only, `no-store` GETs and every POST both.
+- `HostLookup` `unknown` carries `rateLimited: { retryAfterSeconds }` when the API answered 429 (still `unknown` for every other
+  purpose), so a host app can tell that caller to slow down.
 - `lookupStoreByHost(host, { shopperIp })`: with `cache: 'no-store'` the lookup also names the shopper; every lookup
   carries the secret.
 
