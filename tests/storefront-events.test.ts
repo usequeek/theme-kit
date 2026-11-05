@@ -439,13 +439,13 @@ describe('catalog ids (p_id) on the bus', () => {
     expect('variant_p_id' in useCartStore.getState().items[0]).toBe(false);
   });
 
-  it('a chosen variant adds under the variant p_id, at the variant price', () => {
+  it('a chosen variant adds under "product p_id_variant p_id", at the variant price', () => {
     const withVariants = { ...tee, variants: [red], variants_count: 1 };
     const [event] = addedItems(() => useCartStore.getState().addItemWithAddons(withVariants as never, 2, [], red as never));
 
-    expect(event).toMatchObject({ data: { value: 2400, items: [{ item_id: '5102', price: 1200, quantity: 2 }] } });
+    expect(event).toMatchObject({ data: { value: 2400, items: [{ item_id: '4197_5102', price: 1200, quantity: 2 }] } });
     expect(useCartStore.getState().items[0]).toMatchObject({ product_id: 'tee-uuid', variant_id: 'red-uuid', product_p_id: 4197, variant_p_id: 5102 });
-    expect(dataLayer().at(-1)).toEqual(['event', 'add_to_cart', { currency: 'NGN', value: 2400, items: [{ item_id: '5102', item_name: 'Tee', price: 1200, quantity: 2 }] }]);
+    expect(dataLayer().at(-1)).toEqual(['event', 'add_to_cart', { currency: 'NGN', value: 2400, items: [{ item_id: '4197_5102', item_name: 'Tee', price: 1200, quantity: 2 }] }]);
   });
 
   it('a variant without a p_id (older payload) falls back to the product p_id as a group id, never the UUID', () => {

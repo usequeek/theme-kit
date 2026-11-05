@@ -7,15 +7,34 @@ policy. Versions before this file started are in the git tags.
 
 ### Changed
 
-- Shopping events now identify an item by the id an ad-platform catalog feed uses: the variant's `p_id`, else the
-  product's `p_id`, else (only when no `p_id` is known) the product's UUID. Before, every event sent the product UUID
-  and ignored the chosen variant, and the purchase event sent the order line's id. GA4 `item_id`, Meta `content_ids`
-  / `contents[].id`, TikTok `contents[].content_id` and Pinterest `product_id` all read it from
-  `StorefrontEventItem.item_id`, which stays a string. The one rule lives in the new `catalogItemId` helper.
+- Shopping events now identify an item by the id an ad-platform catalog feed uses. Before, every event sent the
+  product UUID and ignored the chosen variant, and the purchase event sent the order line's id. The rule, in one
+  place (`catalogItemId`), and the same one the catalog feeds use:
+  - a variant row is `"{product_p_id}_{variant_p_id}"`;
+  - a product without variants is `"{product_p_id}"`;
+  - the `product_group` id (`item_group_id`) is `"{product_p_id}"`.
+
+  Product and variant `p_id`s come from separate sequences that both start at 1000, so a bare variant `p_id` can equal
+  another product's: a variant is always the pair, and with a variant `p_id` but no product `p_id` the UUID is sent,
+  never the bare variant `p_id`. With no `p_id` at all the product UUID is sent (a cart saved before this release, an
+  API answer that predates the ids). GA4 `item_id`, Meta `content_ids` / `contents[].id`, TikTok
+  `contents[].content_id` and Pinterest `product_id` all read `StorefrontEventItem.item_id`, which stays a string.
 - **Id continuity:** a store that already has pixel or GA4 history keyed by UUID will see its item ids change at this
   release. Reports and audiences that join on the old UUID ids split at the release date; new events match the store's
-  catalog feed. The UUID is still sent for a line with no `p_id` (a cart saved before this release, or an API answer
-  that predates `p_id` on variants, cart lines and order lines), so those carry the old id until they are replaced.
+  catalog feed. Lines with no `p_id` keep sending the UUID until they are replaced.
+
+### Known limits
+
+- **Mixed carts.** A product view sent before the variant is known carries the product `p_id` as a group id
+  (`is_group`: Meta and TikTok `content_type: 'product_group'`). An event is a group event only when EVERY item in it
+  is one, so a cart mixing a group-id line with other lines goes out as `content_type: 'product'` and the group-id
+  line matches nothing in the catalog. Accepted: it only happens for lines whose variant `p_id` is not yet known.
+- **Nova's product page** seeds its option picker from the first value of each option, where every other theme uses
+  `useVariantSelection` (first in-stock variant). The product-view event reports the variant of the shared seed, so on
+  nova it can name a different variant than the one the page opens on. Add-to-cart is unaffected: it reports the
+  variant the shopper actually chose.
+- **A deleted variant.** An order line whose variant was deleted arrives with a product `p_id` and no variant `p_id`.
+  The purchase item is then the product `p_id`, flagged as a group id when the line still carries a `variant_id` or `variant_title`, never a guess.
 
 ### Added
 
@@ -27,7 +46,8 @@ policy. Versions before this file started are in the git tags.
 - `ProductVariant.p_id`, carried by `normalizeProduct` when the API sends it.
 - `CartItem.product_p_id` / `variant_p_id`, written by `addItemWithAddons` when the product / variant has a `p_id`
   (the key is left off a line otherwise).
-- `OrderItem.product_id` / `product_p_id` / `variant_id` / `variant_p_id` and `OrderItem.product.p_id` (optional types).
+- `OrderItem.product_p_id` / `variant_id` / `variant_p_id` / `variant_title` (optional types of what an order line
+  carries).
 
 ## 0.1.38 - 2026-11-04
 

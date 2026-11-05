@@ -14,17 +14,32 @@ describe('toPId', () => {
   });
 });
 
-describe('catalogItemId', () => {
-  it('uses the variant p_id when there is one', () => {
-    expect(catalogItemId({ variantPId: 5102, productPId: 4197, hasVariant: true, fallbackId: 'uuid-p' })).toEqual({ item_id: '5102' });
+describe('catalogItemId (the rule: variant "P_V", simple product "P", group "P")', () => {
+  it('a variant is the product p_id and the variant p_id', () => {
+    expect(catalogItemId({ variantPId: 5102, productPId: 4197, hasVariant: true, fallbackId: 'uuid-p' })).toEqual({ item_id: '4197_5102' });
   });
 
-  it('uses the product p_id for a product without variants', () => {
+  it('numeric strings read the same', () => {
+    expect(catalogItemId({ variantPId: '5102', productPId: '4197', hasVariant: true })).toEqual({ item_id: '4197_5102' });
+  });
+
+  it('keeps ids of the two sequences apart: variant 1042 of product 1001 is not product 1042', () => {
+    expect(catalogItemId({ variantPId: 1042, productPId: 1001, hasVariant: true }).item_id).toBe('1001_1042');
+    expect(catalogItemId({ productPId: 1042, hasVariant: false }).item_id).toBe('1042');
+  });
+
+  it('a product without variants is its product p_id', () => {
     expect(catalogItemId({ productPId: 4197, hasVariant: false, fallbackId: 'uuid-p' })).toEqual({ item_id: '4197' });
   });
 
-  it('marks a product p_id as a group id when the item is a variant whose own p_id is unknown', () => {
+  it('marks a product p_id as the group id when the item is a variant whose own p_id is unknown', () => {
     expect(catalogItemId({ productPId: 4197, hasVariant: true, fallbackId: 'uuid-p' })).toEqual({ item_id: '4197', is_group: true });
+  });
+
+  it('never sends a bare variant p_id: with no product p_id it falls back to the UUID', () => {
+    expect(catalogItemId({ variantPId: 5102, hasVariant: true, fallbackId: 'uuid-p' })).toEqual({ item_id: 'uuid-p' });
+    expect(catalogItemId({ variantPId: 5102, productPId: 0, fallbackId: 'uuid-p' })).toEqual({ item_id: 'uuid-p' });
+    expect(catalogItemId({ variantPId: 5102 })).toEqual({ item_id: '' });
   });
 
   it('falls back to the product UUID only when no p_id is known', () => {
@@ -38,10 +53,12 @@ describe('catalogItemId', () => {
 });
 
 describe('catalogItemIdForCartLine', () => {
-  it('reads the variant, then the product, then the product UUID off the line', () => {
-    expect(catalogItemIdForCartLine({ product_id: 'u', variant_id: 'v', product_p_id: 1, variant_p_id: 2 })).toEqual({ item_id: '2' });
+  it('reads the pair, then the product, then the product UUID off the line', () => {
+    expect(catalogItemIdForCartLine({ product_id: 'u', variant_id: 'v', product_p_id: 1, variant_p_id: 2 })).toEqual({ item_id: '1_2' });
     expect(catalogItemIdForCartLine({ product_id: 'u', variant_id: null, product_p_id: 1, variant_p_id: null })).toEqual({ item_id: '1' });
     expect(catalogItemIdForCartLine({ product_id: 'u', variant_id: 'v', product_p_id: 1 })).toEqual({ item_id: '1', is_group: true });
+    // A variant p_id without its product p_id is never sent bare.
+    expect(catalogItemIdForCartLine({ product_id: 'u', variant_id: 'v', variant_p_id: 2 })).toEqual({ item_id: 'u' });
     // A line saved before p_ids existed.
     expect(catalogItemIdForCartLine({ product_id: 'u', variant_id: 'v' })).toEqual({ item_id: 'u' });
   });
