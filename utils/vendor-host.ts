@@ -189,7 +189,8 @@ export type HostLookup =
       /**
        * Set only when the API answered 429: this caller's own budget (or the server's) is spent. `retryAfterSeconds`
        * is the API's `Retry-After`, or null when it sent none or an unreadable one. Still `unknown` for every
-       * purpose that treats an outage as one; it is here so a host app can tell the caller to slow down.
+       * purpose that treats an outage as one; it is here so a host app can tell a 429 from other outages, e.g. to
+       * retry once as itself (without a shopper address) when the shopper's own budget is what ran out.
        */
       rateLimited?: { retryAfterSeconds: number | null };
     };

@@ -28,7 +28,7 @@ policy. Versions before this file started are in the git tags.
   request's `cf-connecting-ip` when present. Call it outside a Next cache scope.
 - `createServerStoreClient` sends them: cached GETs the secret only, `no-store` GETs and every POST both.
 - `HostLookup` `unknown` carries `rateLimited: { retryAfterSeconds }` when the API answered 429 (still `unknown` for every other
-  purpose), so a host app can tell that caller to slow down.
+  purpose), so a host app can tell a 429 from other outages (e.g. retry once without a shopper address).
 - `lookupStoreByHost(host, { shopperIp })`: with `cache: 'no-store'` the lookup also names the shopper; every lookup
   carries the secret.
 
