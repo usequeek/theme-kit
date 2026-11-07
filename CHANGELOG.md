@@ -3,7 +3,7 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
-## 0.1.41 - 2026-11-05
+## 0.1.42 - 2026-11-07
 
 ### Added
 
@@ -23,6 +23,15 @@ policy. Versions before this file started are in the git tags.
   on the same page), one outside the provider, or one given only an explicit `preferredVariantPId`, never touches it.
   `syncVariantParam(pId)` is exported, and `findPreferredVariant(product, pId)` (`utils/match-variant`); a theme with
   its own picker, like nova, uses them with `useLinkedVariant`.
+
+## 0.1.41 - 2026-11-06
+
+### Fixed
+
+- The subscribe popup (`subscribe` app, `modal` variant) rendered as a circle on any store whose corner style is
+  `pill`: the card used `--radius-lg`, which `pill` sets to 9999px, so it clipped its own heading and close button.
+  The card's corners are now capped at 28px (the `rounded` scale's largest); `sharp`, `soft` and `rounded` are
+  unchanged.
 
 ## 0.1.40 - 2026-11-05
 

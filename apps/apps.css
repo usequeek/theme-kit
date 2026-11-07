@@ -407,7 +407,9 @@
   width: 100%;
   max-width: 400px;
   background: var(--brand-background, #fff);
-  border-radius: var(--radius-lg, 12px);
+  /* Capped at the `rounded` scale's lg: `pill` sets --radius-lg to 9999px,
+     which turns a 400px card into a circle that clips its own content. */
+  border-radius: min(var(--radius-lg, 12px), 28px);
   padding: 2.5rem 2rem 2rem;
   box-shadow: var(--shadow-3, 0 20px 60px rgba(0, 0, 0, 0.25));
   animation: core-subscribe-modal-pop 0.25s ease;
