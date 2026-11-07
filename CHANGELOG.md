@@ -11,7 +11,15 @@ policy. Versions before this file started are in the git tags.
   are gone from the public API. Address search is the storefront core's concern, not a theme's: it is a paid Places call
   and now runs under one session token per search, which only the core's checkout and account address fields do. A theme
   must not look up addresses; read the shopper's chosen delivery location from `useLocationStore` instead. The stores
-  `useLocationStore` and `useAddressModalStore` are unchanged.
+  `useLocationStore` and `useAddressModalStore` are unchanged. (0.1.44's preview guard and `error` notice on these two hooks
+  now live in the storefront's copies.)
+
+## 0.1.44 - 2026-11-07
+
+### Fixed
+
+- Theme preview visitors previously saw failed subscription and sign-in requests for a store that does not exist. Subscribe now explains that nothing was sent and closes signup cards as usual; email and Google sign-in explain that signing in is unavailable.
+- Following, asking product questions and looking up delivery addresses no longer send requests in a theme preview, including when a visitor has a saved sign-in. Follow and question forms show a preview notice; address hooks expose a translated notice for the address field.
 
 ## 0.1.43 - 2026-11-07
 

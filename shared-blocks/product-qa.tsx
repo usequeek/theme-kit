@@ -6,7 +6,7 @@ import type { ProductQaBlockData, ProductQuestionItem } from '../types/block';
 import { Image } from '../components/image';
 import { useProductQuestions } from '../hooks/use-product-questions';
 import { useAuth } from '../hooks/use-auth';
-import { useStorefront } from '../provider';
+import { useIsThemePreview, useStorefront, useThemeStrings } from '../provider';
 import { getQueekClient } from '../sdk/queek-client';
 import { formatDisplayDate } from '../utils/format';
 
@@ -47,6 +47,8 @@ export function CoreProductQaBlock(props: ProductQaBlockData): JSX.Element {
 
 function AskQuestionPanel({ productSlug }: { productSlug: string }): JSX.Element {
   const { vendor } = useStorefront();
+  const isThemePreview = useIsThemePreview();
+  const t = useThemeStrings();
   const { user, openAuthModal } = useAuth();
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState('');
@@ -70,6 +72,10 @@ function AskQuestionPanel({ productSlug }: { productSlug: string }): JSX.Element
   };
 
   const handleSubmit = async (): Promise<void> => {
+    if (isThemePreview) {
+      setError(t('preview.action'));
+      return;
+    }
     const trimmed = question.trim();
     if (!trimmed) {
       setError('Please write a question.');

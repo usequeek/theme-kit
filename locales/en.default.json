@@ -1,4 +1,8 @@
 {
+  "preview": {
+    "action": "This is a theme preview, so nothing was sent.",
+    "address": "Address lookup isn't available in a theme preview."
+  },
   "cart": {
     "title": "Your cart",
     "empty": {
@@ -132,6 +136,7 @@
       "different": "← Use a different email"
     },
     "error": {
+      "preview": "Signing in isn't available in a theme preview.",
       "credentials": "Wrong email or password. Please try again.",
       "method": "This account uses a different sign-in method (Google or phone).",
       "exists": "Email already registered. Please sign in instead.",

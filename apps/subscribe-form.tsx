@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react';
 import { useCallback, useId, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useIsThemePreview, useStorefront, useThemeStrings } from '../provider';
 import { getQueekClient } from '../sdk/queek-client';
 import type { SubscribeFormProps } from '../types/theme';
 
@@ -33,6 +33,8 @@ export function SubscribeForm({
   onSuccess,
 }: SubscribeFormProps & { layout?: 'stacked' | 'inline'; onSuccess?: () => void } = {}): JSX.Element {
   const { vendor } = useStorefront();
+  const isThemePreview = useIsThemePreview();
+  const t = useThemeStrings();
   const emailId = useId();
   const nameId = useId();
 
@@ -45,6 +47,15 @@ export function SubscribeForm({
     async (event: React.FormEvent) => {
       event.preventDefault();
       if (status === 'saving' || email.trim() === '') return;
+
+      if (isThemePreview) {
+        setStatus('done');
+        setMessage(t('preview.action'));
+        setName('');
+        setEmail('');
+        onSuccess?.();
+        return;
+      }
 
       setStatus('saving');
       try {
@@ -62,7 +73,7 @@ export function SubscribeForm({
         setMessage('That didn’t go through. Please check the address and try again.');
       }
     },
-    [name, email, status, vendor.slug, onSuccess],
+    [name, email, status, vendor.slug, onSuccess, isThemePreview, t],
   );
 
   if (status === 'done') {

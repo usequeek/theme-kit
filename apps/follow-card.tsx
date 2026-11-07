@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react';
 import { useState, useCallback, useEffect, useSyncExternalStore } from 'react';
-import { useStorefront, useStorefrontLocale, useThemeStrings } from '../provider';
+import { useIsThemePreview, useStorefront, useStorefrontLocale, useThemeStrings } from '../provider';
 import { useUserStore } from '../stores/user-store';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { getQueekClient } from '../sdk/queek-client';
@@ -84,6 +84,8 @@ function registerInlineMount(): () => void {
 export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}): JSX.Element | null {
   const { config, vendor } = useStorefront();
   const t = useThemeStrings();
+  const isThemePreview = useIsThemePreview();
+  const [previewMessage, setPreviewMessage] = useState(false);
   const locale = useStorefrontLocale();
   const followConfig = config.apps?.follow_card;
   const mount = display === 'inline' ? 'inline' : 'floating';
@@ -107,7 +109,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
   // Check follow status when user is logged in
   useEffect(() => {
     if (!shows) return;
-    if (!user || !vendor.slug) {
+    if (isThemePreview || !user || !vendor.slug) {
       setChecked(true);
       return;
     }
@@ -119,7 +121,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
       })
       .catch(() => {})
       .finally(() => setChecked(true));
-  }, [user, vendor.slug, shows]);
+  }, [user, vendor.slug, shows, isThemePreview]);
 
   // Check persistent dismiss
   useEffect(() => {
@@ -129,6 +131,10 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
   }, [vendor.id]);
 
   const handleFollow = useCallback(async () => {
+    if (isThemePreview) {
+      setPreviewMessage(true);
+      return;
+    }
     if (!user) {
       openAuth('login');
       return;
@@ -148,9 +154,13 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
     } finally {
       setLoading(false);
     }
-  }, [user, vendor.slug, openAuth, shareContact]);
+  }, [user, vendor.slug, openAuth, shareContact, isThemePreview]);
 
   const handleUnfollow = useCallback(async () => {
+    if (isThemePreview) {
+      setPreviewMessage(true);
+      return;
+    }
     if (!user) return;
 
     setLoading(true);
@@ -164,7 +174,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
     } finally {
       setLoading(false);
     }
-  }, [user, vendor.slug]);
+  }, [user, vendor.slug, isThemePreview]);
 
   const handleDismiss = useCallback(() => {
     setDismissed(true);
@@ -184,6 +194,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
   if (isFollowing) {
     return (
       <div className={`core-follow-card core-follow-card--compact ${placement}`} role="complementary" aria-label={t('follow.following')}>
+        {previewMessage && <p className="core-follow-card__notice" role="status">{t('preview.action')}</p>}
         <span className="core-follow-card__state">{t('follow.following')}</span>
         <button type="button" className="core-follow-card__unfollow" onClick={handleUnfollow} disabled={loading}>
           {loading ? t('follow.leaving') : t('follow.unfollow')}
@@ -214,6 +225,7 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
         </button>
       )}
 
+      {previewMessage && <p className="core-follow-card__notice" role="status">{t('preview.action')}</p>}
       <div className="core-follow-card__body">
         {vendor.logo && (
           <img

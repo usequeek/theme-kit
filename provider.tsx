@@ -218,6 +218,11 @@ export function useStorefront(): StorefrontContextValue {
   return context;
 }
 
+/** Whether this storefront is a theme demo with no backing store. */
+export function useIsThemePreview(): boolean {
+  return useStorefront().previewData !== undefined;
+}
+
 /**
  * Validated request locale for translated reads (`null` = primary).
  * Browser hooks send `?locale=` when this is set and key their client
