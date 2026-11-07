@@ -3,6 +3,13 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.44 - 2026-11-07
+
+### Fixed
+
+- Theme preview visitors previously saw failed subscription and sign-in requests for a store that does not exist. Subscribe now explains that nothing was sent and closes signup cards as usual; email and Google sign-in explain that signing in is unavailable.
+- Following, asking product questions and looking up delivery addresses no longer send requests in a theme preview, including when a visitor has a saved sign-in. Follow and question forms show a preview notice; address hooks expose a translated notice for the address field.
+
 ## 0.1.43 - 2026-11-07
 
 ### Added

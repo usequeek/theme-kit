@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStorefront } from '../provider';
+import { useIsThemePreview, useStorefront, useThemeStrings } from '../provider';
 import { getQueekClient } from '../sdk/queek-client';
 
 /** One address suggestion. Pass `place_id` to `useResolveCoordinates` to get its position. */
@@ -23,12 +23,21 @@ const DEBOUNCE_MS = 300;
 export function useAddressAutocomplete(query: string): {
   suggestions: AddressSuggestion[];
   loading: boolean;
+  /** Preview notice for the address field to display. */
+  error: string | null;
 } {
   const { vendor } = useStorefront();
+  const isThemePreview = useIsThemePreview();
+  const t = useThemeStrings();
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (isThemePreview) {
+      setSuggestions([]);
+      setLoading(false);
+      return;
+    }
     if (!query || query.trim().length < 2) {
       setSuggestions([]);
       return;
@@ -65,7 +74,7 @@ export function useAddressAutocomplete(query: string): {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, vendor.slug]);
+  }, [query, vendor.slug, isThemePreview]);
 
-  return { suggestions, loading };
+  return { suggestions, loading, error: isThemePreview ? t('preview.address') : null };
 }

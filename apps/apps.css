@@ -148,6 +148,14 @@
   line-height: 1.4;
 }
 
+/* Shown in a theme preview instead of sending the follow (nothing to follow). */
+.core-follow-card__notice {
+  font-size: 0.75rem;
+  color: var(--brand-text-muted, #666);
+  margin: 0 0 0.5rem;
+  line-height: 1.4;
+}
+
 .core-follow-card__count {
   font-size: 0.7rem;
   color: var(--brand-text-muted, #999);

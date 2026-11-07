@@ -3,7 +3,7 @@
 import type { JSX } from 'react';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { QueekSdkError, type EmailVerifyOtpResponse } from '@usequeek/client-sdk';
-import { useStorefront, useThemeStrings } from '../provider';
+import { useIsThemePreview, useStorefront, useThemeStrings } from '../provider';
 import { getQueekClient, setAuthTokens, QUEEK_AUTH_URL } from '../sdk/queek-client';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { useUserStore } from '../stores/user-store';
@@ -90,6 +90,7 @@ const AuthFlowContext = createContext<AuthFlowValue | null>(null);
 export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Element {
   const { vendor } = useStorefront();
   const t = useThemeStrings();
+  const isThemePreview = useIsThemePreview();
   const closeModal = useAuthModalStore((s) => s.close);
   const setUser = useUserStore((s) => s.setUser);
 
@@ -102,6 +103,12 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function blockPreview(): boolean {
+    if (!isThemePreview) return false;
+    setError(t('auth.error.preview'));
+    return true;
+  }
 
   function applyUser(u: { id: string; name: string; first_name?: string | null; last_name?: string | null; email: string | null; phone?: string | null; avatar: string | null; profile_complete?: boolean }): void {
     setUser({
@@ -122,6 +129,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
   // ── Email OTP flow (primary) ──────────────────────────────────────────────
 
   const submitEmailRequestOtp = async (): Promise<void> => {
+    if (blockPreview()) return;
     const trimmedEmail = email.trim();
     if (!trimmedEmail) return;
     setError(null);
@@ -139,6 +147,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
   };
 
   const submitEmailVerifyOtp = async (): Promise<void> => {
+    if (blockPreview()) return;
     if (otp.length < EMAIL_OTP_LENGTH) return;
     setError(null);
     setLoading(true);
@@ -167,6 +176,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
   // ── Signup (email OTP flow) ───────────────────────────────────────────────
 
   const submitRegister = async (): Promise<void> => {
+    if (blockPreview()) return;
     if (!firstName.trim()) {
       setError(t('auth.error.firstname'));
       return;
@@ -193,6 +203,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
   // ── Email password flow ───────────────────────────────────────────────────
 
   const submitEmailLogin = async (): Promise<void> => {
+    if (blockPreview()) return;
     if (!email.trim() || !password) return;
     setError(null);
     setLoading(true);
@@ -214,6 +225,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
   };
 
   const submitEmailRegister = async (): Promise<void> => {
+    if (blockPreview()) return;
     if (!firstName.trim() || !email.trim() || password.length < 8) return;
     setError(null);
     setLoading(true);
@@ -240,6 +252,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
   // ── Google OAuth ──────────────────────────────────────────────────────────
 
   const initiateGoogleAuth = async (): Promise<void> => {
+    if (blockPreview()) return;
     setError(null);
     setLoading(true);
     try {

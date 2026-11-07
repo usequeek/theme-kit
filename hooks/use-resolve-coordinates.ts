@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useStorefront } from '../provider';
+import { useIsThemePreview, useStorefront, useThemeStrings } from '../provider';
 import { getQueekClient } from '../sdk/queek-client';
 import { useLocationStore } from '../stores/location-store';
 
@@ -26,12 +26,17 @@ interface CoordinatesResponse {
 export function useResolveCoordinates(): {
   resolve: (placeId: string, description: string) => Promise<boolean>;
   resolving: boolean;
+  /** Preview notice for the address field to display. */
+  error: string | null;
 } {
   const { vendor } = useStorefront();
+  const isThemePreview = useIsThemePreview();
+  const t = useThemeStrings();
   const setLocation = useLocationStore((s) => s.setLocation);
   const [resolving, setResolving] = useState(false);
 
   const resolve = async (placeId: string, description: string): Promise<boolean> => {
+    if (isThemePreview) return false;
     setResolving(true);
     try {
       const client = getQueekClient(vendor.slug ?? undefined);
@@ -53,5 +58,5 @@ export function useResolveCoordinates(): {
     }
   };
 
-  return { resolve, resolving };
+  return { resolve, resolving, error: isThemePreview ? t('preview.address') : null };
 }
