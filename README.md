@@ -133,7 +133,7 @@ they keep the data already on screen. They return `isLoading`, except
 | `useCart()` / `useShopCart(shopId)` | `hooks/use-cart`, `hooks/use-shop-cart` | The cart and its actions; one shop's lines and totals |
 | `useAddAppBlockLines(shopId)` | `hooks/use-add-app-block-lines` | Adds the products of an add-to-cart app block: `{ addLines, pending }` |
 | `useAuth()` | `hooks/use-auth` | The signed-in customer and sign-in modal controls |
-| `useVariantSelection(product)` | `hooks/use-variant-selection` | Option selection state and the add-to-cart gate |
+| `useVariantSelection(product, preferredVariantPId?)` | `hooks/use-variant-selection` | Option selection state and the add-to-cart gate; opens on a linked `?variant=` |
 | `useSearch(query, products, collections)` | `hooks/use-search` | Instant search over data you hold |
 | `useAddressAutocomplete(text)` / `useResolveCoordinates()` | `hooks/use-address-autocomplete`, `hooks/use-resolve-coordinates` | Delivery address lookup |
 | `useHref()` | `hooks/use-href` | Builds a store-relative link |

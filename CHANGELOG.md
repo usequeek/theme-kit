@@ -3,6 +3,27 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.42 - 2026-11-07
+
+### Added
+
+- Variant deep links: a product link can name the variant it opens on, `?variant=<variant p_id>` (the `link` a product
+  feed gives each variant). `seedVariantOptions(product, preferredVariantPId?)` seeds from the active variant with that
+  `p_id`, even when it is sold out (the page shows the linked variant and its availability); an unknown or inactive
+  `p_id` falls back to the unchanged rule (first in-stock variant, else the first). `useVariantSelection(product,
+  preferredVariantPId?)` takes the same argument.
+- `PreferredVariantProvider` (`productPId`, `variantPId`) / `useLinkedVariant(product)`: a server product page reads the param
+  (`parsePreferredVariantPId(searchParams.variant)`, from `utils/match-variant`: server-safe, unlike the hook module), wraps the theme's product page in the provider with the page's product `p_id`, and the page's own
+  `useVariantSelection` opens on the linked variant in the first HTML render (what crawlers read). A theme that
+  already calls `useVariantSelection(product)` needs no change. An explicit argument beats the provider.
+- Once the shopper picks another option on the page's own product, the address bar's `?variant=` moves to the matched
+  variant's `p_id` (`history.replaceState(null, ...)`, the pattern Next documents so its router stays in sync: no
+  navigation, no scroll, no history entry; other params are kept). Opening a page never adds the param, a selection that
+  matches no variant leaves the URL as it was, and a picker for another product (a quick-view modal or inline buy box
+  on the same page), one outside the provider, or one given only an explicit `preferredVariantPId`, never touches it.
+  `syncVariantParam(pId)` is exported, and `findPreferredVariant(product, pId)` (`utils/match-variant`); a theme with
+  its own picker, like nova, uses them with `useLinkedVariant`.
+
 ## 0.1.41 - 2026-11-06
 
 ### Fixed
