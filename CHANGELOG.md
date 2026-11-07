@@ -3,6 +3,12 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.1.43 - 2026-11-07
+
+### Added
+
+- `DESIGN_TOKEN_CHOICES` and `findInvalidDesignTokens` from `@usequeek/theme-kit/utils/brand` expose the kit's allowed design-token values and report invalid choices. Theme linters can validate partial tokens against the same choices the kit renders, without maintaining their own lists.
+
 ## 0.1.42 - 2026-11-07
 
 ### Added

@@ -2,13 +2,16 @@ import type { CSSProperties } from 'react';
 import type {
   Brand,
   DesignBorderWeight,
+  DesignColorScheme,
   DesignDensity,
   DesignElevation,
   DesignHeadingCase,
   DesignImageFilter,
+  DesignImageFit,
   DesignImageRadius,
   DesignMotion,
   DesignRadius,
+  DesignScaleRatio,
   DesignTokenColor,
   DesignTokenImage,
   DesignTokenShape,
@@ -136,6 +139,62 @@ const IMAGE_FILTER_MAP: Record<DesignImageFilter, string> = {
   mono: 'grayscale(1)',
   warm: 'sepia(0.35) saturate(1.1) contrast(0.98)',
 };
+
+/** Reject both extra values and missing union members at compile time. */
+function exhaustiveChoices<Union extends string | number>() {
+  return <const Values extends readonly Union[]>(
+    values: Values & ([Union] extends [Values[number]] ? unknown : never),
+  ): Readonly<Values> => Object.freeze(values);
+}
+
+/** These private, exhaustive Record tables have only their declared string keys. */
+function tableKeys<Table extends Record<string, unknown>>(table: Table): Array<Extract<keyof Table, string>> {
+  return Object.keys(table) as Array<Extract<keyof Table, string>>;
+}
+
+/** Allowed semantic token values, shared by renderers and external validation tools. */
+export const DESIGN_TOKEN_CHOICES = Object.freeze({
+  'color.scheme': exhaustiveChoices<DesignColorScheme>()(['light', 'dark']),
+  'type.scale_ratio': exhaustiveChoices<DesignScaleRatio>()([1.125, 1.2, 1.25, 1.333]),
+  'type.heading_case': exhaustiveChoices<DesignHeadingCase>()(tableKeys(CASE_MAP)),
+  'space.density': exhaustiveChoices<DesignDensity>()(tableKeys(DENSITY_UNIT_REM)),
+  'shape.radius': exhaustiveChoices<DesignRadius>()(tableKeys(RADIUS_SCALE)),
+  'shape.border_weight': exhaustiveChoices<DesignBorderWeight>()(tableKeys(BORDER_WEIGHT_PX)),
+  elevation: exhaustiveChoices<DesignElevation>()(tableKeys(ELEVATION_SHADOWS)),
+  motion: exhaustiveChoices<DesignMotion>()(tableKeys(MOTION_TIMING)),
+  'image.radius': exhaustiveChoices<DesignImageRadius>()(tableKeys(IMAGE_RADIUS_MAP)),
+  'image.fit': exhaustiveChoices<DesignImageFit>()(['cover', 'contain']),
+  'image.filter': exhaustiveChoices<DesignImageFilter>()(tableKeys(IMAGE_FILTER_MAP)),
+});
+
+/**
+ * Check only the enumerated leaves; missing/undefined values are valid partials.
+ * Read own data properties only, so malformed input cannot invoke getters.
+ * Unreadable leaves (including throwing proxy traps) are treated as absent.
+ */
+export function findInvalidDesignTokens(tokens: unknown): Array<{
+  path: string; value: unknown; allowed: readonly (string | number)[];
+}> {
+  const invalid: ReturnType<typeof findInvalidDesignTokens> = [];
+  for (const [path, allowed] of Object.entries(DESIGN_TOKEN_CHOICES)) {
+    let value: unknown = tokens;
+    try {
+      for (const key of path.split('.')) {
+        if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+          value = undefined;
+          break;
+        }
+        value = Object.getOwnPropertyDescriptor(value, key)?.value;
+      }
+    } catch {
+      continue;
+    }
+    if (value !== undefined && !(allowed as readonly unknown[]).includes(value)) {
+      invalid.push({ path, value, allowed });
+    }
+  }
+  return invalid;
+}
 
 /** n exponents for the --fs-xs..--fs-3xl ladder, base*ratio^n. */
 const FONT_SIZE_STEPS: Array<[string, number]> = [
