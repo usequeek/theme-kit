@@ -52,8 +52,6 @@ export * from './hooks/use-search';
 export * from './hooks/use-posts';
 export * from './hooks/use-reviews';
 export * from './hooks/use-variant-selection';
-export * from './hooks/use-address-autocomplete';
-export * from './hooks/use-resolve-coordinates';
 export * from './stores/cart-panel-store';
 export * from './stores/product-modal-store';
 export * from './stores/search-modal-store';

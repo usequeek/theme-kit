@@ -78,8 +78,6 @@ const CLIENT_MODULES_0_1_25 = [
   'hooks/use-posts',
   'hooks/use-reviews',
   'hooks/use-variant-selection',
-  'hooks/use-address-autocomplete',
-  'hooks/use-resolve-coordinates',
   'stores/cart-panel-store',
   'stores/product-modal-store',
   'stores/search-modal-store',

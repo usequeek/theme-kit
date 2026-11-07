@@ -3,6 +3,16 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.2.0 - 2026-11-07
+
+### Removed
+
+- `useAddressAutocomplete` and `useResolveCoordinates` (`hooks/use-address-autocomplete`, `hooks/use-resolve-coordinates`)
+  are gone from the public API. Address search is the storefront core's concern, not a theme's: it is a paid Places call
+  and now runs under one session token per search, which only the core's checkout and account address fields do. A theme
+  must not look up addresses; read the shopper's chosen delivery location from `useLocationStore` instead. The stores
+  `useLocationStore` and `useAddressModalStore` are unchanged.
+
 ## 0.1.43 - 2026-11-07
 
 ### Added
