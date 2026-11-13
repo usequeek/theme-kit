@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { useContext, type JSX } from 'react';
 import type { Collection, Post } from '../types/page';
 import type {
   MetafieldScalar,
@@ -7,7 +7,9 @@ import type {
   Product,
   ProductVariant,
 } from '../types/product';
-import { formatDisplayDate } from '../utils/format';
+import { formatShopperDate } from '../utils/format';
+import { storeDisplayFormat } from '../utils/locale';
+import { StorefrontContext } from '../provider';
 
 /** Merchant-set labels and types for custom fields, keyed by field key. Passed as `metafieldDefinitions` on the product page. */
 export interface ProductMetafieldDefinitionLabels {
@@ -93,6 +95,13 @@ function normaliseBoolean(value: MetafieldValue): boolean | null {
 
 const IMAGE_URL_PATTERN = /^https?:\/\/\S+\.(jpg|jpeg|png|gif|webp|avif)(\?\S*)?$/i;
 
+/** A date metafield is a calendar day: the store's English (or the shopper's language), read in UTC so the day never moves with a zone. Works outside a provider too. */
+function MetafieldDate({ time }: { time: number }): JSX.Element {
+  const context = useContext(StorefrontContext);
+  const locale = context ? storeDisplayFormat(context.locale, context.vendor).locale : null;
+  return <>{formatShopperDate(time, locale, {}, 'UTC')}</>;
+}
+
 function renderScalar(value: MetafieldScalar, key: string, label: string, type: string): JSX.Element {
   if (typeof value === 'boolean' || (type === 'boolean' && normaliseBoolean(value) !== null)) {
     const yes = typeof value === 'boolean' ? value : normaliseBoolean(value) === true;
@@ -125,7 +134,7 @@ function renderScalar(value: MetafieldScalar, key: string, label: string, type: 
     const time = new Date(text).getTime();
     return (
       <p className="core-metafields__text">
-        {Number.isNaN(time) ? text : formatDisplayDate(time, {})}
+        {Number.isNaN(time) ? text : <MetafieldDate time={time} />}
       </p>
     );
   }

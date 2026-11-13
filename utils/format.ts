@@ -10,24 +10,24 @@
  */
 import {
   ENGLISH_DISPLAY_LOCALE,
+  currencyRegion,
   resolveIntlLocale,
   resolveSupportedLocale,
 } from './locale';
 
 /**
- * The locale and zone every date/number the kit DISPLAYS is formatted in.
- * Fixed on purpose: storefront pages render on the server first, and a runtime
- * default prints differently there (Node in UTC, en-US) than in the shopper's
- * browser (Africa/Lagos, en-NG/en-GB) — "Feb 14, 2026" vs "14 Feb 2026". React
- * then fails hydration and re-renders the whole page on the client. Queek's
- * stores and shoppers are Nigerian, so that is the one answer both sides give.
+ * The neutral locale and zone a date/number falls back to when the caller
+ * passes none. Always explicit, never the runtime's: storefront pages render
+ * on the server first, and a runtime default prints differently there than in
+ * the shopper's browser, which fails hydration. A store's own region and zone
+ * come from the store (`storeDisplayFormat` / `useStoreDisplayFormat()`), never
+ * from a fixed country.
  *
  * Aliases `ENGLISH_DISPLAY_LOCALE` (`utils/locale.ts`) — the value lives in
- * exactly one place. `resolveIntlLocale` maps every English storefront code
- * here, so English output is byte-identical with or without a locale.
+ * exactly one place.
  */
 export const DISPLAY_LOCALE: string = ENGLISH_DISPLAY_LOCALE;
-export const DISPLAY_TIME_ZONE = 'Africa/Lagos';
+export const DISPLAY_TIME_ZONE = 'UTC';
 
 /**
  * Pick the Intl tag for one formatting call: the storefront locale through
@@ -37,45 +37,52 @@ export const DISPLAY_TIME_ZONE = 'Africa/Lagos';
 function displayTagFor(
   locale: string | null | undefined,
   supportedLocalesOf: (locales: string[]) => readonly string[],
+  region?: string | null,
 ): string {
-  return resolveSupportedLocale(resolveIntlLocale(locale), supportedLocalesOf);
+  return resolveSupportedLocale(resolveIntlLocale(locale, region), supportedLocalesOf, resolveIntlLocale(null, region));
 }
 
 /**
- * A date for display (default "14 Feb 2026"), identical on server and browser.
- * '' if unparseable. The locale parameter is routed through the canonical
- * mapping (English is British/Nigerian order, never US order), so even an explicit 'en'/'en-US' renders "15 February 2026" — no
- * exported formatter lets an 'en*' tag reach Intl unmapped.
+ * A date for display, identical on server and browser. '' if unparseable.
+ * Pass the store's format (`useStoreDisplayFormat()`): a US store prints
+ * "Feb 14, 2026", a Nigerian or British one "14 Feb 2026", each in the store's
+ * zone (or `options.timeZone`). With neither, neutral English in UTC. The locale is routed through
+ * `resolveIntlLocale`, so a storefront code and a resolved tag both work.
  */
 export function formatDisplayDate(
   value: string | number | Date,
   options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' },
   locale: string = DISPLAY_LOCALE,
+  timeZone: string = options.timeZone ?? DISPLAY_TIME_ZONE,
 ): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString(resolveIntlLocale(locale), {
-    ...options,
-    timeZone: DISPLAY_TIME_ZONE,
-  });
+  const tag = resolveIntlLocale(locale);
+  try {
+    return date.toLocaleDateString(tag, { ...options, timeZone });
+  } catch {
+    return date.toLocaleDateString(tag, { ...options, timeZone: DISPLAY_TIME_ZONE });
+  }
 }
 
 /**
  * A date for display in the SHOPPER's locale: `formatDisplayDate` with the
- * storefront locale (from `useStorefrontLocale()`) already resolved through
- * the canonical mapping. English renders exactly as `formatDisplayDate`
- * ("14 Feb 2026"); `fr` renders "14 févr. 2026", and so on. Time zone and
- * invalid-date handling are `formatDisplayDate`'s. Never throws.
+ * locale checked against this runtime's ICU (a missing locale prints English).
+ * Pass `useStoreDisplayFormat()`'s `locale` and `timeZone` for the store's own
+ * order and calendar; `fr` renders "14 févr. 2026", and so on. Invalid-date
+ * handling is `formatDisplayDate`'s. Never throws.
  */
 export function formatShopperDate(
   value: string | number | Date,
   locale: string | null | undefined,
   options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' },
+  timeZone: string = options.timeZone ?? DISPLAY_TIME_ZONE,
 ): string {
   return formatDisplayDate(
     value,
     options,
     displayTagFor(locale, (l) => Intl.DateTimeFormat.supportedLocalesOf(l)),
+    timeZone,
   );
 }
 
@@ -176,6 +183,16 @@ function moneyFormatters(tag: string, code: string): MoneyFormatters {
 }
 
 /**
+ * The Intl tag one amount prints in: the shopper's language, and for English
+ * the currency's home region ("$11.50" for USD, "₦5,000" for NGN, "£8" for
+ * GBP) unless the shopper's own code names a region (an `en-GB` reader sees
+ * "US$11.50").
+ */
+function moneyTagFor(locale: string | null | undefined, currency: string): string {
+  return displayTagFor(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l), currencyRegion(currency));
+}
+
+/**
  * The money display rule (see the top of this file). "Whole" is decided by
  * Intl itself AFTER rounding to the currency's digits, so $11.999 prints "$12"
  * and $11.5 prints "$11.50" — never a float test that disagrees with what is
@@ -199,7 +216,7 @@ function formatAtMinorUnits(amount: number | string, code: string, tag: string):
  *
  * @example
  * formatMoney(5000, 'NGN'); // "₦5,000"
- * formatMoney(11.5, 'USD'); // "US$11.50"
+ * formatMoney(11.5, 'USD'); // "$11.50"
  */
 export function formatMoney(
   amount: number,
@@ -207,7 +224,7 @@ export function formatMoney(
   locale?: string | null,
 ): string {
   const code = normalizeCurrencyCode(currency);
-  const tag = displayTagFor(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
+  const tag = moneyTagFor(locale, code);
   try {
     return formatAtMinorUnits(amount, code, tag);
   } catch {
@@ -224,7 +241,7 @@ export function formatMoney(
  *
  * @example
  * formatWireMoney('4500.00', 'NGN'); // "₦4,500"
- * formatWireMoney('11.50', 'USD'); // "US$11.50"
+ * formatWireMoney('11.50', 'USD'); // "$11.50"
  */
 export function formatWireMoney(
   amount: string,
@@ -236,7 +253,7 @@ export function formatWireMoney(
   }
 
   const code = normalizeCurrencyCode(currency);
-  const tag = displayTagFor(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
+  const tag = moneyTagFor(locale, code);
   try {
     return formatAtMinorUnits(amount, code, tag);
   } catch {

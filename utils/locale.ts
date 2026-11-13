@@ -19,55 +19,137 @@
  */
 
 /**
- * English display locale — the ONE Intl tag every English shopper sees dates,
- * numbers and money in. `en-NG`, not `en-GB`: both print dates identically
- * ("2 October 2026", "14 Feb 2026"), but only `en-NG` renders NGN with the
- * naira sign the stores already show (`₦12,500` vs `en-GB`'s `NGN 12,500`, on
- * Node 22 with full ICU). `DISPLAY_LOCALE` in `utils/format.ts` aliases this, so
- * the value lives in exactly one place.
+ * English display locale with no region: the neutral last resort when neither
+ * the shopper's locale nor the store says where the reader is. Never a fixed
+ * country: a store's region comes from the store itself (`storeRegion`), and
+ * money from its currency's home (`currencyRegion`). `DISPLAY_LOCALE` in
+ * `utils/format.ts` aliases this, so the value lives in exactly one place.
  */
-export const ENGLISH_DISPLAY_LOCALE = 'en-NG';
+export const ENGLISH_DISPLAY_LOCALE = 'en';
+
+const REGION_PATTERN = /^[A-Z]{2}$/;
+
+function regionCode(value: unknown): string | null {
+  const code = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  return REGION_PATTERN.test(code) ? code : null;
+}
+
+/**
+ * The country a currency belongs to: the first two letters of its ISO 4217
+ * code (USD → US, GBP → GB, NGN → NG). Null for a currency with no single home
+ * (EUR, and the X-codes such as XOF/XAF) or anything that is not a 3-letter code.
+ * English money is written the way its home country writes it, so a store's own
+ * currency prints the bare local symbol ("$11.50" for USD, "₦5,000" for NGN).
+ */
+export function currencyRegion(currency: unknown): string | null {
+  const code = typeof currency === 'string' ? currency.trim().toUpperCase() : '';
+  if (!/^[A-Z]{3}$/.test(code) || code.startsWith('X') || code === 'EUR') return null;
+  return code.slice(0, 2);
+}
+
+/**
+ * Where a store is, for the English dates it prints: its country (`country_code`,
+ * ISO 3166-1 alpha-2), else its currency's home (`currencyRegion`), else null
+ * (neutral English). Pure: the server render and the browser give the same answer
+ * from the same store profile.
+ */
+export function storeRegion(store: { country_code?: unknown; currency?: unknown } | null | undefined): string | null {
+  if (!store || typeof store !== 'object') return null;
+  return regionCode(store.country_code) ?? currencyRegion(store.currency);
+}
+
+/** The region subtag a locale code carries itself (`en-GB` → GB, `en-Latn-US` → US), or null. */
+function ownRegion(code: string): string | null {
+  try {
+    return regionCode(new Intl.Locale(code).region);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * THE single canonical mapping from a storefront locale code to the Intl
- * locale dates/numbers/relative time are formatted in: the shopper's locale,
- * with English in the British/Nigerian style ("2 October 2026", never US
- * "October 2, 2026").
+ * locale dates/numbers/relative time are formatted in.
  *
- * - Missing/invalid/unknown-structure codes and EVERY English variant (`en`,
- *   `en-GB`, `en-NG`, `en-US`, …) become `ENGLISH_DISPLAY_LOCALE`. In
- *   particular bare `en` must never reach Intl directly: `en` formats US
- *   order ("October 2, 2026").
+ * - English: the reader's own region when the code carries one (`en-GB`
+ *   stays `en-GB`), else `region` (the store's, or a currency's home), else
+ *   neutral `en`. So a US store reads "Feb 14, 2026" and "$11.50", a
+ *   Nigerian one "14 Feb 2026" and "₦5,000".
+ * - Missing/invalid codes are English.
  * - Every other well-formed code passes through unchanged (`fr`, `ar`,
  *   `pt-BR`, `zh-CN`, `yo`, `ha`, `sw`, …).
  *
- * Pure (no `next/*`, no React) like the rest of this module. Never throws.
- * Pair with `resolveSupportedLocale` when the runtime's ICU may lack the
- * locale — this function maps, it does not probe.
+ * Idempotent for a regional tag: `en-US` maps to itself whatever `region`
+ * says, so a resolved tag can be passed wherever a storefront locale is
+ * expected. Pure (no `next/*`, no
+ * React) like the rest of this module. Never throws. Pair with
+ * `resolveSupportedLocale` when the runtime's ICU may lack the locale — this
+ * function maps, it does not probe.
  */
-export function resolveIntlLocale(locale: string | null | undefined): string {
+export function resolveIntlLocale(locale: string | null | undefined, region?: string | null): string {
   const code = parseLocaleCode(locale);
-  if (!code) return ENGLISH_DISPLAY_LOCALE;
-  if ((code.split('-')[0] ?? '').toLowerCase() === 'en') return ENGLISH_DISPLAY_LOCALE;
-  return code;
+  if (code && (code.split('-')[0] ?? '').toLowerCase() !== 'en') return code;
+  const chosen = (code ? ownRegion(code) : null) ?? regionCode(region);
+  return chosen ? `en-${chosen}` : ENGLISH_DISPLAY_LOCALE;
 }
 
 /**
  * Graceful ICU fallback for one formatting call: the candidate when this
- * Node's ICU formats it natively, `ENGLISH_DISPLAY_LOCALE` otherwise (a
- * minimal-ICU build with no French data still renders English, never an
- * exception). Never throws — pass any Intl constructor's
+ * Node's ICU formats it natively, `fallback` otherwise (a minimal-ICU build
+ * with no French data still renders English, never an exception). Pass the
+ * English tag for the same region as the fallback (`resolveIntlLocale(null,
+ * region)`) so a language the runtime lacks still prints the store's own
+ * symbol and order. Never throws — pass any Intl constructor's
  * `supportedLocalesOf`, e.g. `(l) => Intl.DateTimeFormat.supportedLocalesOf(l)`.
  */
 export function resolveSupportedLocale(
   candidate: string,
   supportedLocalesOf: (locales: string[]) => readonly string[],
+  fallback: string = ENGLISH_DISPLAY_LOCALE,
 ): string {
   try {
-    return supportedLocalesOf([candidate]).length > 0 ? candidate : ENGLISH_DISPLAY_LOCALE;
+    return supportedLocalesOf([candidate]).length > 0 ? candidate : fallback;
   } catch {
-    return ENGLISH_DISPLAY_LOCALE;
+    return fallback;
   }
+}
+
+/** The store's IANA time zone (`timezone` on the store profile), or `UTC` when it sent none or one this runtime does not know. */
+export function storeTimeZone(store: unknown): string {
+  const zone = typeof store === 'object' && store !== null ? (store as { timezone?: unknown }).timezone : null;
+  if (typeof zone !== 'string' || zone.trim() === '') return 'UTC';
+  try {
+    return new Intl.DateTimeFormat(ENGLISH_DISPLAY_LOCALE, { timeZone: zone.trim() }).resolvedOptions().timeZone;
+  } catch {
+    return 'UTC';
+  }
+}
+
+/** How one store's dates read: the Intl tag for the shopper's language in the store's region, and the store's time zone. */
+export interface StoreDisplayFormat {
+  locale: string;
+  timeZone: string;
+}
+
+/**
+ * The display format for a store: `locale` through `resolveIntlLocale` with the
+ * store's region (checked against this runtime's ICU), `timeZone` from
+ * `storeTimeZone`. Pure; server pages call it with the profile they hold,
+ * client components read it through `useStoreDisplayFormat()`.
+ */
+export function storeDisplayFormat(
+  locale: string | null | undefined,
+  store: { country_code?: unknown; currency?: unknown; timezone?: unknown } | null | undefined,
+): StoreDisplayFormat {
+  const region = storeRegion(store);
+  return {
+    locale: resolveSupportedLocale(
+      resolveIntlLocale(locale, region),
+      (l) => Intl.DateTimeFormat.supportedLocalesOf(l),
+      resolveIntlLocale(null, region),
+    ),
+    timeZone: storeTimeZone(store),
+  };
 }
 
 /** Request header the proxy sets for published non-primary locales. */

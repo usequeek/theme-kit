@@ -144,6 +144,10 @@ export interface VendorProfile {
   address?: string | null;
   delivery_time?: string | null;
   currency?: string | null;
+  /** The store's country (ISO 3166-1 alpha-2), when the API sends it: the region its English dates read in. */
+  country_code?: string | null;
+  /** The store's IANA time zone (`timezone` on the store payload): the calendar its dates read on. */
+  timezone?: string | null;
   rating_value?: number;
   rating_count?: number;
   rating_label?: string | null;

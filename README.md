@@ -357,47 +357,53 @@ English. See also [Translating your theme](https://docs.usequeek.com/docs/themes
 
 ## Locale-aware dates, numbers and relative time
 
-Dates, counts, money and relative time follow the SHOPPER's locale. English
-renders in the British/Nigerian style — `2 October 2026`, never US
-`October 2, 2026`.
+Dates, counts, money and relative time follow the SHOPPER's language, and
+English reads the way the STORE's country writes it: a US store prints
+`Oct 2, 2026` and `$11.50`, a Nigerian store `2 Oct 2026` and `₦5,000`, a
+British one `2 Oct 2026` and `£8`. No country is ever assumed: with nothing to
+go on the kit prints neutral English (`en`) in UTC.
 
-- **One mapping.** `resolveIntlLocale(locale)` (`utils/locale.ts`, pure: no
-  `next/*`, no React) is the single canonical storefront-code → Intl-locale
-  mapping every formatter goes through. Missing/invalid codes and every
-  English variant (`en`, `en-GB`, `en-NG`, `en-US`, …) become `en-NG`;
-  everything else passes through (`fr`, `ar`, `pt-BR`, `zh-CN`, `yo`, `ha`,
-  `sw`, …). `en-NG` — not `en-GB` — because it renders NGN as `₦12,500`
-  where `en-GB` renders `NGN 12,500` (both print dates as `2 October 2026`;
-  checked on Node 22 with full ICU). `resolveSupportedLocale` falls back to
-  English when the runtime's ICU lacks a locale — formatting never throws.
-- **What themes call.** `formatThemeDate(value, locale?, options?)`
-  (`strings/theme-strings.ts`) instead of a hardcoded-`'en-GB'`
-  `toLocaleDateString`: pass the storefront locale — client components via
-  `useStorefrontLocale()`, server components via the request locale the host
-  already holds. Siblings: `formatThemeNumber`, `formatThemeMoney`, and
+- **One mapping.** `resolveIntlLocale(locale, region?)` (`utils/locale.ts`,
+  pure: no `next/*`, no React) is the single canonical storefront-code →
+  Intl-locale mapping every formatter goes through. English takes the region
+  its code names (`en-GB` stays `en-GB`), else `region`, else neutral `en`;
+  missing/invalid codes are English; everything else passes through (`fr`,
+  `ar`, `pt-BR`, `zh-CN`, `yo`, `ha`, `sw`, …). `resolveSupportedLocale`
+  falls back to English in the same region when the runtime's ICU lacks a
+  locale — formatting never throws.
+- **Where the region comes from.** Dates: `storeRegion(store)`, the store's
+  `country_code`, else its currency's home. Money: the currency's home
+  (`currencyRegion`: USD → US, NGN → NG; none for EUR and the X-codes), so a
+  store's own currency prints its bare local sign; an `en-GB` reader still
+  sees `US$5`. Zone: `storeTimeZone(store)`, the store's `timezone`, else UTC.
+- **What themes call.** In a client component, `useStoreDisplayFormat()`
+  (`provider`) returns `{ locale, timeZone }` for this store; pass them to
+  `formatShopperDate(value, locale, options?, timeZone)`, or to
+  `formatThemeDate(value, locale, { ...options, timeZone })`. On the server,
+  `storeDisplayFormat(requestLocale, profile)` gives the same answer from the
+  same profile, so the server render and the browser agree. Siblings:
+  `formatThemeNumber`, `formatThemeMoney`, and
   `formatThemeRelativeTime(-1, 'day', locale)` (`hier`, `أمس`, `ontem`, …,
   `numeric: 'auto'`). `formatThemeMoney` uses the currency's default
   decimals (`₦5,000.00`); `formatMoney` drops them from a whole amount
-  (`₦5,000`) and otherwise prints all of them (`₦0.28`, `US$11.50`). The fixed-zone display path is `formatShopperDate`
-  (`utils/format.ts`, Africa/Lagos, `''` for invalid dates);
-  `formatCount`/`formatMoney` take an optional locale, defaulting to English
-  output. `PostMeta` (`components/blog/post-meta.tsx`) renders its byline
-  through the provider locale.
-- **Fallbacks.** Unknown locale → English style; invalid date → `''`;
-  minimal-ICU runtimes render English rather than throwing.
+  (`₦5,000`) and otherwise prints all of them (`₦0.28`, `$11.50`).
+  `formatCount`/`formatMoney` take an optional locale. `PostMeta`, the
+  reviews and Q&A blocks and date metafields read the store's format.
+- **Fallbacks.** Unknown locale → English in the store's region; no region →
+  neutral `en`; no zone → UTC; invalid date → `''`; minimal-ICU runtimes
+  render English rather than throwing.
 - **Plural selection stays separate.** `canonicalThemeLocale`
   (`strings/theme-strings.ts`) is for `t()` plural selection ONLY: it returns
-  a bare `'en'` tag, which is a US-order Intl tag. Never pass it to a date,
-  number, money or relative-time formatter — formatters use
-  `resolveIntlLocale` (en* → `en-NG`) instead.
+  a bare `'en'` tag with no region. Never pass it to a date, number, money or
+  relative-time formatter — formatters use `resolveIntlLocale` instead.
 
 ```tsx
-import { useStorefrontLocale } from '@usequeek/theme-kit/provider';
-import { formatThemeDate } from '@usequeek/theme-kit/strings/theme-strings';
+import { useStoreDisplayFormat } from '@usequeek/theme-kit/provider';
+import { formatShopperDate } from '@usequeek/theme-kit/utils/format';
 
-const locale = useStorefrontLocale(); // null on the primary (English) locale
-formatThemeDate(post.published_at, locale, { year: 'numeric', month: 'long', day: 'numeric' });
-// en → "2 October 2026" · fr → "2 octobre 2026" · ar → "2 أكتوبر 2026"
+const { locale, timeZone } = useStoreDisplayFormat();
+formatShopperDate(post.published_at, locale, { year: 'numeric', month: 'long', day: 'numeric' }, timeZone);
+// US store → "October 2, 2026" · Nigerian store → "2 October 2026" · fr → "2 octobre 2026"
 ```
 
 ## Consumers

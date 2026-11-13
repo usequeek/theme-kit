@@ -6,9 +6,10 @@ import type { ProductQaBlockData, ProductQuestionItem } from '../types/block';
 import { Image } from '../components/image';
 import { useProductQuestions } from '../hooks/use-product-questions';
 import { useAuth } from '../hooks/use-auth';
-import { useIsThemePreview, useStorefront, useThemeStrings } from '../provider';
+import { useIsThemePreview, useStoreDisplayFormat, useStorefront, useThemeStrings } from '../provider';
 import { getQueekClient } from '../sdk/queek-client';
-import { formatDisplayDate } from '../utils/format';
+import { formatShopperDate } from '../utils/format';
+import type { StoreDisplayFormat } from '../utils/locale';
 
 const MAX_QUESTION_LENGTH = 1000;
 
@@ -152,6 +153,7 @@ function AskQuestionPanel({ productSlug }: { productSlug: string }): JSX.Element
 }
 
 function QuestionCard({ question }: { question: ProductQuestionItem }): JSX.Element {
+  const display = useStoreDisplayFormat();
   return (
     <article className="core-block-product-qa__card">
       <header className="core-block-product-qa__card-head">
@@ -170,7 +172,7 @@ function QuestionCard({ question }: { question: ProductQuestionItem }): JSX.Elem
         </div>
         <div className="core-block-product-qa__card-meta">
           <p className="core-block-product-qa__author">{question.user.name}</p>
-          <p className="core-block-product-qa__date">{formatDate(question.created_at)}</p>
+          <p className="core-block-product-qa__date">{formatDate(question.created_at, display)}</p>
         </div>
       </header>
 
@@ -179,7 +181,7 @@ function QuestionCard({ question }: { question: ProductQuestionItem }): JSX.Elem
       {question.answer ? (
         <div className="core-block-product-qa__answer">
           <p className="core-block-product-qa__answer-label">
-            Answered{question.answered_at ? ` · ${formatDate(question.answered_at)}` : ''}
+            Answered{question.answered_at ? ` · ${formatDate(question.answered_at, display)}` : ''}
           </p>
           <p className="core-block-product-qa__answer-body">{question.answer}</p>
         </div>
@@ -198,7 +200,7 @@ function initialsFor(name: string): string {
     .toUpperCase();
 }
 
-function formatDate(iso: string): string {
-  // Fixed locale + zone: this block renders on the server too (see formatDisplayDate).
-  return formatDisplayDate(iso);
+/** In the store's format (explicit locale + zone: this block renders on the server too). */
+function formatDate(iso: string, display: StoreDisplayFormat): string {
+  return formatShopperDate(iso, display.locale, undefined, display.timeZone);
 }

@@ -342,7 +342,7 @@ describe('formatWireMoney', () => {
     expect(formatWireMoney('1.2345', 'NGN')).toBe('₦1.23');
     expect(plain(formatWireMoney('1.250', 'KWD'))).toBe('KWD 1.250');
     expect(plain(formatWireMoney('1.000', 'KWD'))).toBe('KWD 1');
-    expect(formatWireMoney('11.50', 'USD')).toBe('US$11.50');
+    expect(formatWireMoney('11.50', 'USD')).toBe('$11.50');
     expect(formatWireMoney('-5.00', 'NGN')).toBe('-₦5');
     expect(formatWireMoney('-5.25', 'NGN')).toBe('-₦5.25');
     expect(formatWireMoney('-0.00', 'NGN')).toBe('₦0');

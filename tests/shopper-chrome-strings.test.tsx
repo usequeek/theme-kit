@@ -108,10 +108,11 @@ const AVATAR_USER = {
   avatar: 'https://cdn.example.com/a.png',
 };
 
+// A naira store with no country sent: its English byline reads in Nigerian order ("15 September 2026", the baseline).
 function render(children: ReactNode): string {
   return renderToStaticMarkup(
     <StorefrontProvider
-      vendor={{ id: 'v1', slug: 'demo-store', name: 'Demo Store' } as never}
+      vendor={{ id: 'v1', slug: 'demo-store', name: 'Demo Store', currency: 'NGN', timezone: 'Africa/Lagos' } as never}
       config={{} as never}
       menus={[]}
     >

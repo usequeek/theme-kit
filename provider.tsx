@@ -8,7 +8,7 @@ import type { Post } from './types/page';
 import type { Product } from './types/product';
 import type { StorefrontConfig, VendorProfile } from './types/vendor';
 import { getBrandCssVariables } from './utils/brand';
-import { parseLocaleCode } from './utils/locale';
+import { parseLocaleCode, storeDisplayFormat, type StoreDisplayFormat } from './utils/locale';
 import { normalizeStoreLocales, type StoreLocale, type StoreLocaleInput } from './utils/locale-switch';
 import { normalizeStoreMarkets, parseMarketId, setBrowserMarketId, type StoreMarket } from './utils/market';
 import { reconcileMarketChoice } from './utils/market-choice';
@@ -237,6 +237,27 @@ export function useStorefrontLocale(): string | null {
   }
 
   return context.locale ?? null;
+}
+
+/**
+ * How this store's dates read, for `formatShopperDate` / `formatDisplayDate` /
+ * `formatThemeDate`: `locale` is the shopper's language in the store's region
+ * (a US store's English is `en-US`, a Nigerian one's `en-NG`), `timeZone` the
+ * store's zone (UTC when it sent none). Built from the store profile, so the
+ * server render and the browser agree.
+ *
+ * @example
+ * const { locale, timeZone } = useStoreDisplayFormat();
+ * formatShopperDate(order.created_at, locale, undefined, timeZone);
+ */
+export function useStoreDisplayFormat(): StoreDisplayFormat {
+  const context = useContext(StorefrontContext);
+
+  if (!context) {
+    throw new Error('useStoreDisplayFormat() was called outside <StorefrontProvider>. Render the component inside StorefrontProvider.');
+  }
+
+  return storeDisplayFormat(context.locale, context.vendor);
 }
 
 /**

@@ -1,35 +1,38 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { DISPLAY_LOCALE, DISPLAY_TIME_ZONE, formatCount, formatDisplayDate, formatMoney, formatRelativeTime, formatShopperDate } from '../utils/format';
-import { ENGLISH_DISPLAY_LOCALE, resolveIntlLocale, resolveSupportedLocale } from '../utils/locale';
+import { DISPLAY_LOCALE, DISPLAY_TIME_ZONE, formatCount, formatDisplayDate, formatMoney, formatRelativeTime, formatShopperDate, formatWireMoney } from '../utils/format';
+import { ENGLISH_DISPLAY_LOCALE, currencyRegion, resolveIntlLocale, resolveSupportedLocale, storeDisplayFormat, storeRegion, storeTimeZone } from '../utils/locale';
 import { formatThemeDate, formatThemeMoney, formatThemeNumber, formatThemeRelativeTime } from '../strings/theme-strings';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { StorefrontProvider, useStoreDisplayFormat } from '../provider';
+import { PostMeta } from '../components/blog/post-meta';
 
 /**
  * Storefront pages render on the server first. A date formatted with the
  * runtime's default locale printed "Feb 14, 2026" on the server (Node: en-US,
  * UTC) and "14 Feb 2026" in a Nigerian browser; React then failed hydration
- * (#418) and re-rendered the whole page on the client — seen live on every
- * store page with a reviews block. Everything the kit displays is formatted in
- * one fixed locale and zone instead.
+ * (#418) and re-rendered the whole page on the client. Every formatter takes an
+ * explicit locale and zone instead: the store's (`storeDisplayFormat`), or the
+ * neutral English/UTC fallback — never a fixed country.
  */
 describe('display formatting is the same on the server and in the browser', () => {
-  it('uses one fixed locale and zone', () => {
-    expect(DISPLAY_LOCALE).toBe('en-NG');
-    expect(DISPLAY_TIME_ZONE).toBe('Africa/Lagos');
+  it('falls back to neutral English in UTC, never a fixed country', () => {
+    expect(DISPLAY_LOCALE).toBe('en');
+    expect(DISPLAY_TIME_ZONE).toBe('UTC');
   });
 
-  it('formats dates in Lagos time, whatever the machine is set to', () => {
-    expect(formatDisplayDate('2026-02-14T10:00:00Z')).toBe('14 Feb 2026');
-    // 23:30 UTC is already the 15th in Lagos (UTC+1) — the server (UTC) and the
-    // browser (Lagos) used to print different days for this review.
-    expect(formatDisplayDate('2026-02-14T23:30:00Z')).toBe('15 Feb 2026');
-    expect(formatDisplayDate('2026-02-14', {})).toBe('14/02/2026');
-    // English is British/Nigerian order, never US order — the locale parameter
-    // is routed through resolveIntlLocale, so even an explicit 'en'/'en-US'
-    // renders "15 February 2026", not "February 15, 2026".
-    expect(formatDisplayDate('2026-02-14T23:30:00Z', { year: 'numeric', month: 'long', day: 'numeric' }, 'en-US')).toBe('15 February 2026');
-    expect(formatDisplayDate('2026-02-14T23:30:00Z', { year: 'numeric', month: 'long', day: 'numeric' }, 'en')).toBe('15 February 2026');
+  it('formats dates in the zone it is given, UTC by default, whatever the machine is set to', () => {
+    expect(formatDisplayDate('2026-02-14T10:00:00Z')).toBe('Feb 14, 2026');
+    expect(formatDisplayDate('2026-02-14T23:30:00Z')).toBe('Feb 14, 2026');
+    // 23:30 UTC is already the 15th in Lagos (UTC+1): the store's zone decides the day.
+    expect(formatDisplayDate('2026-02-14T23:30:00Z', undefined, 'en-NG', 'Africa/Lagos')).toBe('15 Feb 2026');
+    expect(formatDisplayDate('2026-02-14', {})).toBe('2/14/2026');
+    expect(formatDisplayDate('2026-02-14', {}, 'en-GB')).toBe('14/02/2026');
+    expect(formatDisplayDate('2026-02-14T23:30:00Z', { year: 'numeric', month: 'long', day: 'numeric' }, 'en-US')).toBe('February 14, 2026');
+    // A zone this runtime does not know prints in UTC rather than throwing.
+    expect(formatDisplayDate('2026-02-14T23:30:00Z', undefined, 'en', 'Mars/Base')).toBe('Feb 14, 2026');
     expect(formatDisplayDate('not a date')).toBe('');
   });
 
@@ -55,55 +58,149 @@ describe('display formatting is the same on the server and in the browser', () =
 });
 
 /**
- * Dates and numbers follow the SHOPPER's locale, with English in the
- * British/Nigerian style ("2 October 2026", never US "October 2, 2026").
+ * Dates and numbers follow the SHOPPER's language; English reads in the
+ * store's region (its country, else its currency's home), else neutral `en`.
  */
-describe('canonical locale mapping (shopper locale -> Intl locale)', () => {
-  const LONG_LAGOS = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Lagos' } as const;
-
-  it('maps every English variant and every missing/invalid code to en-NG', () => {
-    expect(ENGLISH_DISPLAY_LOCALE).toBe('en-NG');
+describe('canonical locale mapping (shopper locale + store region -> Intl locale)', () => {
+  it('maps a missing/invalid code or bare English to neutral en without a region', () => {
+    expect(ENGLISH_DISPLAY_LOCALE).toBe('en');
     expect(DISPLAY_LOCALE).toBe(ENGLISH_DISPLAY_LOCALE);
-    for (const locale of [null, undefined, 'en', 'en-GB', 'en-NG', 'en-US', 'not a locale!!', '']) {
-      expect(resolveIntlLocale(locale), String(locale)).toBe('en-NG');
+    for (const locale of [null, undefined, 'en', 'EN', 'not a locale!!', '']) {
+      expect(resolveIntlLocale(locale), String(locale)).toBe('en');
     }
   });
 
-  it('passes every other well-formed code through unchanged', () => {
+  it('gives English the store region, unless the code names its own', () => {
+    expect(resolveIntlLocale('en', 'US')).toBe('en-US');
+    expect(resolveIntlLocale(null, 'ng')).toBe('en-NG');
+    expect(resolveIntlLocale('en-GB', 'US')).toBe('en-GB');
+    expect(resolveIntlLocale('en-Latn-US', 'NG')).toBe('en-US');
+    expect(resolveIntlLocale('en', 'USA')).toBe('en');
+    expect(resolveIntlLocale('en', '')).toBe('en');
+  });
+
+  it('is idempotent, so a resolved tag can stand in for a storefront locale', () => {
+    for (const [locale, region] of [['en', 'US'], [null, 'NG'], ['en-GB', 'US'], ['fr', 'NG'], [null, null]] as const) {
+      const tag = resolveIntlLocale(locale, region);
+      expect(resolveIntlLocale(tag, 'JP')).toBe(tag === 'en' ? 'en-JP' : tag);
+    }
+  });
+
+  it('passes every other well-formed code through unchanged, whatever the region', () => {
     for (const code of ['fr', 'ar', 'pt-BR', 'zh-CN', 'yo', 'ha', 'sw', 'es', 'de', 'ig']) {
       expect(resolveIntlLocale(code)).toBe(code);
+      expect(resolveIntlLocale(code, 'US')).toBe(code);
     }
   });
 
-  it('evidence: en-NG is the mapping that reproduces current English output byte for byte', () => {
-    // Dates are identical under en-GB and en-NG …
-    expect(new Date('2026-10-02T10:00:00Z').toLocaleDateString('en-GB', { ...LONG_LAGOS })).toBe('2 October 2026');
-    expect(new Date('2026-10-02T10:00:00Z').toLocaleDateString('en-NG', { ...LONG_LAGOS })).toBe('2 October 2026');
-    // … but money is NOT: only en-NG keeps the naira sign the stores show.
-    expect(
-      new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(12500),
-    ).toBe('₦12,500');
-    expect(
-      new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(12500),
-    ).not.toBe('₦12,500');
-    // So the mapping pins the sign the pinned tests assert.
-    expect(formatMoney(12500)).toBe('₦12,500');
+  it("a currency's home region is its code's first two letters, none for EUR and the X-codes", () => {
+    expect(currencyRegion('USD')).toBe('US');
+    expect(currencyRegion(' ngn ')).toBe('NG');
+    expect(currencyRegion('GBP')).toBe('GB');
+    for (const code of ['EUR', 'XOF', 'XAF', 'XXX', 'US', '', null, 7]) {
+      expect(currencyRegion(code), String(code)).toBeNull();
+    }
   });
 
-  it('falls back to English when the runtime ICU lacks the locale, and never throws', () => {
+  it("a store's region is its country, else its currency's home", () => {
+    expect(storeRegion({ country_code: 'US', currency: 'NGN' })).toBe('US');
+    expect(storeRegion({ country_code: 'gb', currency: 'GBP' })).toBe('GB');
+    expect(storeRegion({ country_code: null, currency: 'NGN' })).toBe('NG');
+    expect(storeRegion({ country_code: 'USA', currency: 'USD' })).toBe('US');
+    expect(storeRegion({ currency: 'EUR' })).toBeNull();
+    expect(storeRegion({})).toBeNull();
+    expect(storeRegion(null)).toBeNull();
+  });
+
+  it("a store's zone is its own IANA zone, else UTC", () => {
+    expect(storeTimeZone({ timezone: 'America/New_York' })).toBe('America/New_York');
+    expect(storeTimeZone({ timezone: ' Africa/Lagos ' })).toBe('Africa/Lagos');
+    for (const store of [{ timezone: '' }, { timezone: 'Mars/Base' }, { timezone: 7 }, {}, null, 'UTC']) {
+      expect(storeTimeZone(store), JSON.stringify(store)).toBe('UTC');
+    }
+  });
+
+  it('evidence: bare en cannot stand in for a region (NGN loses its sign, USD is disambiguated elsewhere)', () => {
+    expect(new Intl.NumberFormat('en', { style: 'currency', currency: 'NGN' }).format(12500)).not.toBe('₦12,500.00');
+    expect(new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(12500)).toBe('₦12,500.00');
+    expect(new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'USD' }).format(5)).toBe('US$5.00');
+    expect(new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(5)).toBe('$5.00');
+  });
+
+  it('falls back to English in the given region when the runtime ICU lacks the locale, and never throws', () => {
     expect(resolveSupportedLocale('fr', (l) => Intl.DateTimeFormat.supportedLocalesOf(l))).toBe('fr');
-    expect(resolveSupportedLocale('xx', (l) => Intl.DateTimeFormat.supportedLocalesOf(l))).toBe('en-NG');
-    expect(resolveSupportedLocale('fr', () => { throw new Error('no ICU'); })).toBe('en-NG');
+    expect(resolveSupportedLocale('xx', (l) => Intl.DateTimeFormat.supportedLocalesOf(l))).toBe('en');
+    expect(resolveSupportedLocale('xx', (l) => Intl.DateTimeFormat.supportedLocalesOf(l), 'en-NG')).toBe('en-NG');
+    expect(resolveSupportedLocale('fr', () => { throw new Error('no ICU'); })).toBe('en');
   });
 });
 
-describe('English output is byte-identical with or without a locale', () => {
+/**
+ * One store, one answer: a US store prints US dates and "$", a Nigerian store
+ * Nigerian dates and "₦", a GBP store British dates and "£", each on its own
+ * calendar — and a locale the runtime lacks still reads in the store's region.
+ */
+describe('stores read in their own region and zone', () => {
+  const US = { country_code: 'US', currency: 'USD', timezone: 'America/New_York' };
+  const NG = { country_code: null, currency: 'NGN', timezone: 'Africa/Lagos' };
+  const GB = { country_code: 'GB', currency: 'GBP', timezone: 'Europe/London' };
+  const shopperDate = (value: string, store: object, locale: string | null = null): string => {
+    const display = storeDisplayFormat(locale, store);
+    return formatShopperDate(value, display.locale, undefined, display.timeZone);
+  };
+
+  it('a US store: US order on New York time, the bare dollar sign', () => {
+    expect(storeDisplayFormat(null, US)).toEqual({ locale: 'en-US', timeZone: 'America/New_York' });
+    // 03:30 UTC on the 15th is still the 14th in New York.
+    expect(shopperDate('2026-02-15T03:30:00Z', US)).toBe('Feb 14, 2026');
+    expect(formatMoney(11.5, US.currency)).toBe('$11.50');
+    expect(formatMoney(5, US.currency, 'en')).toBe('$5');
+    expect(formatWireMoney('11.50', US.currency)).toBe('$11.50');
+    expect(formatThemeMoney(5, US.currency, null)).toBe('$5.00');
+  });
+
+  it('a Nigerian store (no country sent): Nigerian order on Lagos time, the naira sign', () => {
+    expect(storeDisplayFormat('en', NG)).toEqual({ locale: 'en-NG', timeZone: 'Africa/Lagos' });
+    expect(shopperDate('2026-02-14T23:30:00Z', NG)).toBe('15 Feb 2026');
+    expect(formatMoney(5000, NG.currency)).toBe('₦5,000');
+    expect(formatMoney(0.28, NG.currency)).toBe('₦0.28');
+    expect(formatWireMoney('4500.00', NG.currency)).toBe('₦4,500');
+  });
+
+  it('a GBP store: British order on London time, the pound sign', () => {
+    expect(storeDisplayFormat(null, GB)).toEqual({ locale: 'en-GB', timeZone: 'Europe/London' });
+    expect(shopperDate('2026-02-14T23:30:00Z', GB)).toBe('14 Feb 2026');
+    expect(formatMoney(11.5, GB.currency)).toBe('£11.50');
+    expect(formatThemeMoney(8, GB.currency, 'en')).toBe('£8.00');
+  });
+
+  it('an unknown locale reads as English in the store region, never Nigeria by default', () => {
+    expect(storeDisplayFormat('xx', US).locale).toBe('en-US');
+    expect(storeDisplayFormat('xx', NG).locale).toBe('en-NG');
+    expect(storeDisplayFormat('xx', {})).toEqual({ locale: 'en', timeZone: 'UTC' });
+    expect(shopperDate('2026-02-14T23:30:00Z', US, 'xx')).toBe('Feb 14, 2026');
+    expect(formatMoney(12500, 'NGN', 'xx')).toBe('₦12,500');
+    expect(formatMoney(11.5, 'USD', 'xx')).toBe('$11.50');
+  });
+
+  it("a reader whose code names a region sees another country's currency disambiguated", () => {
+    expect(formatMoney(5, 'USD', 'en-GB')).toBe('US$5');
+    expect(formatMoney(5, 'USD', 'en-NG')).toBe('US$5');
+    expect(formatMoney(5, 'GBP', 'en-US')).toBe('£5');
+  });
+
+  it('a store in another language keeps its zone', () => {
+    expect(storeDisplayFormat('fr', NG)).toEqual({ locale: 'fr', timeZone: 'Africa/Lagos' });
+  });
+});
+
+describe('English output with no store region is neutral and identical with or without a locale', () => {
   const LONG_LAGOS: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Lagos' };
 
-  it('format.ts helpers render the pinned strings for null/en', () => {
+  it('format.ts helpers render the same strings for null/en', () => {
     for (const locale of [undefined, null, 'en'] as const) {
-      expect(formatShopperDate('2026-02-14T10:00:00Z', locale)).toBe('14 Feb 2026');
-      expect(formatShopperDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe('15 February 2026');
+      expect(formatShopperDate('2026-02-14T10:00:00Z', locale)).toBe('Feb 14, 2026');
+      expect(formatShopperDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe('February 15, 2026');
       expect(formatCount(1234567, locale)).toBe('1,234,567');
       expect(formatMoney(12500, 'NGN', locale)).toBe('₦12,500');
       expect(formatMoney(0.28, 'NGN', locale)).toBe('₦0.28');
@@ -112,10 +209,10 @@ describe('English output is byte-identical with or without a locale', () => {
     expect(formatRelativeTime(-3, 'day')).toBe('3 days ago');
   });
 
-  it('formatTheme* helpers render English in the British/Nigerian style', () => {
+  it('formatTheme* helpers render the same strings for null/en', () => {
     for (const locale of [undefined, null, 'en'] as const) {
       expect(formatThemeNumber(1234567, locale)).toBe('1,234,567');
-      expect(formatThemeDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe('15 February 2026');
+      expect(formatThemeDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe('February 15, 2026');
       expect(formatThemeMoney(5000, 'NGN', locale)).toBe('₦5,000.00');
       expect(formatThemeRelativeTime(-1, 'day', locale)).toBe('yesterday');
     }
@@ -146,8 +243,8 @@ describe('shopper locales format through real Intl output', () => {
     }
   };
 
-  // Expected output on Node 22 with full ICU; each row falls back to the
-  // English style when the runtime's ICU lacks the locale.
+  // Expected output on Node 22 with full ICU; each row falls back to neutral
+  // English when the runtime's ICU lacks the locale.
   it.each([
     ['fr', '15 février 2026'],
     ['ar', '15 فبراير 2026'],
@@ -158,11 +255,11 @@ describe('shopper locales format through real Intl output', () => {
     ['sw', '15 Februari 2026'],
   ])('long date in %s (Lagos day boundary preserved)', (code, native) => {
     expect(formatThemeDate('2026-02-14T23:30:00Z', code, LONG_LAGOS)).toBe(
-      dateSupported(code) ? native : '15 February 2026',
+      dateSupported(code) ? native : 'February 15, 2026',
     );
-    // Same through the fixed-zone display path post-meta uses.
+    // Same through the explicit-zone display path post-meta uses.
     expect(formatShopperDate('2026-02-14T23:30:00Z', code, LONG_LAGOS)).toBe(
-      dateSupported(code) ? native : '15 February 2026',
+      dateSupported(code) ? native : 'February 15, 2026',
     );
   });
 
@@ -176,7 +273,7 @@ describe('shopper locales format through real Intl output', () => {
     ['sw', '14 Feb 2026'],
   ])('short date in %s', (code, native) => {
     expect(formatShopperDate('2026-02-14T10:00:00Z', code)).toBe(
-      dateSupported(code) ? native : '14 Feb 2026',
+      dateSupported(code) ? native : 'Feb 14, 2026',
     );
   });
 
@@ -193,7 +290,7 @@ describe('shopper locales format through real Intl output', () => {
     expect(formatCount(1234567, code)).toBe(numberSupported(code) ? native : '1,234,567');
   });
 
-  it('money follows the shopper locale, English keeps the naira sign', () => {
+  it('money follows the shopper locale; English keeps the currency home sign', () => {
     expect(formatThemeMoney(12500, 'NGN', 'fr')).toBe(
       numberSupported('fr') ? '12\u202f500,00\u00a0NGN' : '₦12,500.00',
     );
@@ -221,11 +318,11 @@ describe('shopper locales format through real Intl output', () => {
 
   it('an unknown but well-formed locale renders English and never throws', () => {
     expect(formatThemeNumber(1234567, 'xx')).toBe('1,234,567');
-    expect(formatThemeDate('2026-02-14T23:30:00Z', 'xx', LONG_LAGOS)).toBe('15 February 2026');
+    expect(formatThemeDate('2026-02-14T23:30:00Z', 'xx', LONG_LAGOS)).toBe('February 15, 2026');
     expect(formatThemeMoney(12500, 'NGN', 'xx')).toBe('₦12,500.00');
     expect(formatThemeRelativeTime(-1, 'day', 'xx')).toBe('yesterday');
     expect(formatCount(1234567, 'xx')).toBe('1,234,567');
-    expect(formatShopperDate('2026-02-14T10:00:00Z', 'xx')).toBe('14 Feb 2026');
+    expect(formatShopperDate('2026-02-14T10:00:00Z', 'xx')).toBe('Feb 14, 2026');
     expect(formatMoney(12500, 'NGN', 'xx')).toBe('₦12,500');
     expect(formatRelativeTime(-1, 'day', 'xx')).toBe('yesterday');
   });
@@ -259,24 +356,26 @@ describe('no kit source hardcodes an English locale into a formatter', () => {
   });
 });
 
-describe("no exported formatter lets an 'en*' tag reach Intl unmapped", () => {
+describe('an English tag that names a region is honoured by every formatter', () => {
   const LONG_LAGOS: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Lagos' };
 
-  it("explicit 'en'/'en-US' renders British order through every formatter", () => {
-    for (const locale of ['en', 'en-US'] as const) {
-      expect(formatDisplayDate('2026-02-14T23:30:00Z', LONG_LAGOS, locale)).toBe('15 February 2026');
-      expect(formatShopperDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe('15 February 2026');
-      expect(formatCount(1234567, locale)).toBe('1,234,567');
-      expect(formatMoney(12500, 'NGN', locale)).toBe('₦12,500');
-      expect(formatRelativeTime(-1, 'day', locale)).toBe('yesterday');
-      expect(formatThemeNumber(1234567, locale)).toBe('1,234,567');
-      expect(formatThemeDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe('15 February 2026');
-      expect(formatThemeMoney(5000, 'NGN', locale)).toBe('₦5,000.00');
-      expect(formatThemeRelativeTime(-1, 'day', locale)).toBe('yesterday');
-    }
+  it.each([
+    ['en-US', 'February 15, 2026', 'NGN\u00a012,500', 'NGN\u00a05,000.00'],
+    ['en-GB', '15 February 2026', 'NGN\u00a012,500', 'NGN\u00a05,000.00'],
+    ['en-NG', '15 February 2026', '₦12,500', '₦5,000.00'],
+  ])('%s', (locale, longDate, money, themeMoney) => {
+    expect(formatDisplayDate('2026-02-14T23:30:00Z', LONG_LAGOS, locale)).toBe(longDate);
+    expect(formatShopperDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe(longDate);
+    expect(formatThemeDate('2026-02-14T23:30:00Z', locale, LONG_LAGOS)).toBe(longDate);
+    expect(formatMoney(12500, 'NGN', locale)).toBe(money);
+    expect(formatThemeMoney(5000, 'NGN', locale)).toBe(themeMoney);
+    expect(formatCount(1234567, locale)).toBe('1,234,567');
+    expect(formatThemeNumber(1234567, locale)).toBe('1,234,567');
+    expect(formatRelativeTime(-1, 'day', locale)).toBe('yesterday');
+    expect(formatThemeRelativeTime(-1, 'day', locale)).toBe('yesterday');
   });
 
-  it("constructor call sites receive the mapped tag, never bare 'en'/'en-US'", () => {
+  it('constructor call sites receive the resolved tag: the reader region, else the currency home', () => {
     // Date/Number.prototype.toLocale* use V8 intrinsics and bypass a patched
     // global (verified live on this Node), so this spy covers only the
     // `new Intl.*` call sites; the toLocale* sites are pinned behaviorally above.
@@ -288,10 +387,13 @@ describe("no exported formatter lets an 'en*' tag reach Intl unmapped", () => {
     };
     const box = Intl as unknown as Record<string, unknown>;
     const wrap = (kind: string, Orig: new (...args: never[]) => object) => {
-      box[kind] = function (this: unknown, ...args: unknown[]) {
-        seen.push(typeof args[0] === 'string' ? args[0] : JSON.stringify(args[0]));
-        return new Orig(...(args as never[]));
-      };
+      box[kind] = Object.assign(
+        function (this: unknown, ...args: unknown[]) {
+          seen.push(typeof args[0] === 'string' ? args[0] : JSON.stringify(args[0]));
+          return new Orig(...(args as never[]));
+        },
+        { supportedLocalesOf: (Orig as unknown as { supportedLocalesOf: unknown }).supportedLocalesOf },
+      );
     };
     wrap('DateTimeFormat', originals.DateTimeFormat as new (...args: never[]) => object);
     wrap('NumberFormat', originals.NumberFormat as new (...args: never[]) => object);
@@ -301,31 +403,29 @@ describe("no exported formatter lets an 'en*' tag reach Intl unmapped", () => {
       formatThemeDate('2026-02-14T12:00:00Z', 'en-US');
       formatThemeMoney(5000, 'NGN', 'en-US');
       formatThemeRelativeTime(-1, 'day', 'en-US');
-      formatMoney(5000, 'NGN', 'en-US');
-      formatRelativeTime(-1, 'day', 'en-US');
+      formatThemeMoney(5000, 'KES', null);
     } finally {
       box.DateTimeFormat = originals.DateTimeFormat;
       box.NumberFormat = originals.NumberFormat;
       box.RelativeTimeFormat = originals.RelativeTimeFormat;
     }
-    expect(seen.length).toBeGreaterThan(0);
-    expect(seen).toEqual(seen.map(() => 'en-NG'));
+    expect(seen).toEqual(['en-US', 'en-US', 'en-US', 'en-US', 'en-KE']);
   });
 
   it('formatDisplayDate routes its locale parameter through resolveIntlLocale', () => {
     const source = readFileSync(resolve(__dirname, '..', 'utils', 'format.ts'), 'utf8');
-    expect(source).toContain('date.toLocaleDateString(resolveIntlLocale(locale)');
+    expect(source).toContain('const tag = resolveIntlLocale(locale);');
   });
 });
 
 describe('English money output', () => {
-  // formatMoney and formatThemeMoney both render English through en-NG, so USD
-  // prints 'US$'. GBP/EUR symbols are identical under 'en' and 'en-NG'; the
-  // helpers differ only in decimals (formatMoney: none for a whole amount, all of
-  // them otherwise; formatThemeMoney: always the currency's default decimals).
+  // formatMoney and formatThemeMoney both render English in the currency's home
+  // region, so every currency prints its bare local sign. The helpers differ only
+  // in decimals (formatMoney: none for a whole amount, all of them otherwise;
+  // formatThemeMoney: always the currency's default decimals).
   it.each([
     ['NGN', '₦5,000', '₦5,000.00'],
-    ['USD', 'US$5,000', 'US$5,000.00'],
+    ['USD', '$5,000', '$5,000.00'],
     ['GBP', '£5,000', '£5,000.00'],
     ['EUR', '€5,000', '€5,000.00'],
   ])('%s renders the live-store English output', (currency, money, themeMoney) => {
@@ -336,8 +436,8 @@ describe('English money output', () => {
   });
 
   it('September abbreviates as Intl prints it', () => {
-    expect(formatDisplayDate('2026-09-05T10:00:00Z')).toBe('5 Sept 2026');
-    expect(formatDisplayDate('2026-09-05T10:00:00Z', { day: 'numeric', month: 'short', year: 'numeric' }, 'en-US')).toBe('5 Sept 2026');
+    expect(formatDisplayDate('2026-09-05T10:00:00Z')).toBe('Sep 5, 2026');
+    expect(formatDisplayDate('2026-09-05T10:00:00Z', { day: 'numeric', month: 'short', year: 'numeric' }, 'en-GB')).toBe('5 Sept 2026');
   });
 });
 
@@ -346,15 +446,15 @@ describe('money shows the currency\'s full minor units or none', () => {
   // digit, so a fractional price never reads "$11.5". The digits come from the
   // currency (USD/EUR/NGN 2, JPY 0, KWD 3), never a fixed 2.
   it.each([
-    [11.5, 'USD', 'US$11.50'],
-    [5, 'USD', 'US$5'],
+    [11.5, 'USD', '$11.50'],
+    [5, 'USD', '$5'],
     [2800, 'NGN', '₦2,800'],
     [1234.5, 'EUR', '€1,234.50'],
     [0.28, 'NGN', '₦0.28'],
-    [11.999, 'USD', 'US$12'],
-    [1235, 'JPY', 'JP¥1,235'],
-    [1234.6, 'JPY', 'JP¥1,235'],
-    [-11.5, 'USD', '-US$11.50'],
+    [11.999, 'USD', '$12'],
+    [1235, 'JPY', '¥1,235'],
+    [1234.6, 'JPY', '¥1,235'],
+    [-11.5, 'USD', '-$11.50'],
     [-0, 'NGN', '₦0'],
     [-0.001, 'NGN', '₦0'],
     [-0.005, 'NGN', '-₦0.01'],
@@ -380,10 +480,11 @@ describe('money shows the currency\'s full minor units or none', () => {
   });
 
   it('the same amount prints the same text on every call (cached formatters stay per locale and currency)', () => {
-    expect(formatMoney(11.5, 'USD')).toBe('US$11.50');
+    expect(formatMoney(11.5, 'USD')).toBe('$11.50');
     expect(formatMoney(11.5, 'EUR')).toBe('€11.50');
     expect(formatMoney(11.5, 'USD', 'fr')).not.toBe(formatMoney(11.5, 'USD'));
-    expect(formatMoney(11.5, 'USD')).toBe('US$11.50');
+    expect(formatMoney(11.5, 'USD', 'en-GB')).toBe('US$11.50');
+    expect(formatMoney(11.5, 'USD')).toBe('$11.50');
   });
 });
 
@@ -394,7 +495,7 @@ describe('malformed currency (normalize-then-format)', () => {
   // 'usd' (Intl is case-insensitive) and 'XXX' (a real ISO 4217 code).
   // formatThemeMoney normalizes at its base as well.
   it.each([
-    ['usd', 'US$5,000'],
+    ['usd', '$5,000'],
     [' ngn ', '₦5,000'],
     ['', '₦5,000'],
     ['XXX', '¤5,000'],
@@ -409,10 +510,9 @@ describe('malformed currency (normalize-then-format)', () => {
 });
 
 describe('canonicalThemeLocale is plural-selection only', () => {
-  // canonicalThemeLocale returns bare 'en' (a US-order Intl tag). If a future
-  // formatter routes through it, English stores regress to US order. t() is
-  // its only legitimate caller: plural selection needs the bare language tag,
-  // and Intl.PluralRules('en') vs ('en-NG') select identically for our rules.
+  // canonicalThemeLocale returns bare 'en' with no region. If a future
+  // formatter routes through it, stores lose their own region. t() is its only
+  // legitimate caller: plural selection needs the bare language tag.
   it('t() still selects plurals through it', () => {
     const source = readFileSync(resolve(__dirname, '..', 'strings', 'theme-strings.ts'), 'utf8');
     expect(source).toContain('canonicalThemeLocale(locale)');
@@ -435,7 +535,7 @@ describe('canonicalThemeLocale is plural-selection only', () => {
     for (const name of ['formatThemeNumber', 'formatThemeDate', 'formatThemeMoney', 'formatThemeRelativeTime']) {
       expect(bodyOf(name)).not.toContain('canonicalThemeLocale');
     }
-    // The shared tag helper all four formatters use maps en* -> en-NG.
+    // The shared tag helper all four formatters use is the canonical mapping.
     expect(bodyOf('themeFormatTag')).toContain('resolveIntlLocale');
     expect(bodyOf('themeFormatTag')).not.toContain('canonicalThemeLocale');
   });
@@ -445,5 +545,27 @@ describe('canonicalThemeLocale is plural-selection only', () => {
     const segments = mutated.split(/\n(?:export )?function /);
     const body = segments.find((s) => s.startsWith('formatThemeDate(')) as string;
     expect(body).toContain('canonicalThemeLocale');
+  });
+});
+
+describe('the provider hands every block the store format', () => {
+  const render = (vendor: object, child: ReturnType<typeof createElement>, locale: string | null = null): string =>
+    renderToStaticMarkup(
+      createElement(StorefrontProvider, { vendor: { id: 'v1', slug: 's', name: 'Store', ...vendor } as never, config: {} as never, menus: [], locale, children: child }),
+    );
+  const Probe = (): ReturnType<typeof createElement> => {
+    const { locale, timeZone } = useStoreDisplayFormat();
+    return createElement('i', null, `${locale}|${timeZone}`);
+  };
+  const post = { title: 'P', published_at: '2026-09-15T02:00:00.000Z', reading_time: 0, author: null } as never;
+
+  it.each([
+    [{ country_code: 'US', currency: 'USD', timezone: 'America/New_York' }, null, 'en-US|America/New_York', 'September 14, 2026'],
+    [{ currency: 'NGN', timezone: 'Africa/Lagos' }, null, 'en-NG|Africa/Lagos', '15 September 2026'],
+    [{ country_code: 'GB', currency: 'GBP', timezone: 'Europe/London' }, 'en', 'en-GB|Europe/London', '15 September 2026'],
+    [{}, 'xx', 'en|UTC', 'September 15, 2026'],
+  ])('%j (locale %s)', (vendor, locale, format, byline) => {
+    expect(render(vendor, createElement(Probe), locale)).toContain(`<i>${format}</i>`);
+    expect(render(vendor, createElement(PostMeta, { post }), locale)).toContain(`>${byline}</time>`);
   });
 });

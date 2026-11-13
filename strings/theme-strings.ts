@@ -30,6 +30,7 @@
 
 import {
   ENGLISH_DISPLAY_LOCALE,
+  currencyRegion,
   parseLocaleCode,
   resolveIntlLocale,
   resolveSupportedLocale,
@@ -82,12 +83,11 @@ const PLURAL_FORMS = ['one', 'two', 'few', 'many', 'other'] as const;
 /**
  * Canonical locale for PLURAL SELECTION ONLY (used by `t()`).
  *
- * This returns a bare `'en'` tag for unknown codes, and bare `'en'` is a
- * US-order Intl tag (`February 15, 2026`). NEVER pass its result to
- * `Intl.DateTimeFormat` / `Intl.NumberFormat` / `Intl.RelativeTimeFormat`,
- * `toLocale*`, or any date/number/money/relative-time formatter — that would
- * reintroduce US date order (`February 15, 2026`) for English stores.
- * Formatters must route through `resolveIntlLocale` (en* → en-NG) instead.
+ * This returns a bare `'en'` tag for unknown codes, with no region. NEVER
+ * pass its result to `Intl.DateTimeFormat` / `Intl.NumberFormat` /
+ * `Intl.RelativeTimeFormat`, `toLocale*`, or any date/number/money/relative-time
+ * formatter: formatters route through `resolveIntlLocale` with the store's
+ * region (`storeDisplayFormat`) so a store prints its own country's order.
  *
  * Unknown/unparseable codes become English, mirroring `parseLocaleCode` (and
  * the API's unknown-locale rule). A well-formed code the runtime's ICU
@@ -333,15 +333,16 @@ export async function createThemeStrings(options?: {
 
 /**
  * Pick the Intl tag for one theme formatting call: the storefront locale
- * through the single canonical mapping (`resolveIntlLocale` — English lands
- * on `ENGLISH_DISPLAY_LOCALE`, never bare `en` with its US order), or
- * English when the runtime's ICU lacks the locale. Never throws.
+ * through the single canonical mapping (`resolveIntlLocale`, with `region`
+ * for an English reader whose code names none), or English when the
+ * runtime's ICU lacks the locale. Never throws.
  */
 function themeFormatTag(
   locale: string | null | undefined,
   supportedLocalesOf: (locales: string[]) => readonly string[],
+  region?: string | null,
 ): string {
-  return resolveSupportedLocale(resolveIntlLocale(locale), supportedLocalesOf);
+  return resolveSupportedLocale(resolveIntlLocale(locale, region), supportedLocalesOf, resolveIntlLocale(null, region));
 }
 
 /** Locale-aware number formatting keyed by the active locale (unknown → English). Never throws. */
@@ -367,11 +368,12 @@ export function formatThemeNumber(
  * English). `''` if unparseable. Never throws.
  *
  * THE helper themes call instead of hardcoding 'en-GB' in their own date
- * formatting: pass the storefront locale (client: `useStorefrontLocale()`; server: the
- * request locale the host already holds) and the same Intl options — English
- * shoppers see the unchanged British/Nigerian order ("2 October 2026"),
- * other shoppers see their own locale. A Node whose ICU lacks the locale
- * falls back to English, never an exception.
+ * formatting: pass the store's display locale (client: `useStoreDisplayFormat().locale`;
+ * server: `storeDisplayFormat(requestLocale, profile).locale`) and the same Intl
+ * options, with `timeZone` set to the store's zone — English shoppers see the
+ * store's own country's order ("2 October 2026" in Britain or Nigeria,
+ * "October 2, 2026" in the US), other shoppers see their own locale. A Node
+ * whose ICU lacks the locale falls back to English, never an exception.
  */
 export function formatThemeDate(
   value: string | number | Date,
@@ -472,7 +474,7 @@ export function formatThemeMoney(
   options?: Omit<Intl.NumberFormatOptions, 'style' | 'currency'>,
 ): string {
   const code = normalizeMoneyCurrency(currency);
-  const tag = themeFormatTag(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
+  const tag = themeFormatTag(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l), currencyRegion(code));
   try {
     return new Intl.NumberFormat(tag, {
       ...options,

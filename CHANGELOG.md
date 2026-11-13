@@ -3,6 +3,24 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.2.2 - 2026-11-13
+
+### Fixed
+
+- English dates, numbers and money no longer default to Nigeria. A store's money prints the way its currency's home
+  country writes it, so a US store reads `$11.50` (was `US$11.50`), a GBP store `£11.50`, a Nigerian store `₦5,000`. A
+  reader whose locale names its own region still sees another country's currency disambiguated (`en-GB`: `US$5`).
+- `formatDisplayDate` and `formatShopperDate` take a time zone (default UTC, or `options.timeZone`) instead of a fixed
+  `Africa/Lagos`; `DISPLAY_LOCALE` / `ENGLISH_DISPLAY_LOCALE` are neutral `en` and `DISPLAY_TIME_ZONE` is `UTC`.
+- The reviews and Q&A blocks, `PostMeta` and date metafields print in the store's region and zone.
+
+### Added
+
+- `useStoreDisplayFormat()` (provider) and `storeDisplayFormat(locale, store)`: the store's display `{ locale, timeZone }`
+  from its `country_code`, `currency` and `timezone`. Helpers `storeRegion`, `currencyRegion`, `storeTimeZone`.
+- `resolveIntlLocale(locale, region?)` gives English the store's region; `resolveSupportedLocale` takes a fallback tag.
+- `VendorProfile` carries the optional `country_code` and `timezone` the store payload sends.
+
 ## 0.2.1 - 2026-11-13
 
 ### Fixed

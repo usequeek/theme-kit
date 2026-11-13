@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReviewItem, ReviewsBlockData, ReviewsSummary } from '../types/block';
 import { Image } from '../components/image';
 import { useReviews } from '../hooks/use-reviews';
-import { useStorefront } from '../provider';
-import { formatDisplayDate } from '../utils/format';
+import { useStoreDisplayFormat, useStorefront } from '../provider';
+import { formatShopperDate } from '../utils/format';
+import type { StoreDisplayFormat } from '../utils/locale';
 
 /**
  * Framework-owned reviews block. Renders verified, platform-generated reviews
@@ -241,6 +242,7 @@ function SpotlightReviews({ reviews }: { reviews: ReviewItem[] }): JSX.Element {
  * quiet-luxury) where card backgrounds/shadows would read as noise.
  */
 function MinimalList({ reviews }: { reviews: ReviewItem[] }): JSX.Element {
+  const display = useStoreDisplayFormat();
   return (
     <ul className="core-block-reviews__minimal">
       {reviews.map((review) => (
@@ -248,7 +250,7 @@ function MinimalList({ reviews }: { reviews: ReviewItem[] }): JSX.Element {
           <div className="core-block-reviews__minimal-head">
             <Stars rating={review.rating} small />
             <p className="core-block-reviews__author">{review.user.name}</p>
-            <p className="core-block-reviews__date">{formatDate(review.created_at)}</p>
+            <p className="core-block-reviews__date">{formatDate(review.created_at, display)}</p>
             {review.is_verified_purchase ? (
               <span className="core-block-reviews__pill core-block-reviews__pill--verified">Verified buyer</span>
             ) : null}
@@ -264,6 +266,7 @@ function MinimalList({ reviews }: { reviews: ReviewItem[] }): JSX.Element {
 }
 
 function ReviewCard({ review }: { review: ReviewItem }): JSX.Element {
+  const display = useStoreDisplayFormat();
   return (
     <article className="core-block-reviews__card">
       <header className="core-block-reviews__card-head">
@@ -278,7 +281,7 @@ function ReviewCard({ review }: { review: ReviewItem }): JSX.Element {
         </div>
         <div className="core-block-reviews__card-meta">
           <p className="core-block-reviews__author">{review.user.name}</p>
-          <p className="core-block-reviews__date">{formatDate(review.created_at)}</p>
+          <p className="core-block-reviews__date">{formatDate(review.created_at, display)}</p>
         </div>
         <Stars rating={review.rating} />
       </header>
@@ -425,7 +428,7 @@ function initialsFor(name: string): string {
     .toUpperCase();
 }
 
-function formatDate(iso: string): string {
-  // Fixed locale + zone: this block renders on the server too (see formatDisplayDate).
-  return formatDisplayDate(iso);
+/** In the store's format (explicit locale + zone: this block renders on the server too). */
+function formatDate(iso: string, display: StoreDisplayFormat): string {
+  return formatShopperDate(iso, display.locale, undefined, display.timeZone);
 }
