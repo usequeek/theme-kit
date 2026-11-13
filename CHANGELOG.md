@@ -13,6 +13,7 @@ policy. Versions before this file started are in the git tags.
   rounds a three-digit currency to two (KWD `1.250`, `1.235`) and a zero-decimal currency (JPY) never shows decimals.
 - `formatWireMoney` accepts a negative decimal string (`'-5.00'` prints `-₦5`) instead of returning an empty string,
   so the storefront prints refunds and adjustments through the kit.
+- An amount that rounds to zero prints `₦0`, never `-₦0` (`formatMoney(-0)`, `formatWireMoney('-0.00')`).
 
 ## 0.2.0 - 2026-11-07
 
