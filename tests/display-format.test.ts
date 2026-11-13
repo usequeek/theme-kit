@@ -341,6 +341,49 @@ describe('English money output', () => {
   });
 });
 
+describe('money shows the currency\'s full minor units or none', () => {
+  // A whole amount drops its decimals; any other amount keeps every minor-unit
+  // digit, so a fractional price never reads "$11.5". The digits come from the
+  // currency (USD/EUR/NGN 2, JPY 0, KWD 3), never a fixed 2.
+  it.each([
+    [11.5, 'USD', 'US$11.50'],
+    [5, 'USD', 'US$5'],
+    [2800, 'NGN', '₦2,800'],
+    [1234.5, 'EUR', '€1,234.50'],
+    [0.28, 'NGN', '₦0.28'],
+    [11.999, 'USD', 'US$12'],
+    [1235, 'JPY', 'JP¥1,235'],
+    [1234.6, 'JPY', 'JP¥1,235'],
+    [-11.5, 'USD', '-US$11.50'],
+  ])('%p %s prints %s', (amount, currency, expected) => {
+    expect(formatMoney(amount, currency)).toBe(expected);
+  });
+
+  it('a three-digit currency keeps all three digits', () => {
+    expect(formatMoney(1.25, 'KWD').replace(/\u00a0/g, ' ')).toBe('KWD 1.250');
+    expect(formatMoney(1.235, 'KWD').replace(/\u00a0/g, ' ')).toBe('KWD 1.235');
+    expect(formatMoney(3, 'KWD').replace(/\u00a0/g, ' ')).toBe('KWD 3');
+  });
+
+  it.each(['fr', 'ar', 'pt'])('the rule holds in the %s storefront locale, whatever its digits and separator', (locale) => {
+    const fractional = formatMoney(11.5, 'USD', locale);
+    const whole = formatMoney(5, 'USD', locale);
+    const reference = new Intl.NumberFormat(resolveIntlLocale(locale), { style: 'currency', currency: 'USD' });
+
+    expect(fractional).toBe(reference.format(11.5));
+    expect(whole).not.toBe(reference.format(5));
+    expect(reference.formatToParts(5).some((part) => part.type === 'fraction')).toBe(true);
+    expect(new Intl.NumberFormat(resolveIntlLocale(locale), { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(5)).toBe(whole);
+  });
+
+  it('the same amount prints the same text on every call (cached formatters stay per locale and currency)', () => {
+    expect(formatMoney(11.5, 'USD')).toBe('US$11.50');
+    expect(formatMoney(11.5, 'EUR')).toBe('€11.50');
+    expect(formatMoney(11.5, 'USD', 'fr')).not.toBe(formatMoney(11.5, 'USD'));
+    expect(formatMoney(11.5, 'USD')).toBe('US$11.50');
+  });
+});
+
 describe('malformed currency (normalize-then-format)', () => {
   // normalizeCurrencyCode runs first, so fixable/invalid codes resolve to the
   // platform default instead of echoing raw input (' ngn  5,000', 'null 5,000')

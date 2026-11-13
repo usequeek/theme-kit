@@ -164,12 +164,14 @@ items.map((item) => {
 });
 ```
 
-`formatWireMoney` hands the string to Intl at the currency's own precision, so a
-zero-decimal currency prints no decimals and an amount with more digits than the
-currency has is rounded by Intl; it returns an empty string for anything that is
-not a plain non-negative decimal. The storefront app keeps a different
-`formatWireMoney` (it accepts numbers and negatives and returns an em dash for a
-missing amount); the wiring item must converge on one of them.
+`formatWireMoney` hands the string to Intl untouched and follows the same rule
+as `formatMoney`: a whole amount prints without decimals (`₦4,500`), any other
+amount prints all of the currency's minor-unit digits (`US$11.50`, KWD `1.250`,
+never `US$11.5`), a zero-decimal currency never prints decimals, and an amount
+with more digits than the currency has is rounded by Intl. It returns an empty
+string for anything that is not a plain decimal (a leading `-` is allowed). The
+storefront app's own `formatWireMoney` (numbers, em dash for a missing amount)
+prints through these two.
 
 The host app supplies the server pricing once, above every theme, with
 `<CartServerPricingProvider value={pricing}>` (`hooks/use-cart-server-pricing`).
@@ -375,8 +377,8 @@ renders in the British/Nigerian style — `2 October 2026`, never US
   already holds. Siblings: `formatThemeNumber`, `formatThemeMoney`, and
   `formatThemeRelativeTime(-1, 'day', locale)` (`hier`, `أمس`, `ontem`, …,
   `numeric: 'auto'`). `formatThemeMoney` uses the currency's default
-  decimals (`₦5,000.00`); `formatMoney` shows decimals only when present
-  (`₦5,000`, `₦0.28`). The fixed-zone display path is `formatShopperDate`
+  decimals (`₦5,000.00`); `formatMoney` drops them from a whole amount
+  (`₦5,000`) and otherwise prints all of them (`₦0.28`, `US$11.50`). The fixed-zone display path is `formatShopperDate`
   (`utils/format.ts`, Africa/Lagos, `''` for invalid dates);
   `formatCount`/`formatMoney` take an optional locale, defaulting to English
   output. `PostMeta` (`components/blog/post-meta.tsx`) renders its byline

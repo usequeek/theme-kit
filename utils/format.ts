@@ -1,18 +1,12 @@
 /**
- * Was hardcoded to `maximumFractionDigits: 0` — which, per Intl's own
- * resolution rules, also clamps the (otherwise currency-default 2) minimum
- * down to 0, so it silently truncated EVERY fractional-naira amount to a
- * whole number, everywhere in the storefront. A ₦0.28 balance (e.g. a tiny
- * residual left after a near-100% discount) displayed as "₦0" — the customer
- * saw a free checkout, then got asked to actually pay something. The POS
- * always shows two decimals.
+ * Money display rule (one rule, every formatter in this file): a whole amount
+ * shows no decimals (₦5,000, $5), any other amount shows ALL of its currency's
+ * minor-unit digits ($11.50, never $11.5; KWD 1.250; JPY never has decimals).
+ * The digits come from Intl's own currency data, not a fixed 2.
  *
- * Deliberately NOT matching the POS's always-2-decimals format here: the
- * overwhelming majority of storefront prices are whole naira, and putting
- * ".00" on every single one would be a large, unrequested visual change
- * across every theme. `minimumFractionDigits: 0, maximumFractionDigits: 2`
- * shows decimals only when the amount genuinely has them — ₦5,000 stays
- * ₦5,000, ₦0.28 now correctly shows as ₦0.28.
+ * History: a hardcoded `maximumFractionDigits: 0` once truncated a ₦0.28
+ * balance to "₦0"; the next fix (`minimum 0, maximum 2`) printed "$11.5" and
+ * rounded a KWD amount to 2 digits.
  */
 import {
   ENGLISH_DISPLAY_LOCALE,
@@ -145,12 +139,59 @@ export function normalizeCurrencyCode(value: unknown, fallback: string = PLATFOR
 }
 
 /**
+ * What one (locale, currency) needs, built once: `full` at the currency's own
+ * minor units (Intl's default for a currency), `whole` with no decimals, and
+ * `zeroFraction`, the fraction text of a whole amount in that locale's own
+ * digits ("00", Arabic-Indic "٠٠", `undefined` for JPY). Intl.NumberFormat
+ * construction is the expensive part of formatting, and a product grid formats
+ * the same pair hundreds of times.
+ */
+interface MoneyFormatters {
+  full: Intl.NumberFormat;
+  whole: Intl.NumberFormat;
+  zeroFraction: string | undefined;
+}
+
+const moneyFormatterCache = new Map<string, MoneyFormatters>();
+
+function moneyFormatters(tag: string, code: string): MoneyFormatters {
+  const key = `${tag}|${code}`;
+  let formatters = moneyFormatterCache.get(key);
+  if (!formatters) {
+    const full = new Intl.NumberFormat(tag, { style: 'currency', currency: code });
+    formatters = {
+      full,
+      whole: new Intl.NumberFormat(tag, { style: 'currency', currency: code, minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+      zeroFraction: full.formatToParts(0).find((part) => part.type === 'fraction')?.value,
+    };
+    moneyFormatterCache.set(key, formatters);
+  }
+  return formatters;
+}
+
+/**
+ * The money display rule (see the top of this file). "Whole" is decided by
+ * Intl itself AFTER rounding to the currency's digits, so $11.999 prints "$12"
+ * and $11.5 prints "$11.50" — never a float test that disagrees with what is
+ * printed. A decimal string reaches Intl untouched (exact, no float round trip);
+ * the cast only satisfies the lib typing. Throws what Intl throws.
+ */
+function formatAtMinorUnits(amount: number | string, code: string, tag: string): string {
+  const { full, whole, zeroFraction } = moneyFormatters(tag, code);
+  const value = amount as number;
+  const fraction = full.formatToParts(value).find((part) => part.type === 'fraction')?.value;
+  return fraction !== undefined && fraction !== zeroFraction ? full.format(value) : whole.format(value);
+}
+
+/**
  * Format an amount in a currency (ISO 4217 code), in the shopper's locale.
- * Decimals show only when the amount has them (`₦5,000`, `₦0.28`). An invalid
- * currency code falls back to the platform default. Never throws.
+ * A whole amount shows no decimals (`₦5,000`, `$5`); any other amount shows
+ * all of the currency's minor-unit digits (`$11.50`, `₦0.28`, KWD `1.250`).
+ * An invalid currency code falls back to the platform default. Never throws.
  *
  * @example
  * formatMoney(5000, 'NGN'); // "₦5,000"
+ * formatMoney(11.5, 'USD'); // "US$11.50"
  */
 export function formatMoney(
   amount: number,
@@ -160,12 +201,7 @@ export function formatMoney(
   const code = normalizeCurrencyCode(currency);
   const tag = displayTagFor(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
   try {
-    return new Intl.NumberFormat(tag, {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(amount);
+    return formatAtMinorUnits(amount, code, tag);
   } catch {
     return `${code} ${amount.toLocaleString(DISPLAY_LOCALE)}`;
   }
@@ -173,35 +209,28 @@ export function formatMoney(
 
 /**
  * Format a money amount the server sent as a decimal STRING ("4500.00",
- * KWD "1.250") without a float round trip: the string reaches Intl untouched,
- * at the currency's own precision, with decimals shown only when present (the
- * same style as `formatMoney`, which caps at 2 digits). Returns an empty string
- * for anything that is not a plain non-negative decimal. Never computes, never throws.
+ * KWD "1.250", a refund "-5.00") without a float round trip: the string reaches
+ * Intl untouched, under the same rule as `formatMoney` (whole amounts without
+ * decimals, any other amount at the currency's full minor units). Returns an
+ * empty string for anything that is not a plain decimal. Never computes, never throws.
  *
  * @example
  * formatWireMoney('4500.00', 'NGN'); // "₦4,500"
+ * formatWireMoney('11.50', 'USD'); // "US$11.50"
  */
 export function formatWireMoney(
   amount: string,
   currency = PLATFORM_DEFAULT_CURRENCY,
   locale?: string | null,
 ): string {
-  if (typeof amount !== 'string' || !/^\d+(\.\d+)?$/.test(amount)) {
+  if (typeof amount !== 'string' || !/^-?\d+(\.\d+)?$/.test(amount)) {
     return '';
   }
 
   const code = normalizeCurrencyCode(currency);
   const tag = displayTagFor(locale, (l) => Intl.NumberFormat.supportedLocalesOf(l));
   try {
-    const precision = new Intl.NumberFormat(tag, { style: 'currency', currency: code }).resolvedOptions().maximumFractionDigits ?? 2;
-
-    // Intl parses a decimal string exactly; the cast only satisfies the lib typing.
-    return new Intl.NumberFormat(tag, {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: precision,
-    }).format(amount as unknown as number);
+    return formatAtMinorUnits(amount, code, tag);
   } catch {
     return `${code} ${amount}`;
   }

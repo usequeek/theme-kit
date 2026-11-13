@@ -3,6 +3,17 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.2.1 - 2026-11-13
+
+### Fixed
+
+- `formatMoney` and `formatWireMoney` printed a fractional amount with only the digits it had: `US$11.5`, `€1,234.5`.
+  A whole amount still prints without decimals (`₦2,800`, `US$5`); any other amount now prints all of its currency's
+  minor-unit digits (`US$11.50`, `€1,234.50`). The digit count comes from the currency, so `formatMoney` no longer
+  rounds a three-digit currency to two (KWD `1.250`, `1.235`) and a zero-decimal currency (JPY) never shows decimals.
+- `formatWireMoney` accepts a negative decimal string (`'-5.00'` prints `-₦5`) instead of returning an empty string,
+  so the storefront prints refunds and adjustments through the kit.
+
 ## 0.2.0 - 2026-11-07
 
 ### Removed

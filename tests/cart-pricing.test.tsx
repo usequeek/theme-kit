@@ -209,7 +209,8 @@ describe('the kit does no price arithmetic of its own on server amounts', () => 
     return `${whole}.${cents}`;
   };
   const digits = (text: string): string => text.replace(/\D/g, '');
-  const canonical = (decimal: string): string => digits(decimal.replace(/\.?0+$/, ''));
+  // A whole amount prints without decimals; any other prints all of the currency's digits ("1.50", never "1.5").
+  const canonical = (decimal: string): string => digits(decimal.endsWith('.00') ? decimal.slice(0, -3) : decimal);
 
   it('property: every amount that comes out is, character for character, the amount that went in', () => {
     for (let run = 0; run < 200; run += 1) {
@@ -237,7 +238,7 @@ describe('the kit does no price arithmetic of its own on server amounts', () => 
     for (let run = 0; run < 200; run += 1) {
       const value = amount();
 
-      // Intl grouping and trimmed trailing zeros aside, no digit is added, dropped or changed.
+      // Intl grouping and a whole amount's dropped ".00" aside, no digit is added, dropped or changed.
       expect(digits(formatWireMoney(value, 'NGN'))).toBe(canonical(value));
     }
 
@@ -337,9 +338,13 @@ describe('formatWireMoney', () => {
     expect(plain(formatWireMoney('1500', 'UGX'))).toBe('UGX 1,500');
     expect(plain(formatWireMoney('1500.50', 'UGX'))).toBe('UGX 1,501');
     expect(formatWireMoney('1.2345', 'NGN')).toBe('₦1.23');
-    expect(plain(formatWireMoney('1.250', 'KWD'))).toBe('KWD 1.25');
+    expect(plain(formatWireMoney('1.250', 'KWD'))).toBe('KWD 1.250');
+    expect(plain(formatWireMoney('1.000', 'KWD'))).toBe('KWD 1');
+    expect(formatWireMoney('11.50', 'USD')).toBe('US$11.50');
+    expect(formatWireMoney('-5.00', 'NGN')).toBe('-₦5');
+    expect(formatWireMoney('-5.25', 'NGN')).toBe('-₦5.25');
     expect(plain(formatWireMoney('1.2505', 'KWD'))).toBe('KWD 1.251');
-    for (const bad of ['', '-1.00', '1,5', ' 1', '1e3', 'abc', null, undefined, 12]) {
+    for (const bad of ['', '--1.00', '-', '1,5', ' 1', '1e3', 'abc', null, undefined, 12]) {
       expect(formatWireMoney(bad as never, 'NGN'), String(bad)).toBe('');
     }
   });
