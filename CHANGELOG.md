@@ -24,7 +24,8 @@ and fall back to neutral English in UTC.
 
 - `useStoreDisplayFormat()` (provider, built once per provider) and `storeDisplayFormat(locale, store)`: the store's
   `{ locale, timeZone }` from its `country_code`, `currency` and `timezone`. Helpers `storeRegion`, `currencyRegion`,
-  `storeTimeZone`. `resolveSupportedLocale` takes a fallback tag.
+  `storeTimeZone`, and `ENGLISH_REGIONS` (the regions English reads in natively on both server and browser; a reader
+  region outside it falls through to the store's). `resolveSupportedLocale` takes a fallback tag.
 - `VendorProfile` carries the optional `country_code` and `timezone` the store payload sends.
 - The reviews and Q&A blocks, `PostMeta` and date metafields print in the store's region and zone (the date metafield is
   a client component, so the metafield renderers stay server-safe).

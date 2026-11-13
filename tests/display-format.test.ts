@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DISPLAY_LOCALE, DISPLAY_TIME_ZONE, formatCount, formatDisplayDate, formatMoney, formatRelativeTime, formatShopperDate, formatWireMoney } from '../utils/format';
-import { ENGLISH_DISPLAY_LOCALE, currencyRegion, resolveIntlLocale, resolveSupportedLocale, storeDisplayFormat, storeRegion, storeTimeZone } from '../utils/locale';
+import { ENGLISH_DISPLAY_LOCALE, ENGLISH_REGIONS, currencyRegion, resolveIntlLocale, resolveSupportedLocale, storeDisplayFormat, storeRegion, storeTimeZone } from '../utils/locale';
 import { formatThemeDate, formatThemeMoney, formatThemeNumber, formatThemeRelativeTime } from '../strings/theme-strings';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -83,9 +83,14 @@ describe('canonical locale mapping (shopper locale + store region -> Intl locale
     // Chrome formats en-FR natively ("14 Feb 2026"), Node 22 falls back to en ("Feb 14, 2026").
     expect(resolveIntlLocale('en', 'FR')).toBe('en');
     expect(resolveIntlLocale('en-FR')).toBe('en');
+    // An unlisted reader region falls through to the store (or currency) region.
+    expect(resolveIntlLocale('en-FR', 'NG')).toBe('en-NG');
+    expect(formatMoney(5000, 'NGN', 'en-FR')).toBe('₦5,000');
     expect(resolveIntlLocale(null, 'JP')).toBe('en');
     expect(storeDisplayFormat(null, { country_code: 'FR', currency: 'EUR', timezone: 'Europe/Paris' })).toEqual({ locale: 'en', timeZone: 'Europe/Paris' });
-    for (const region of ['US', 'NG', 'GB', 'KE', 'GH', 'ZA', 'CA', 'AU', 'IN', 'IE', 'DE']) {
+    expect(ENGLISH_REGIONS.size).toBe(105);
+    // Every listed region must be native on this runtime: an ICU upgrade that drops one fails here, not as a hydration split.
+    for (const region of ENGLISH_REGIONS) {
       const tag = resolveIntlLocale('en', region);
       expect(tag).toBe(`en-${region}`);
       expect(new Intl.DateTimeFormat(tag).resolvedOptions().locale).toBe(tag);

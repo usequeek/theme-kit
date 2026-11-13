@@ -35,7 +35,7 @@ const REGION_PATTERN = /^[A-Z]{2}$/;
  * formats `en-FR` as "14 Feb 2026", Node falls back to `en` and prints "Feb 14, 2026"), which fails hydration, so it
  * reads as neutral `en` instead. Extend only with a region both runtimes format natively.
  */
-const ENGLISH_REGIONS = new Set(
+export const ENGLISH_REGIONS: ReadonlySet<string> = new Set(
   'AE,AG,AI,AS,AT,AU,BB,BE,BI,BM,BS,BW,BZ,CA,CC,CH,CK,CM,CX,CY,DE,DG,DK,DM,ER,FI,FJ,FK,FM,GB,GD,GG,GH,GI,GM,GU,GY,HK,ID,IE,IL,IM,IN,IO,JE,JM,KE,KI,KN,KY,LC,LR,LS,MG,MH,MO,MP,MS,MT,MU,MV,MW,MY,NA,NF,NG,NL,NR,NU,NZ,PG,PH,PK,PN,PR,PW,RW,SB,SC,SD,SE,SG,SH,SI,SL,SS,SX,SZ,TC,TK,TO,TT,TV,TZ,UG,UM,US,VC,VG,VI,VU,WS,ZA,ZM,ZW'.split(','),
 );
 
@@ -100,8 +100,8 @@ function ownRegion(code: string): string | null {
 export function resolveIntlLocale(locale: string | null | undefined, region?: string | null): string {
   const code = parseLocaleCode(locale);
   if (code && (code.split('-')[0] ?? '').toLowerCase() !== 'en') return code;
-  const chosen = (code ? ownRegion(code) : null) ?? regionCode(region);
-  return chosen && ENGLISH_REGIONS.has(chosen) ? `en-${chosen}` : ENGLISH_DISPLAY_LOCALE;
+  const chosen = [code ? ownRegion(code) : null, regionCode(region)].find((r) => r !== null && ENGLISH_REGIONS.has(r));
+  return chosen ? `en-${chosen}` : ENGLISH_DISPLAY_LOCALE;
 }
 
 /**
