@@ -3,23 +3,31 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
-## 0.2.2 - 2026-11-13
+## 0.3.0 - 2026-11-13
 
-### Fixed
+English dates, numbers and money no longer default to Nigeria. They read the way the store's own country writes them,
+and fall back to neutral English in UTC.
 
-- English dates, numbers and money no longer default to Nigeria. A store's money prints the way its currency's home
-  country writes it, so a US store reads `$11.50` (was `US$11.50`), a GBP store `£11.50`, a Nigerian store `₦5,000`. A
-  reader whose locale names its own region still sees another country's currency disambiguated (`en-GB`: `US$5`).
-- `formatDisplayDate` and `formatShopperDate` take a time zone (default UTC, or `options.timeZone`) instead of a fixed
-  `Africa/Lagos`; `DISPLAY_LOCALE` / `ENGLISH_DISPLAY_LOCALE` are neutral `en` and `DISPLAY_TIME_ZONE` is `UTC`.
-- The reviews and Q&A blocks, `PostMeta` and date metafields print in the store's region and zone.
+### Changed (can change what a theme prints)
+
+- `DISPLAY_LOCALE` / `ENGLISH_DISPLAY_LOCALE` are `en` (were `en-NG`); `DISPLAY_TIME_ZONE` is `UTC` (was `Africa/Lagos`).
+- `resolveIntlLocale(locale, region?)`: English takes the region its code names (`en-US` stays `en-US`, was `en-NG`), else
+  `region`, else `en`. A region English is not formatted in natively on both the server and the browser reads as `en`.
+  A theme calling `formatShopperDate(d, useStorefrontLocale())` or `formatThemeDate(d, 'en')` now prints neutral English
+  (`Feb 14, 2026`); pass `useStoreDisplayFormat()`'s `locale` and `timeZone` for the store's own order and calendar
+  (`14 Feb 2026` for a Nigerian or British store).
+- `formatDisplayDate` and `formatShopperDate` take a time zone (default `options.timeZone`, else UTC).
+- Money prints in its currency's home region: a US store reads `$11.50` (was `US$11.50`), JPY `¥`, UGX `USh`. A reader
+  whose locale names its own region still sees another country's currency disambiguated (`en-GB`: `US$5`).
 
 ### Added
 
-- `useStoreDisplayFormat()` (provider) and `storeDisplayFormat(locale, store)`: the store's display `{ locale, timeZone }`
-  from its `country_code`, `currency` and `timezone`. Helpers `storeRegion`, `currencyRegion`, `storeTimeZone`.
-- `resolveIntlLocale(locale, region?)` gives English the store's region; `resolveSupportedLocale` takes a fallback tag.
+- `useStoreDisplayFormat()` (provider, built once per provider) and `storeDisplayFormat(locale, store)`: the store's
+  `{ locale, timeZone }` from its `country_code`, `currency` and `timezone`. Helpers `storeRegion`, `currencyRegion`,
+  `storeTimeZone`. `resolveSupportedLocale` takes a fallback tag.
 - `VendorProfile` carries the optional `country_code` and `timezone` the store payload sends.
+- The reviews and Q&A blocks, `PostMeta` and date metafields print in the store's region and zone (the date metafield is
+  a client component, so the metafield renderers stay server-safe).
 
 ## 0.2.1 - 2026-11-13
 

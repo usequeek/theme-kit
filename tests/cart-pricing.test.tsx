@@ -337,8 +337,8 @@ describe('formatWireMoney', () => {
   const plain = (text: string): string => text.replace(/\u00a0/g, ' ');
 
   it('prints at the currency precision and refuses what is not a plain decimal', () => {
-    expect(plain(formatWireMoney('1500', 'UGX'))).toBe('UGX 1,500');
-    expect(plain(formatWireMoney('1500.50', 'UGX'))).toBe('UGX 1,501');
+    expect(plain(formatWireMoney('1500', 'UGX'))).toBe('USh 1,500');
+    expect(plain(formatWireMoney('1500.50', 'UGX'))).toBe('USh 1,501');
     expect(formatWireMoney('1.2345', 'NGN')).toBe('₦1.23');
     expect(plain(formatWireMoney('1.250', 'KWD'))).toBe('KWD 1.250');
     expect(plain(formatWireMoney('1.000', 'KWD'))).toBe('KWD 1');

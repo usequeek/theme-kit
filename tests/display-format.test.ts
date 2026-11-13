@@ -79,10 +79,23 @@ describe('canonical locale mapping (shopper locale + store region -> Intl locale
     expect(resolveIntlLocale('en', '')).toBe('en');
   });
 
+  it('a region English is not native in on both server and browser reads as neutral en (no hydration split)', () => {
+    // Chrome formats en-FR natively ("14 Feb 2026"), Node 22 falls back to en ("Feb 14, 2026").
+    expect(resolveIntlLocale('en', 'FR')).toBe('en');
+    expect(resolveIntlLocale('en-FR')).toBe('en');
+    expect(resolveIntlLocale(null, 'JP')).toBe('en');
+    expect(storeDisplayFormat(null, { country_code: 'FR', currency: 'EUR', timezone: 'Europe/Paris' })).toEqual({ locale: 'en', timeZone: 'Europe/Paris' });
+    for (const region of ['US', 'NG', 'GB', 'KE', 'GH', 'ZA', 'CA', 'AU', 'IN', 'IE', 'DE']) {
+      const tag = resolveIntlLocale('en', region);
+      expect(tag).toBe(`en-${region}`);
+      expect(new Intl.DateTimeFormat(tag).resolvedOptions().locale).toBe(tag);
+    }
+  });
+
   it('is idempotent, so a resolved tag can stand in for a storefront locale', () => {
     for (const [locale, region] of [['en', 'US'], [null, 'NG'], ['en-GB', 'US'], ['fr', 'NG'], [null, null]] as const) {
       const tag = resolveIntlLocale(locale, region);
-      expect(resolveIntlLocale(tag, 'JP')).toBe(tag === 'en' ? 'en-JP' : tag);
+      expect(resolveIntlLocale(tag, 'KE')).toBe(tag === 'en' ? 'en-KE' : tag);
     }
   });
 

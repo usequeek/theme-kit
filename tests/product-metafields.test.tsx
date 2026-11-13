@@ -11,6 +11,7 @@ import {
 import type { Collection, Post } from '../types/page';
 import type { MetafieldValue, Product } from '../types/product';
 import { normalizeProduct } from '../utils/product-normalizer';
+import { StorefrontProvider } from '../provider';
 
 function makeProduct(metafields?: Record<string, MetafieldValue>): Product {
   return {
@@ -109,6 +110,21 @@ describe('ProductMetafields', () => {
 
     expect(html).not.toContain('2026-09-20');
     expect(html).toContain('2026');
+  });
+
+  it('reads a date in the store region, on its calendar day', () => {
+    const inStore = (vendor: object): string =>
+      renderToStaticMarkup(
+        React.createElement(StorefrontProvider, {
+          vendor: { id: 'v1', slug: 's', name: 'S', ...vendor } as never,
+          config: {} as never,
+          menus: [],
+          children: React.createElement(ProductMetafields, { product: makeProduct({ drop: '2026-09-20' }), definitions: { drop: { name: 'Drop date', type: 'date' } } }),
+        }),
+      );
+    expect(inStore({ country_code: 'US', currency: 'USD', timezone: 'America/New_York' })).toContain('9/20/2026');
+    expect(inStore({ currency: 'NGN', timezone: 'Africa/Lagos' })).toContain('20/09/2026');
+    expect(render({ drop: '2026-09-20' }, { drop: { name: 'Drop date', type: 'date' } })).toContain('9/20/2026');
   });
 
   it('renders urls as links', () => {

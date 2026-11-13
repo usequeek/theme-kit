@@ -29,6 +29,16 @@ export const ENGLISH_DISPLAY_LOCALE = 'en';
 
 const REGION_PATTERN = /^[A-Z]{2}$/;
 
+/**
+ * The regions English is formatted in natively by BOTH the server (Node 22, full ICU) and current browsers (checked on
+ * Chrome 152, which ships a superset). A regional tag outside this list resolves differently on the two sides (Chrome
+ * formats `en-FR` as "14 Feb 2026", Node falls back to `en` and prints "Feb 14, 2026"), which fails hydration, so it
+ * reads as neutral `en` instead. Extend only with a region both runtimes format natively.
+ */
+const ENGLISH_REGIONS = new Set(
+  'AE,AG,AI,AS,AT,AU,BB,BE,BI,BM,BS,BW,BZ,CA,CC,CH,CK,CM,CX,CY,DE,DG,DK,DM,ER,FI,FJ,FK,FM,GB,GD,GG,GH,GI,GM,GU,GY,HK,ID,IE,IL,IM,IN,IO,JE,JM,KE,KI,KN,KY,LC,LR,LS,MG,MH,MO,MP,MS,MT,MU,MV,MW,MY,NA,NF,NG,NL,NR,NU,NZ,PG,PH,PK,PN,PR,PW,RW,SB,SC,SD,SE,SG,SH,SI,SL,SS,SX,SZ,TC,TK,TO,TT,TV,TZ,UG,UM,US,VC,VG,VI,VU,WS,ZA,ZM,ZW'.split(','),
+);
+
 function regionCode(value: unknown): string | null {
   const code = typeof value === 'string' ? value.trim().toUpperCase() : '';
   return REGION_PATTERN.test(code) ? code : null;
@@ -73,7 +83,8 @@ function ownRegion(code: string): string | null {
  *
  * - English: the reader's own region when the code carries one (`en-GB`
  *   stays `en-GB`), else `region` (the store's, or a currency's home), else
- *   neutral `en`. So a US store reads "Feb 14, 2026" and "$11.50", a
+ *   neutral `en`; a region outside `ENGLISH_REGIONS` (not native on both the
+ *   server and the browser) is neutral `en` too. So a US store reads "Feb 14, 2026" and "$11.50", a
  *   Nigerian one "14 Feb 2026" and "₦5,000".
  * - Missing/invalid codes are English.
  * - Every other well-formed code passes through unchanged (`fr`, `ar`,
@@ -90,7 +101,7 @@ export function resolveIntlLocale(locale: string | null | undefined, region?: st
   const code = parseLocaleCode(locale);
   if (code && (code.split('-')[0] ?? '').toLowerCase() !== 'en') return code;
   const chosen = (code ? ownRegion(code) : null) ?? regionCode(region);
-  return chosen ? `en-${chosen}` : ENGLISH_DISPLAY_LOCALE;
+  return chosen && ENGLISH_REGIONS.has(chosen) ? `en-${chosen}` : ENGLISH_DISPLAY_LOCALE;
 }
 
 /**

@@ -368,14 +368,19 @@ go on the kit prints neutral English (`en`) in UTC.
   Intl-locale mapping every formatter goes through. English takes the region
   its code names (`en-GB` stays `en-GB`), else `region`, else neutral `en`;
   missing/invalid codes are English; everything else passes through (`fr`,
-  `ar`, `pt-BR`, `zh-CN`, `yo`, `ha`, `sw`, …). `resolveSupportedLocale`
-  falls back to English in the same region when the runtime's ICU lacks a
-  locale — formatting never throws.
+  `ar`, `pt-BR`, `zh-CN`, `yo`, `ha`, `sw`, …). A region English is not
+  formatted in natively on both the server (Node 22) and the browser reads as
+  `en` too, so the two never print differently (hydration).
+  `resolveSupportedLocale` falls back to English in the same region when the
+  runtime's ICU lacks a locale — formatting never throws.
 - **Where the region comes from.** Dates: `storeRegion(store)`, the store's
   `country_code`, else its currency's home. Money: the currency's home
   (`currencyRegion`: USD → US, NGN → NG; none for EUR and the X-codes), so a
   store's own currency prints its bare local sign; an `en-GB` reader still
-  sees `US$5`. Zone: `storeTimeZone(store)`, the store's `timezone`, else UTC.
+  sees `US$5`. So pass money formatters the storefront locale
+  (`useStorefrontLocale()`), never the store's display tag: `en-US` there would
+  print a naira market price as `NGN 5,000`. Zone: `storeTimeZone(store)`, the
+  store's `timezone`, else UTC.
 - **What themes call.** In a client component, `useStoreDisplayFormat()`
   (`provider`) returns `{ locale, timeZone }` for this store; pass them to
   `formatShopperDate(value, locale, options?, timeZone)`, or to

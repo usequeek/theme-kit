@@ -65,6 +65,8 @@ interface StorefrontContextValue {
   markets?: StoreMarket[];
   /** The market the shopper chose, only when it is one of `markets`; null = the store's own currency. */
   activeMarketId?: number | null;
+  /** This store's date format (`storeDisplayFormat(locale, vendor)`), built once per provider. Optional so hand-built context values keep compiling; `useStoreDisplayFormat()` builds it when absent. */
+  display?: StoreDisplayFormat;
 }
 
 /** The context behind {@link StorefrontProvider}. Read it through the hooks; use it directly only to test for a provider without throwing. */
@@ -169,8 +171,10 @@ export function StorefrontProvider({
     // A cookie naming a market the store no longer publishes: drop it (and the lines priced under it) once.
     reconcileMarketChoice(vendorSlug, vendorId, marketsKnown ? resolvedMarkets : null);
   }, [vendorSlug, vendorId, resolvedMarkets, marketsKnown]);
+  const display = useMemo(() => storeDisplayFormat(resolvedLocale, vendor), [resolvedLocale, vendor]);
   const value = useMemo(
     () => ({
+      display,
       vendor,
       config,
       menus,
@@ -183,7 +187,7 @@ export function StorefrontProvider({
       markets: resolvedMarkets,
       activeMarketId,
     }),
-    [config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale, resolvedStrings, resolvedLocales, resolvedMarkets, activeMarketId],
+    [display, config, menus, previewData, vendor, resolvedBasePath, pagesChrome, resolvedLocale, resolvedStrings, resolvedLocales, resolvedMarkets, activeMarketId],
   );
   const brandRootRef = useRef<HTMLDivElement>(null);
 
@@ -257,7 +261,7 @@ export function useStoreDisplayFormat(): StoreDisplayFormat {
     throw new Error('useStoreDisplayFormat() was called outside <StorefrontProvider>. Render the component inside StorefrontProvider.');
   }
 
-  return storeDisplayFormat(context.locale, context.vendor);
+  return context.display ?? storeDisplayFormat(context.locale, context.vendor);
 }
 
 /**
