@@ -16,7 +16,9 @@ import { cartLinePricing, resolveCartPricing, type CartLinePricing, type CartSer
 import { formatMoney, formatWireMoney } from '../utils/format';
 import { useCartStore } from '../stores/cart-store';
 import { CART_CASES, renderHooks, renderShell } from './fixtures/cart-pricing-cases';
-import baseline from './fixtures/cart-pricing-baseline-0.1.29.json';
+// Recorded from 0.1.29; re-recorded in 0.2.1, whose only change is that a fractional amount prints all of its
+// currency's minor-unit digits (₦12,500.50 was ₦12,500.5, KWD 1.250 was KWD 1.25).
+import baseline from './fixtures/cart-pricing-baseline-0.2.1.json';
 
 const ROOT = resolve(__dirname, '..');
 
@@ -41,7 +43,7 @@ beforeEach(() => {
   useCartStore.setState({ items: [] });
 });
 
-describe('without server pricing the output is byte-identical to 0.1.29', () => {
+describe('without server pricing the output is byte-identical to 0.1.29 (bar 0.2.1\'s minor-unit digits)', () => {
   const mismatched: Record<string, CartServerPricing> = {
     'a different quantity': { ...MIXED_PRICING, lines: MIXED_PRICING.lines.map((l, i) => (i === 0 ? { ...l, quantity: 3 } : l)) },
     'a line the cart does not have': { ...MIXED_PRICING, lines: MIXED_PRICING.lines.map((l, i) => (i === 2 ? { ...l, line_id: 'gone' } : l)) },
@@ -101,16 +103,16 @@ describe('with server pricing', () => {
     const html = renderShell('mixed', CART_CASES, withPricing(MIXED_PRICING));
 
     expect(html).toContain('<del class="core-cart-item__was" aria-hidden="true">₦10,000</del> <ins class="core-cart-item__now" aria-hidden="true" style="text-decoration:none">₦9,000</ins>');
-    expect(html).toContain('<del class="core-cart-item__was" aria-hidden="true">₦49,006.5</del> <ins class="core-cart-item__now" aria-hidden="true" style="text-decoration:none">₦44,006.5</ins>');
+    expect(html).toContain('<del class="core-cart-item__was" aria-hidden="true">₦49,006.50</del> <ins class="core-cart-item__now" aria-hidden="true" style="text-decoration:none">₦44,006.50</ins>');
     // One visually hidden sentence per pair is what assistive technology reads; the pair itself is hidden from it.
     expect(html).toMatch(/<span style="[^"]*clip:rect\(0 0 0 0\)[^"]*">Was ₦10,000, now ₦9,000<\/span>/);
-    expect(html).toMatch(/<span style="[^"]*clip:rect\(0 0 0 0\)[^"]*">Was ₦49,006.5, now ₦44,006.5<\/span>/);
+    expect(html).toMatch(/<span style="[^"]*clip:rect\(0 0 0 0\)[^"]*">Was ₦49,006.50, now ₦44,006.50<\/span>/);
     expect(html).not.toContain('aria-label="Was');
     expect(html).not.toContain('role="group"');
     // The "each" line states the server's unit price.
     expect(html).toContain('₦4,500 each');
     // A line the server does not discount shows its charged total plain, no strike.
-    expect(html).toContain('<span class="core-cart-page__item-total">₦39,001.5</span>');
+    expect(html).toContain('<span class="core-cart-page__item-total">₦39,001.50</span>');
     expect(html.match(/<del /g)).toHaveLength(2);
     // The list price of the discounted line is no longer printed as its total or unit price.
     expect(html).not.toContain('₦5,000 each');
@@ -149,7 +151,7 @@ describe('with server pricing', () => {
     const html = renderShell('fractional', CART_CASES, withPricing(kwd));
 
     expect(html).toContain('3.375');
-    expect(html).toContain('3.75');
+    expect(html).toContain('3.750');
   });
 
   it('does not touch the empty cart page', () => {
@@ -343,6 +345,8 @@ describe('formatWireMoney', () => {
     expect(formatWireMoney('11.50', 'USD')).toBe('US$11.50');
     expect(formatWireMoney('-5.00', 'NGN')).toBe('-₦5');
     expect(formatWireMoney('-5.25', 'NGN')).toBe('-₦5.25');
+    expect(formatWireMoney('-0.00', 'NGN')).toBe('₦0');
+    expect(formatWireMoney('-0.001', 'NGN')).toBe('₦0');
     expect(plain(formatWireMoney('1.2505', 'KWD'))).toBe('KWD 1.251');
     for (const bad of ['', '--1.00', '-', '1,5', ' 1', '1e3', 'abc', null, undefined, 12]) {
       expect(formatWireMoney(bad as never, 'NGN'), String(bad)).toBe('');

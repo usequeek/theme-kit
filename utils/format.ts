@@ -140,18 +140,22 @@ export function normalizeCurrencyCode(value: unknown, fallback: string = PLATFOR
 
 /**
  * What one (locale, currency) needs, built once: `full` at the currency's own
- * minor units (Intl's default for a currency), `whole` with no decimals, and
+ * minor units (Intl's default for a currency), `whole` with no decimals,
  * `zeroFraction`, the fraction text of a whole amount in that locale's own
- * digits ("00", Arabic-Indic "٠٠", `undefined` for JPY). Intl.NumberFormat
- * construction is the expensive part of formatting, and a product grid formats
- * the same pair hundreds of times.
+ * digits ("00", Arabic-Indic "٠٠", `undefined` for JPY), and `halfMinorUnit`,
+ * below which an amount rounds to zero. Intl.NumberFormat construction is the
+ * expensive part of formatting, and a product grid formats the same pair
+ * hundreds of times.
  */
 interface MoneyFormatters {
   full: Intl.NumberFormat;
   whole: Intl.NumberFormat;
   zeroFraction: string | undefined;
+  halfMinorUnit: number;
 }
 
+/** Real keys are (store locales x store currencies); the cap only bounds a caller passing arbitrary tags. */
+const MONEY_FORMATTER_CACHE_LIMIT = 256;
 const moneyFormatterCache = new Map<string, MoneyFormatters>();
 
 function moneyFormatters(tag: string, code: string): MoneyFormatters {
@@ -163,7 +167,9 @@ function moneyFormatters(tag: string, code: string): MoneyFormatters {
       full,
       whole: new Intl.NumberFormat(tag, { style: 'currency', currency: code, minimumFractionDigits: 0, maximumFractionDigits: 0 }),
       zeroFraction: full.formatToParts(0).find((part) => part.type === 'fraction')?.value,
+      halfMinorUnit: 0.5 / 10 ** (full.resolvedOptions().maximumFractionDigits ?? 2),
     };
+    if (moneyFormatterCache.size >= MONEY_FORMATTER_CACHE_LIMIT) moneyFormatterCache.clear();
     moneyFormatterCache.set(key, formatters);
   }
   return formatters;
@@ -173,14 +179,16 @@ function moneyFormatters(tag: string, code: string): MoneyFormatters {
  * The money display rule (see the top of this file). "Whole" is decided by
  * Intl itself AFTER rounding to the currency's digits, so $11.999 prints "$12"
  * and $11.5 prints "$11.50" — never a float test that disagrees with what is
- * printed. A decimal string reaches Intl untouched (exact, no float round trip);
- * the cast only satisfies the lib typing. Throws what Intl throws.
+ * printed. An amount that rounds to zero prints as zero, never "-₦0". A decimal
+ * string reaches Intl untouched (exact, no float round trip); the cast only
+ * satisfies the lib typing. Throws what Intl throws.
  */
 function formatAtMinorUnits(amount: number | string, code: string, tag: string): string {
-  const { full, whole, zeroFraction } = moneyFormatters(tag, code);
-  const value = amount as number;
-  const fraction = full.formatToParts(value).find((part) => part.type === 'fraction')?.value;
-  return fraction !== undefined && fraction !== zeroFraction ? full.format(value) : whole.format(value);
+  const { full, whole, zeroFraction, halfMinorUnit } = moneyFormatters(tag, code);
+  const value = (Math.abs(Number(amount)) < halfMinorUnit ? 0 : amount) as number;
+  const parts = full.formatToParts(value);
+  const fraction = parts.find((part) => part.type === 'fraction')?.value;
+  return fraction !== undefined && fraction !== zeroFraction ? parts.map((part) => part.value).join('') : whole.format(value);
 }
 
 /**

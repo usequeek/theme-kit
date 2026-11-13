@@ -321,8 +321,8 @@ describe("no exported formatter lets an 'en*' tag reach Intl unmapped", () => {
 describe('English money output', () => {
   // formatMoney and formatThemeMoney both render English through en-NG, so USD
   // prints 'US$'. GBP/EUR symbols are identical under 'en' and 'en-NG'; the
-  // helpers differ only in decimals (formatMoney: decimals only when present;
-  // formatThemeMoney: always the currency's default decimals).
+  // helpers differ only in decimals (formatMoney: none for a whole amount, all of
+  // them otherwise; formatThemeMoney: always the currency's default decimals).
   it.each([
     ['NGN', '₦5,000', '₦5,000.00'],
     ['USD', 'US$5,000', 'US$5,000.00'],
@@ -355,6 +355,9 @@ describe('money shows the currency\'s full minor units or none', () => {
     [1235, 'JPY', 'JP¥1,235'],
     [1234.6, 'JPY', 'JP¥1,235'],
     [-11.5, 'USD', '-US$11.50'],
+    [-0, 'NGN', '₦0'],
+    [-0.001, 'NGN', '₦0'],
+    [-0.005, 'NGN', '-₦0.01'],
   ])('%p %s prints %s', (amount, currency, expected) => {
     expect(formatMoney(amount, currency)).toBe(expected);
   });
