@@ -3,6 +3,14 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.3.1 - 2026-11-14
+
+### Fixed
+
+- Cookie consent banner on phones (600px wide or less): the stacked banner gave its text a 320px height (`flex: 1 1 20rem`
+  turned into a height once the banner became a column), so the banner covered about half the screen with the buttons
+  pinned to the bottom. The text now takes only the height of its lines.
+
 ## 0.3.0 - 2026-11-13
 
 English dates, numbers and money no longer default to Nigeria. They read the way the store's own country writes them,

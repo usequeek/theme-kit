@@ -586,6 +586,10 @@
     flex-direction: column;
     align-items: stretch;
   }
+  /* Stacked, `flex: 1 1 20rem` would set a 320px HEIGHT on the text: size it to its lines instead. */
+  .core-consent-banner__text {
+    flex: 0 1 auto;
+  }
   .core-consent-banner__actions {
     justify-content: flex-end;
   }
