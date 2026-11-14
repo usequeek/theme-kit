@@ -142,9 +142,46 @@ describe('all auth entry points', () => {
     if (action === 'submitEmailVerifyOtp') expect(sdk.emailVerifyOtp).toHaveBeenCalledExactlyOnceWith({ email: 'a@b.test', otpCode: '123456' });
     if (action === 'submitRegister') expect(sdk.emailRegisterOtp).toHaveBeenCalledExactlyOnceWith({ firstName: 'Ada', lastName: 'Lovelace', verifiedToken: 'verified' });
     if (action === 'submitEmailLogin') expect(sdk.post).toHaveBeenCalledExactlyOnceWith('/client/auth/email/login', { email: 'a@b.test', password: 'password123', platform: 'client_web' });
-    if (action === 'submitEmailRegister') expect(sdk.post).toHaveBeenCalledExactlyOnceWith('/client/auth/email/register-password', { first_name: 'Ada', last_name: 'Lovelace', email: 'a@b.test', password: 'password123', phone: '', platform: 'client_web' });
+    // Password sign-up proves the address first: this step only sends the code; the account is made after it is verified (see below).
+    if (action === 'submitEmailRegister') { expect(sdk.emailRequestOtp).toHaveBeenCalledExactlyOnceWith({ email: 'a@b.test' }); expect(sdk.post).not.toHaveBeenCalled(); }
     if (action === 'initiateGoogleAuth') expect(fetch).toHaveBeenCalledExactlyOnceWith(`https://auth.example.test/oauth/google/start?channel=storefront&vendor_slug=acme&return_to=${encodeURIComponent(location.href)}`);
     expect(flow.error).toBeNull();
+  });
+});
+
+describe('password sign-up proves the address first', () => {
+  const user = { id: 'u1', name: 'Ada', email: 'a@b.test', avatar: null };
+  it('sends the code, then registers with the verified token the code returned', async () => {
+    sdk.emailRequestOtp.mockResolvedValue({});
+    sdk.emailVerifyOtp.mockResolvedValue({ needs_registration: true, verified_token: 'verified' });
+    sdk.post.mockResolvedValue({ data: { user, access_token: 'access', refresh_token: 'refresh' } });
+    await authMount(false);
+    await act(async () => flow.submitEmailRegister());
+    expect(flow.step).toBe('email-otp-verify'); expect(sdk.post).not.toHaveBeenCalled();
+    await act(async () => flow.setOtp('123456'));
+    await act(async () => flow.submitEmailVerifyOtp());
+    expect(sdk.emailVerifyOtp).toHaveBeenCalledExactlyOnceWith({ email: 'a@b.test', otpCode: '123456' });
+    expect(sdk.post).toHaveBeenCalledExactlyOnceWith('/client/auth/email/register-password', { first_name: 'Ada', last_name: 'Lovelace', email: 'a@b.test', password: 'password123', phone: '', platform: 'client_web', verified_token: 'verified' });
+    expect(sdk.emailRegisterOtp).not.toHaveBeenCalled(); expect(flow.error).toBeNull();
+  });
+  it('signs an existing account in with the code and never posts the password', async () => {
+    sdk.emailRequestOtp.mockResolvedValue({});
+    sdk.emailVerifyOtp.mockResolvedValue({ user });
+    await authMount(false);
+    await act(async () => flow.submitEmailRegister());
+    await act(async () => flow.setOtp('123456'));
+    await act(async () => flow.submitEmailVerifyOtp());
+    expect(sdk.post).not.toHaveBeenCalled(); expect(flow.error).toBeNull();
+  });
+  it('a plain email-code sign-up is unchanged after the shopper leaves the password form', async () => {
+    sdk.emailRequestOtp.mockResolvedValue({});
+    sdk.emailVerifyOtp.mockResolvedValue({ needs_registration: true, verified_token: 'verified' });
+    await authMount(false);
+    await act(async () => flow.submitEmailRegister());
+    await act(async () => flow.goToEmailOtp());
+    await act(async () => flow.setOtp('123456'));
+    await act(async () => flow.submitEmailVerifyOtp());
+    expect(flow.step).toBe('signup'); expect(sdk.post).not.toHaveBeenCalled();
   });
 });
 

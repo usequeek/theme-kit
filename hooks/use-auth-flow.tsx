@@ -97,6 +97,8 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
   const [step, setStep] = useState<AuthStep>('email-otp');
   const [otp, setOtp] = useState('');
   const [verifiedToken, setVerifiedToken] = useState(''); // email OTP flow: server-issued token
+  // Password sign-up: the address is proven by the same email code first; the typed name/password wait here until it is.
+  const [passwordSignup, setPasswordSignup] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -146,6 +148,23 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
     }
   };
 
+  // The proven address is the only way to name an email at register-password: the server refuses a password sign-up without it.
+  const registerWithPassword = async (client: ReturnType<typeof getQueekClient>, proof: string): Promise<void> => {
+    const res = await client.post<PasswordAuthData>('/client/auth/email/register-password', {
+      first_name: firstName.trim(),
+      last_name: lastName.trim() || undefined,
+      email: email.trim(),
+      password,
+      phone: '',
+      platform: 'client_web',
+      verified_token: proof,
+    });
+    setAuthTokens(res.data.access_token, res.data.refresh_token);
+    applyUser(res.data.user);
+    setPasswordSignup(false);
+    closeModal();
+  };
+
   const submitEmailVerifyOtp = async (): Promise<void> => {
     if (blockPreview()) return;
     if (otp.length < EMAIL_OTP_LENGTH) return;
@@ -158,12 +177,17 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
         otpCode: otp,
       });
       if (data.needs_registration) {
+        if (passwordSignup) {
+          await registerWithPassword(client, data.verified_token);
+          return;
+        }
         setVerifiedToken(data.verified_token);
         setStep('signup');
         return;
       }
       // tokens already persisted by SDK
       applyUser(data.user);
+      setPasswordSignup(false);
       closeModal();
     } catch (err) {
       setError(mapEmailError(err, t));
@@ -231,17 +255,10 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
     setLoading(true);
     try {
       const client = getQueekClient(vendor.slug ?? undefined);
-      const res = await client.post<PasswordAuthData>('/client/auth/email/register-password', {
-        first_name: firstName.trim(),
-        last_name: lastName.trim() || undefined,
-        email: email.trim(),
-        password,
-        phone: '',
-        platform: 'client_web',
-      });
-      setAuthTokens(res.data.access_token, res.data.refresh_token);
-      applyUser(res.data.user);
-      closeModal();
+      await client.auth.emailRequestOtp({ email: email.trim() });
+      setOtp('');
+      setPasswordSignup(true);
+      setStep('email-otp-verify');
     } catch (err) {
       setError(mapEmailError(err, t));
     } finally {
@@ -291,6 +308,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
     setStep('email-otp');
     setOtp('');
     setVerifiedToken('');
+    setPasswordSignup(false);
     setFirstName('');
     setLastName('');
     setEmail('');
@@ -303,16 +321,19 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
     setStep('email-otp');
     setOtp('');
     setVerifiedToken('');
+    setPasswordSignup(false);
     setError(null);
   };
 
   const goToEmailLogin = (): void => {
     setStep('email-login');
+    setPasswordSignup(false);
     setError(null);
   };
 
   const goToEmailRegister = (): void => {
     setStep('email-register');
+    setPasswordSignup(false);
     setError(null);
   };
 

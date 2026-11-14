@@ -3,6 +3,18 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.3.2 - 2026-11-14
+
+### Fixed
+
+- Sign-up with email and password now proves the address first. The sign-up form sends the email code (the same code step
+  as the email-code sign-in), and creates the account with the `verified_token` that code returns, because the API refuses
+  a password sign-up for an address nobody proved (`POST /client/auth/email/register-password` requires `verified_token`).
+  Against an API that does not require it yet, the extra field is ignored, so the new kit works before and after the API
+  change. An address that already has an account is signed in with its code instead. The flow's public surface
+  (`useAuthFlow()` state and actions, the step components) is unchanged; the shopper sees the code step between the form
+  and the signed-in state.
+
 ## 0.3.1 - 2026-11-14
 
 ### Fixed
