@@ -537,8 +537,10 @@
   flex-shrink: 0;
 }
 
-.core-consent-banner__decline,
-.core-consent-banner__accept {
+/* Two classes deep on purpose: a theme's own `button { background: none; color: inherit }` reset (one class and an element) would otherwise beat
+   these and leave the Accept label the page's text colour on the primary fill, or on no fill at all. */
+.core-consent-banner .core-consent-banner__decline,
+.core-consent-banner .core-consent-banner__accept {
   padding: 0.55rem 1.1rem;
   font: inherit;
   font-size: 0.8125rem;
@@ -549,19 +551,19 @@
   transition: opacity 0.15s ease;
 }
 
-.core-consent-banner__decline {
+.core-consent-banner .core-consent-banner__decline {
   background: transparent;
   border-color: var(--brand-border, rgba(0, 0, 0, 0.18));
   color: inherit;
 }
 
-.core-consent-banner__accept {
+.core-consent-banner .core-consent-banner__accept {
   background: var(--brand-primary, #00a884);
   color: var(--brand-on-primary, #fff);
 }
 
-.core-consent-banner__decline:hover,
-.core-consent-banner__accept:hover { opacity: 0.85; }
+.core-consent-banner .core-consent-banner__decline:hover,
+.core-consent-banner .core-consent-banner__accept:hover { opacity: 0.85; }
 
 /* The footer attribution slot: the cookie preferences link, then "Powered by Queek". No positioning, so a footer row keeps its layout. */
 .core-powered-by-group {

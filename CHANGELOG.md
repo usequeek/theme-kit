@@ -11,6 +11,9 @@ policy. Versions before this file started are in the git tags.
   "Powered by Queek", so it never covers a heading or a button on a phone. It also no longer shows to a shopper whose
   browser sends Global Privacy Control: that signal is already a decline, there is no banner to reopen, and the old
   button did nothing.
+- The cookie banner's Accept and Decline buttons keep their own label colour and fill under a theme's blanket
+  `button { color: inherit; background: none }` reset. Before, Accept could render as an unreadable block (the page's
+  text colour on the primary fill, or on no fill) in themes with that reset.
 
 ### Changed
 
