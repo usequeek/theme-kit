@@ -540,16 +540,26 @@ export default function Footer() {
 - Style only: the link emits `core-powered-by` with a
   `core-powered-by__brand` hook on the `Queek` wordmark; an optional
   `className` passthrough lets a footer position it (e.g.
-  `<PoweredByQueek className="my-footer__powered" />`). No kit CSS ships for
-  it — style the classes in your theme.
+  `<PoweredByQueek className="my-footer__powered" />`). It goes on the link
+  itself. The link sits inside one `core-powered-by-group` element, so a footer
+  row keeps its child count. Style the `core-powered-by` classes in your theme.
+- The same group holds the shopper's cookie preferences button
+  (`core-consent-link`), shown only when the store uses analytics or an ad
+  pixel, the shopper has chosen, and the browser does not send Global Privacy
+  Control. It is how a shopper withdraws consent, so a footer cannot opt out of
+  it. The kit ships a neutral style for the group and the button (no
+  positioning, logical properties); restyle `core-consent-link` in your
+  `theme.css` if the footer needs it. The label is the string
+  `consent.preferences`.
 - The href (`https://usequeek.com/business`), `target="_blank"` and
   `rel="noopener noreferrer"` are the contract — never re-implement the
   markup by hand. The href is tagged for attribution by `poweredByQueekUrl`
   (`utm_source=powered_by&utm_medium=storefront&utm_campaign=<store slug>`,
   campaign omitted when the store has no slug); the component reads the slug
   from the storefront context, so themes pass nothing.
-- `hidden` (default false) takes the component's visibility from a prop.
-  There is no merchant-facing toggle for it — always render it visible.
+- `hidden` (default false) takes the attribution link's visibility from a prop;
+  it never hides the cookie preferences button. There is no merchant-facing
+  toggle for it — always render it visible.
 
 ## Locales
 

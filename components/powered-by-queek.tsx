@@ -2,6 +2,7 @@
 
 import { useContext, type JSX } from 'react';
 import { StorefrontContext } from '../provider';
+import { ConsentPreferencesLink } from '../apps/consent-preferences-link';
 import { poweredByQueekUrl } from '../utils/powered-by';
 
 /** Props for {@link PoweredByQueek}. */
@@ -9,8 +10,9 @@ export interface PoweredByQueekProps {
   /** Extra class so a footer can position the link — styling stays theme-owned. */
   className?: string;
   /**
-   * Lets a caller hide the link from a prop. Defaults to false; themes always
-   * render it visible — there is no merchant-facing toggle for it.
+   * Lets a caller hide the attribution link from a prop. Defaults to false;
+   * themes always render it visible — there is no merchant-facing toggle for
+   * it. It never hides the cookie preferences link, which is not attribution.
    */
   hidden?: boolean;
 }
@@ -26,21 +28,35 @@ export interface PoweredByQueekProps {
  * `utm_medium=storefront`, `utm_campaign=<store slug>` via `poweredByQueekUrl`
  * (read from the storefront context, so themes pass nothing; no provider means
  * no campaign, never an error). Markup carries `core-powered-by` classes so each theme
- * styles it in its own `theme.css`; no kit CSS ships for it.
+ * styles it in its own `theme.css`; `className` goes on the link itself.
+ *
+ * It also carries the shopper's cookie preferences link
+ * ({@link ConsentPreferencesLink}), so the one footer slot every theme already
+ * has is also where a shopper reopens their cookie choice. That is why the
+ * output is one `core-powered-by-group` element holding both: a footer row
+ * keeps its child count, and the preferences link sits directly before the
+ * attribution. The link renders only when the store uses analytics or an ad
+ * pixel and the shopper has chosen; otherwise the group holds just the
+ * attribution. A footer needs no extra markup, and a theme may restyle
+ * `core-consent-link` in its own `theme.css` (the kit gives it a neutral
+ * look).
  */
 export function PoweredByQueek({ className, hidden = false }: PoweredByQueekProps): JSX.Element | null {
   const vendor = useContext(StorefrontContext)?.vendor;
 
-  if (hidden) return null;
+  if (hidden) return <ConsentPreferencesLink />;
 
   return (
-    <a
-      href={poweredByQueekUrl(vendor?.slug)}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={className ? `core-powered-by ${className}` : 'core-powered-by'}
-    >
-      Powered by <strong className="core-powered-by__brand">Queek</strong>
-    </a>
+    <span className="core-powered-by-group">
+      <ConsentPreferencesLink />
+      <a
+        href={poweredByQueekUrl(vendor?.slug)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className ? `core-powered-by ${className}` : 'core-powered-by'}
+      >
+        Powered by <strong className="core-powered-by__brand">Queek</strong>
+      </a>
+    </span>
   );
 }

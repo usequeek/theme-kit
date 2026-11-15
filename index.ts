@@ -50,6 +50,9 @@ export * from './utils/locale';
 export * from './utils/locale-switch';
 export * from './utils/market';
 
+// Which cookie-consent categories a store uses (pure, server-safe).
+export * from './apps/consent-offers';
+
 // Theme strings — the pure/server-safe i18n core (no next/*, no React).
 export * from './strings/theme-strings';
 // Pseudo-locale QA — dev/test-only dictionary transform + English-leak scan

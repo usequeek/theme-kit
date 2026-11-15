@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -58,8 +59,20 @@ describe('PoweredByQueek', () => {
     expect(html).toContain('class="core-powered-by qn-footer4__powered"');
   });
 
-  it('renders nothing when hidden', () => {
+  it('renders nothing when hidden and no cookie preferences link is due', () => {
     expect(render({ hidden: true })).toBe('');
     expect(render({ hidden: true }, { id: 'uuid-1', slug: 'demo-store' })).toBe('');
+  });
+
+  it('renders one root element holding the attribution link, so a footer row keeps its child count', () => {
+    const html = render({ className: 'td-footer__powered' }, { id: 'uuid-1', slug: 'demo-store' });
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const roots = doc.body.children;
+
+    expect(roots).toHaveLength(1);
+    expect(roots[0]?.tagName).toBe('SPAN');
+    expect(roots[0]?.className).toBe('core-powered-by-group');
+    expect(roots[0]?.children).toHaveLength(1);
+    expect(roots[0]?.firstElementChild?.getAttribute('class')).toBe('core-powered-by td-footer__powered');
   });
 });

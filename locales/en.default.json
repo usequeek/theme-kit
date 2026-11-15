@@ -191,6 +191,9 @@
     "label": "Currency",
     "named": "Currency: {name}"
   },
+  "consent": {
+    "preferences": "Cookie preferences"
+  },
   "follow": {
     "aria": "Follow this store",
     "dismiss": "Don't show again",

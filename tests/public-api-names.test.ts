@@ -117,6 +117,12 @@ describe('public API names recorded from 0.1.25', () => {
     expect(typeof lineTextStore.readLineText).toBe('function');
   });
 
+  it('the cookie-consent modules are exported from the barrels', () => {
+    expect(barrelModules('index.ts').has('apps/consent-offers')).toBe(true);
+    expect(barrelModules('client.ts').has('apps/use-analytics-consent')).toBe(true);
+    expect(barrelModules('client.ts').has('apps/consent-preferences-link')).toBe(true);
+  });
+
   it('the bearer suffix list and the blank-text helper stay internal', () => {
     expect(Object.keys(lineProperties)).not.toContain('BEARER_PROPERTY_SUFFIXES');
     expect(Object.keys(lineTextStore)).not.toContain('BEARER_PROPERTY_SUFFIXES');

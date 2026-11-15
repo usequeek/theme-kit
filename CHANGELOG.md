@@ -3,6 +3,28 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.3.3 - 2026-11-15
+
+### Fixed
+
+- The "Cookie preferences" control no longer floats over the page. It moves into the store footer, directly before
+  "Powered by Queek", so it never covers a heading or a button on a phone. It also no longer shows to a shopper whose
+  browser sends Global Privacy Control: that signal is already a decline, there is no banner to reopen, and the old
+  button did nothing.
+
+### Changed
+
+- `PoweredByQueek` renders one `core-powered-by-group` element holding the attribution link and, once the shopper has
+  answered every cookie question the store asks, a `core-consent-link` button that reopens the banner. Footers need no
+  change: every footer already places `PoweredByQueek`. The attribution `<a>` keeps its markup, `className` and href.
+  `hidden` hides the attribution only, never the preferences link.
+- `.core-consent-settings-link` (the floating button's style) is removed. The kit ships a neutral `.core-consent-link`
+  and `.core-powered-by-group` style with no positioning; a theme can restyle `core-consent-link` in its own `theme.css`.
+- Cookie-consent state now lives in the kit. New: `ConsentPreferencesLink` and `useAnalyticsConsent` (which also returns
+  `gpc`), exported from the client barrel; `consentOffers`, `consentPending`, `buildConsentOffers`, `resolveGaId`,
+  `resolveAdPixelIds` and the pixel-id patterns, exported from the index barrel. The kit default strings gain
+  `consent.preferences` ("Cookie preferences").
+
 ## 0.3.2 - 2026-11-14
 
 ### Fixed

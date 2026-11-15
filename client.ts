@@ -28,6 +28,8 @@ export * from './components/checkout/default-checkout-shell';
 export * from './components/checkout/checkout-contact';
 export * from './components/checkout/policy-links';
 export * from './apps/follow-card';
+export * from './apps/use-analytics-consent';
+export * from './apps/consent-preferences-link';
 export * from './apps/storefront-events';
 export * from './apps/subscribe-form';
 export * from './api/collections';
