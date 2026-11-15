@@ -541,8 +541,10 @@ export default function Footer() {
   `core-powered-by__brand` hook on the `Queek` wordmark; an optional
   `className` passthrough lets a footer position it (e.g.
   `<PoweredByQueek className="my-footer__powered" />`). It goes on the link
-  itself. The link sits inside one `core-powered-by-group` element, so a footer
-  row keeps its child count. Style the `core-powered-by` classes in your theme.
+  itself and styles it; to position the credit in the footer row, style
+  `.core-powered-by-group`, the one element `PoweredByQueek` renders (an
+  inline-flex `span`), so a footer row keeps its child count. Style the
+  `core-powered-by` classes in your theme.
 - The same group holds the shopper's cookie preferences button
   (`core-consent-link`), shown only when the store uses analytics or an ad
   pixel, the shopper has chosen, and the browser does not send Global Privacy
@@ -560,6 +562,35 @@ export default function Footer() {
 - `hidden` (default false) takes the attribution link's visibility from a prop;
   it never hides the cookie preferences button. There is no merchant-facing
   toggle for it — always render it visible.
+
+## Cookie consent
+
+A store that uses Google Analytics or an ad pixel asks its shoppers for
+consent, and the shopper can change their mind from the footer. The state and
+the footer control live in the kit so every theme gets them:
+
+- `ConsentPreferencesLink` (`@usequeek/theme-kit/apps/consent-preferences-link`)
+  is the footer button. `PoweredByQueek` renders it, so a theme places nothing.
+  It renders only when the store offers a consent category, the shopper has
+  answered every question the store asks, and the browser does not send Global
+  Privacy Control. A click forgets this store's choice and brings the banner
+  back. It renders nothing on the server, without a provider, and for a store
+  with no consent category. The label is `consent.preferences`.
+- `useAnalyticsConsent(vendorId)` (`.../apps/use-analytics-consent`) returns
+  `{ decision, marketing, gpc, decide, reset }`. `decision` (analytics) and
+  `marketing` are `null` until the shopper has chosen, `gpc` is true when the
+  browser sends Global Privacy Control (both decisions then read `false`).
+  The record is kept in `localStorage` per store, so stores that share an origin
+  never share a choice. `readStoredMarketingConsent(vendorId)` reads the stored
+  marketing decision without React.
+- `consentOffers(config)`, `buildConsentOffers(gaId, pixels)` and
+  `consentPending(offers, decision, marketing)` (`.../apps/consent-offers`,
+  pure and server-safe) say which categories the store uses and whether a
+  question is still open. `resolveGaId` and `resolveAdPixelIds` validate the
+  ids from `config.apps.analytics` (the patterns are exported too); an id that
+  fails its pattern counts as not set.
+
+Style the button through `core-consent-link`; the kit ships a neutral style.
 
 ## Locales
 

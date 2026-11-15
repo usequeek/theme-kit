@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 import React from 'react';
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { PoweredByQueek } from '../components/powered-by-queek';
 import { StorefrontContext } from '../provider';
+
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const BASE = 'https://usequeek.com/business?utm_source=powered_by&amp;utm_medium=storefront';
 
@@ -62,6 +66,36 @@ describe('PoweredByQueek', () => {
   it('renders nothing when hidden and no cookie preferences link is due', () => {
     expect(render({ hidden: true })).toBe('');
     expect(render({ hidden: true }, { id: 'uuid-1', slug: 'demo-store' })).toBe('');
+  });
+
+  it('keeps the cookie preferences link when hidden, on a store where it is due (client render)', async () => {
+    window.localStorage.setItem('queek_consent', JSON.stringify({ 'uuid-1': { analytics: true, version: 1, decidedAt: '2026-11-15T10:00:00.000Z' } }));
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const store = { vendor: { id: 'uuid-1', slug: 'demo-store' }, config: { apps: { analytics: { ga_id: 'G-ABCD1234' } } } };
+
+    await act(async () => {
+      root.render(
+        React.createElement(StorefrontContext.Provider, { value: store as never }, React.createElement(PoweredByQueek, { hidden: true })),
+      );
+    });
+
+    expect(container.querySelectorAll('button.core-consent-link')).toHaveLength(1);
+    expect(container.querySelector('button.core-consent-link')?.textContent).toBe('Cookie preferences');
+    expect(container.querySelectorAll('a.core-powered-by')).toHaveLength(0);
+
+    await act(async () => {
+      root.render(
+        React.createElement(StorefrontContext.Provider, { value: store as never }, React.createElement(PoweredByQueek)),
+      );
+    });
+    expect(container.querySelectorAll('button.core-consent-link')).toHaveLength(1);
+    expect(container.querySelectorAll('a.core-powered-by')).toHaveLength(1);
+
+    act(() => root.unmount());
+    container.remove();
+    window.localStorage.clear();
   });
 
   it('renders one root element holding the attribution link, so a footer row keeps its child count', () => {

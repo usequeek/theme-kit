@@ -571,7 +571,7 @@
   gap: 0.75em;
 }
 
-/* Inherits the credit's size and colour from the footer around it; a theme restyles it in its own theme.css. */
+/* Inherits size and colour from the footer row around it, not from the credit link: a theme whose credit has its own rule for them restyles this in its own theme.css. */
 .core-consent-link {
   background: none;
   border: 0;

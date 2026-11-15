@@ -3,7 +3,7 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
-## 0.3.3 - 2026-11-15
+## 0.4.0 - 2026-11-15
 
 ### Fixed
 
@@ -14,9 +14,13 @@ policy. Versions before this file started are in the git tags.
 
 ### Changed
 
-- `PoweredByQueek` renders one `core-powered-by-group` element holding the attribution link and, once the shopper has
-  answered every cookie question the store asks, a `core-consent-link` button that reopens the banner. Footers need no
-  change: every footer already places `PoweredByQueek`. The attribution `<a>` keeps its markup, `className` and href.
+- **Breaking for a theme that positions the credit through `className`.** `PoweredByQueek` renders one
+  `core-powered-by-group` element (an inline-flex `span`) holding the attribution link and, once the shopper has
+  answered every cookie question the store asks, a `core-consent-link` button that reopens the banner. The `<a>` keeps
+  its markup, `className` and href, but it is no longer the footer row's own flex or grid item: `className` now styles
+  the link inside the group and no longer positions it within the footer row. A theme that put `margin-inline-start:auto`,
+  `order`, `grid-column` or `justify-self` on that class must move the rule to `.core-powered-by-group`. Themes that
+  only style the link (colour, size, spacing inside it) need no change, and every footer already places `PoweredByQueek`.
   `hidden` hides the attribution only, never the preferences link.
 - `.core-consent-settings-link` (the floating button's style) is removed. The kit ships a neutral `.core-consent-link`
   and `.core-powered-by-group` style with no positioning; a theme can restyle `core-consent-link` in its own `theme.css`.
