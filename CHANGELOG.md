@@ -3,6 +3,14 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.4.1 - 2026-11-15
+
+### Fixed
+
+- A demo store's collections (`getCollections`, `getCollection`) carry the demo category's own `description`, and
+  none when the demo gives none. Before, every collection said "<name> — curated picks from this collection.", copy no
+  store wrote. `DemoCategory` gains an optional `description`.
+
 ## 0.4.0 - 2026-11-15
 
 ### Fixed

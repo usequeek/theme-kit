@@ -24,7 +24,8 @@ import type { StorefrontConfig, VendorProfile } from './types/vendor';
  * code should import from here directly.
  */
 
-export type DemoCategory = { id: string; slug: string; name: string; image?: string | null };
+/** A demo store's category; `description` is the collection's own copy, shown as written (none when absent). */
+export type DemoCategory = { id: string; slug: string; name: string; image?: string | null; description?: string | null };
 
 export interface PreviewDemoData {
   profile: VendorProfile;
@@ -174,7 +175,7 @@ export function getCollections(demo: PreviewDemoData): Collection[] {
     id: category.id,
     slug: category.slug,
     name: category.name,
-    description: `${category.name} — curated picks from this collection.`,
+    description: category.description?.trim() || null,
     image: category.image ?? null,
     mode: 'manual',
     products_count: products.filter((product) => product.categories.some((item) => item.slug === category.slug)).length,
