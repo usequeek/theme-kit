@@ -590,6 +590,12 @@ the footer control live in the kit so every theme gets them:
   ids from `config.apps.analytics` (the patterns are exported too); an id that
   fails its pattern counts as not set.
 
+`ConsentRegimeProvider` (`.../apps/use-analytics-consent`) takes `required`. The storefront sets it per request (the
+visitor's country, the store's own `show` setting). Without it every shopper must answer. With `required={false}` a shopper
+with no stored answer reads as granted for both categories (nothing is written to the record), Global Privacy Control still
+reads as declined, and `reset()` does not delete the stored answer: it marks the question reopened (`decision` and
+`marketing` read `null`) until `decide()` runs. The footer link therefore shows in that region and reopens the banner.
+
 Style the button through `core-consent-link`; the kit ships a neutral style.
 
 ## Locales

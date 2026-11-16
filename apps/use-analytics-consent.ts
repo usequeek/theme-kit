@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useSyncExternalStore } from 'react';
+import { createContext, createElement, useCallback, useContext, useLayoutEffect, useSyncExternalStore, type JSX, type ReactNode } from 'react';
 
 /**
  * Consent is keyed by vendor id inside one shared localStorage record — the
@@ -75,11 +75,50 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-function readDecision(vendorId: string, category: keyof ConsentChoice): boolean | null {
+/**
+ * Whether the shopper must answer before anything non-essential runs. The storefront decides it per request
+ * (the visitor's country, the store's own `show` setting) and tells the kit through `ConsentRegimeProvider`;
+ * without a provider every visitor must answer, exactly as before.
+ */
+const ConsentRegimeContext = createContext<boolean>(true);
+
+/** The React-free readers' copy of the regime (the ad-pixel event subscribers fire outside React). Set only in the browser. */
+let regimeRequired = true;
+
+/**
+ * Stores whose shopper opened "Cookie preferences" while consent is not required. A reopened question must read
+ * unanswered even though an earlier answer is still stored: the stored answer stays untouched until the shopper
+ * decides again, so closing the tab mid-review loses nothing. In memory on purpose.
+ */
+const reviewing = new Set<string>();
+
+/**
+ * Tells the kit whether this visitor must answer before analytics or ad pixels run. `required={false}` means a
+ * shopper with no stored answer reads as granted (never written to the record: only a click writes it), Global
+ * Privacy Control still reads as declined, and "Cookie preferences" in the footer reopens the question so the
+ * shopper can decline. Default (no provider) is `required`.
+ */
+export function ConsentRegimeProvider({ required, children }: { required: boolean; children: ReactNode }): JSX.Element {
+  useLayoutEffect(() => {
+    regimeRequired = required;
+    return () => {
+      regimeRequired = true;
+    };
+  }, [required]);
+
+  return createElement(ConsentRegimeContext.Provider, { value: required }, children);
+}
+
+/**
+ * One category's answer. Order matters: Global Privacy Control declines; a question the shopper reopened is
+ * unanswered; a stored answer wins; with no answer, a region that does not require consent grants and the rest ask.
+ */
+function readDecision(vendorId: string, category: keyof ConsentChoice, required: boolean): boolean | null {
   if (hasGlobalPrivacyControl()) return false;
+  if (reviewing.has(vendorId)) return null;
   const record = readStore()[vendorId];
-  if (!record || record.version !== CONSENT_VERSION) return null;
-  return typeof record[category] === 'boolean' ? record[category] : null;
+  if (record && record.version === CONSENT_VERSION && typeof record[category] === 'boolean') return record[category];
+  return required ? null : true;
 }
 
 /**
@@ -90,7 +129,7 @@ function readDecision(vendorId: string, category: keyof ConsentChoice): boolean 
  */
 export function readStoredMarketingConsent(vendorId: string | undefined): boolean {
   if (!vendorId || typeof window === 'undefined') return false;
-  return readDecision(vendorId, 'marketing') === true;
+  return readDecision(vendorId, 'marketing', regimeRequired) === true;
 }
 
 /**
@@ -119,14 +158,15 @@ export function useAnalyticsConsent(vendorId: string | undefined): {
   // change event — a decision in the banner reaches the analytics loader
   // without a reload, which per-instance state never did. `null` on the
   // server and during hydration.
+  const required = useContext(ConsentRegimeContext);
   const decision = useSyncExternalStore(
     subscribe,
-    () => (vendorId ? readDecision(vendorId, 'analytics') : null),
+    () => (vendorId ? readDecision(vendorId, 'analytics', required) : null),
     () => null,
   );
   const marketing = useSyncExternalStore(
     subscribe,
-    () => (vendorId ? readDecision(vendorId, 'marketing') : null),
+    () => (vendorId ? readDecision(vendorId, 'marketing', required) : null),
     () => null,
   );
 
@@ -135,6 +175,7 @@ export function useAnalyticsConsent(vendorId: string | undefined): {
   const decide = useCallback(
     (choice: ConsentChoice) => {
       if (!vendorId) return;
+      reviewing.delete(vendorId);
       const store = readStore();
       const previous = store[vendorId]?.version === CONSENT_VERSION ? store[vendorId] : undefined;
       store[vendorId] = {
@@ -152,11 +193,15 @@ export function useAnalyticsConsent(vendorId: string | undefined): {
 
   const reset = useCallback(() => {
     if (!vendorId) return;
-    const store = readStore();
-    delete store[vendorId];
-    writeStore(store);
+    if (required) {
+      const store = readStore();
+      delete store[vendorId];
+      writeStore(store);
+    } else {
+      reviewing.add(vendorId);
+    }
     window.dispatchEvent(new Event(CHANGE_EVENT));
-  }, [vendorId]);
+  }, [vendorId, required]);
 
   return { decision, marketing, gpc, decide, reset };
 }

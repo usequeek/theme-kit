@@ -392,6 +392,17 @@
     width: auto;
     bottom: 5rem;
   }
+
+  /* One floating card at a time on a phone: the follow card and this one are both full width at the same height, and the shell
+     renders them as siblings. A full follow card keeps the bottom; this card shows once it is dismissed or the shopper follows. */
+  .core-follow-card--floating:not(.core-follow-card--compact) ~ .core-subscribe-floating {
+    display: none;
+  }
+
+  /* The small "Following" chip sits at the right edge at the same height: lift this card above it. */
+  .core-follow-card--compact.core-follow-card--floating ~ .core-subscribe-floating {
+    bottom: 8rem;
+  }
 }
 
 /* ── Subscribe — modal variant ───────────────────────────── */

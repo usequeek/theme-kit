@@ -11,6 +11,18 @@ policy. Versions before this file started are in the git tags.
   none when the demo gives none. Before, every collection said "<name> — curated picks from this collection.", copy no
   store wrote. `DemoCategory` gains an optional `description`.
 
+## 0.5.0 - 2026-11-16
+
+### Added
+
+- `ConsentRegimeProvider` (`apps/use-analytics-consent`): the storefront tells the kit whether this visitor must answer the
+  cookie question first. `required={false}` reads a shopper with no stored answer as granted for both categories (the record
+  is only ever written by a click), Global Privacy Control still reads as declined, and "Cookie preferences" in the footer
+  reopens the question so the shopper can decline. A reopened question reads unanswered while the earlier stored answer stays
+  until the shopper decides again. Without a provider nothing changes: every visitor must answer.
+- `config.apps.consent_banner` in the config type: `message` (the banner's lead sentence) and `show` (`required` | `everywhere`).
+- Phones: a full floating follow card hides the floating subscribe card (one card at a time), and the "Following" chip lifts it.
+
 ## 0.4.0 - 2026-11-15
 
 ### Fixed

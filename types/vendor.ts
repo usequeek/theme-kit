@@ -246,6 +246,11 @@ export interface StorefrontConfig {
       /** `modal` variant only — when it should pop up. Defaults to 'scroll' when unset. */
       trigger?: 'immediate' | 'delay' | 'scroll';
     };
+    /**
+     * The cookie banner. `message` replaces the banner's lead sentence (plain text); `show` is `everywhere` when the merchant
+     * wants the banner for every visitor instead of only where consent is required.
+     */
+    consent_banner?: { message?: string; show?: 'required' | 'everywhere' };
   };
   followers_count?: number;
 }
