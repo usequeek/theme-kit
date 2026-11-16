@@ -23,7 +23,8 @@ function ConsentPreferencesButton({ onReset }: { onReset: () => void }): JSX.Ele
  * Shown only when the store uses analytics or an ad pixel, the shopper has
  * answered every question it asks, and the browser is not sending Global
  * Privacy Control (that is already a decline: there is nothing to reopen).
- * Clicking it forgets this store's choice only, which brings the banner back.
+ * Clicking it brings the banner back for this store only: where consent is required it forgets the stored choice, and outside
+ * those regions (`ConsentRegimeProvider required={false}`) it marks the question reopened and keeps the stored choice until the shopper decides.
  * Renders nothing on the server and while hydrating (the decision is read from
  * the browser), outside a `StorefrontProvider`, and for a store with no consent
  * category. Reads the context directly so it never throws without a provider.

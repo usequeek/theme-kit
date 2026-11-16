@@ -3,14 +3,6 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
-## 0.4.1 - 2026-11-15
-
-### Fixed
-
-- A demo store's collections (`getCollections`, `getCollection`) carry the demo category's own `description`, and
-  none when the demo gives none. Before, every collection said "<name> — curated picks from this collection.", copy no
-  store wrote. `DemoCategory` gains an optional `description`.
-
 ## 0.5.0 - 2026-11-16
 
 ### Added
@@ -21,7 +13,37 @@ policy. Versions before this file started are in the git tags.
   reopens the question so the shopper can decline. A reopened question reads unanswered while the earlier stored answer stays
   until the shopper decides again. Without a provider nothing changes: every visitor must answer.
 - `config.apps.consent_banner` in the config type: `message` (the banner's lead sentence) and `show` (`required` | `everywhere`).
-- Phones: a full floating follow card hides the floating subscribe card (one card at a time), and the "Following" chip lifts it.
+- `[data-overlay-held]`: an ancestor carrying it hides the floating follow and subscribe cards (not the compact "Following" chip) while
+  another prompt is open. The storefront's overlay gate sets it, so at most one prompt is open at a time.
+
+### Changed
+
+Every store that uses the follow card, the subscribe form or the cookie banner sees these:
+
+- **Follow card button.** The fill is now `--brand-accent-fill` (the accent, deepened only when it had to be) and the label
+  `--brand-on-accent`, the pair the tokens keep at 4.5:1. Before, the fill came from `--brand-button` (never set, so the accent)
+  and the label from `--brand-button-text`, and a theme's `button { color: inherit }` reset won over it: dark text on the accent
+  fill (Beaurify).
+- **Subscribe button and banner Accept.** The fill is now `--brand-button-bg` and the label `--brand-button-text` (the pair the
+  tokens keep readable together; `--brand-on-primary` was never emitted, so the label was always white). A merchant's
+  `colors.button` override therefore recolours these two buttons now.
+- **Selector specificity.** The three button rules are two classes deep (`.core-follow-card .core-follow-card__btn`,
+  `.core-subscribe .core-subscribe__button`, `.core-consent-banner .core-consent-banner__accept`). They beat a theme's
+  `.theme-x button` reset, and tie a theme's own two-class override such as `.theme-allure .core-subscribe__button`
+  (then the later stylesheet wins, as before for the banner).
+- **Banner buttons on a phone (600px and under)** stack full width in one column, every label on one line, all the same size.
+  The order is Accept, then "Accept analytics only", then Decline, in the markup too (the storefront renders them in that
+  order on every screen), so focus order matches the visual order. On a wide screen they sit in one row in the same order.
+- **Phones: one floating card at a time.** A full floating follow card hides the floating subscribe card; the compact
+  "Following" chip lifts it above the chip.
+
+## 0.4.1 - 2026-11-15
+
+### Fixed
+
+- A demo store's collections (`getCollections`, `getCollection`) carry the demo category's own `description`, and
+  none when the demo gives none. Before, every collection said "<name> — curated picks from this collection.", copy no
+  store wrote. `DemoCategory` gains an optional `description`.
 
 ## 0.4.0 - 2026-11-15
 

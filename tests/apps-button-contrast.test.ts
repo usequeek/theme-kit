@@ -66,11 +66,19 @@ describe('the label of a kit button survives a theme button reset, and reads on 
 });
 
 describe('the cookie banner buttons on a phone', () => {
-  it('stack full width in one column, Accept first, with every label on one line', () => {
+  it('stack full width in one column in markup order, with every label on one line', () => {
     const phone = css.slice(css.indexOf('@media (max-width: 600px) {\n  .core-consent-banner {'));
     const block = phone.slice(0, phone.indexOf('/* ── Unsubscribe page'));
-    expect(block).toMatch(/\.core-consent-banner__actions \{[^}]*flex-direction: column-reverse/);
+    expect(block).toMatch(/\.core-consent-banner__actions \{[^}]*flex-direction: column;/);
     expect(block).toMatch(/\.core-consent-banner \.core-consent-banner__accept \{[^}]*width: 100%/);
     expect(block).toMatch(/\.core-consent-banner \.core-consent-banner__decline,[^{]*\{[^}]*width: 100%/);
+  });
+});
+
+describe('another prompt open', () => {
+  it('hides the floating follow and subscribe cards under [data-overlay-held], and leaves the "Following" chip alone', () => {
+    const block = rule('[data-overlay-held] .core-subscribe-floating');
+    expect(block).toContain('display: none');
+    expect(css).toContain('[data-overlay-held] .core-follow-card--floating:not(.core-follow-card--compact),');
   });
 });

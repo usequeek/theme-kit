@@ -136,9 +136,13 @@ export function readStoredMarketingConsent(vendorId: string | undefined): boolea
  * Per-vendor consent in two independent categories. `decision` (analytics) and
  * `marketing` are each `null` until the visitor has chosen (or GPC decided for
  * them) — the banner and Consent Mode's default state both key off that.
- * Granting analytics never grants marketing. Marketing (ad pixels) is denied by
- * default and stays denied until an explicit accept. `reset` forgets this
- * vendor's record only, which reopens the banner.
+ * Granting analytics never grants marketing. Where consent is required (the
+ * default, no provider) marketing (ad pixels) is denied until an explicit accept
+ * and `reset` forgets this vendor's record, which reopens the banner. Under
+ * `ConsentRegimeProvider required={false}` a category with no stored answer reads
+ * as granted (marketing included, nothing is written to the record), GPC still
+ * declines, and `reset` leaves the stored record in place and marks the question
+ * reopened (both read `null`) until `decide` runs.
  */
 export function useAnalyticsConsent(vendorId: string | undefined): {
   decision: boolean | null;

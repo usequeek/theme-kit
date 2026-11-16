@@ -409,6 +409,12 @@
   }
 }
 
+/* Another prompt is open (the storefront's overlay gate sets the attribute): the floating cards wait, the compact "Following" chip stays. */
+[data-overlay-held] .core-follow-card--floating:not(.core-follow-card--compact),
+[data-overlay-held] .core-subscribe-floating {
+  display: none;
+}
+
 /* ── Subscribe — modal variant ───────────────────────────── */
 /* Above the floating widgets (190/200) so it isn't hidden behind them while
    open, below the cookie-consent banner (300) — a legal notice should never
@@ -610,10 +616,10 @@
   .core-consent-banner__text {
     flex: 0 1 auto;
   }
-  /* Stacked full width, Accept first: the labels ("Accept analytics only", "Decline all") never wrap in cramped columns. The markup keeps
-     Decline first (the order of a wide screen), so the column runs in reverse; every button is the same size, Decline as easy to press as Accept. */
+  /* Stacked full width, in markup order (Accept first, Decline last, so focus order is the visual order): the labels ("Accept analytics
+     only", "Decline all") never wrap in cramped columns, and every button is the same size, Decline as easy to press as Accept. */
   .core-consent-banner__actions {
-    flex-direction: column-reverse;
+    flex-direction: column;
     align-items: stretch;
   }
   .core-consent-banner .core-consent-banner__decline,
