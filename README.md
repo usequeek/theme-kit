@@ -590,6 +590,8 @@ the footer control live in the kit so every theme gets them:
   ids from `config.apps.analytics` (the patterns are exported too); an id that
   fails its pattern counts as not set.
 
+`config.apps.consent_banner` (typed in `types/vendor.ts`) carries the store's own `message` (replaces the banner's lead sentence) and `show` (`required` or `everywhere`); the storefront reads them.
+
 `ConsentRegimeProvider` (`.../apps/use-analytics-consent`) takes `required`. The storefront sets it per request (the
 visitor's country, the store's own `show` setting). Without it every shopper must answer. With `required={false}` a shopper
 with no stored answer reads as granted for both categories (nothing is written to the record), Global Privacy Control still
