@@ -162,7 +162,10 @@
   margin: 0;
 }
 
-.core-follow-card__btn {
+/* Two classes deep on purpose: a theme's own `button { color: inherit }` reset (one class and an element beats a single class) left the label in
+   the card's text colour on the accent fill (dark maroon on crimson, Beaurify, 16/11/26). The fill and the label are the readable pair the
+   tokens guarantee at 4.5:1: `--brand-accent-fill` (the accent, deepened only when it had to be) and `--brand-on-accent`. */
+.core-follow-card .core-follow-card__btn {
   width: 100%;
   padding: 0.5rem 1rem;
   border: 0;
@@ -171,8 +174,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, transform 0.1s;
-  background: var(--brand-button, var(--brand-accent, #000));
-  color: var(--brand-button-text, #fff);
+  background: var(--brand-accent-fill, var(--brand-accent, #000));
+  color: var(--brand-on-accent, #fff);
 }
 
 .core-follow-card__btn:hover {
@@ -313,21 +316,22 @@
   outline-offset: 1px;
 }
 
-.core-subscribe__button {
+/* Two classes deep, and the paired button tokens (fill `--brand-button-bg`, label `--brand-button-text`, kept readable together): see the follow card button. */
+.core-subscribe .core-subscribe__button {
   padding: 0.7rem 1.25rem;
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
-  color: var(--brand-on-primary, #fff);
-  background: var(--brand-primary, #00a884);
+  color: var(--brand-button-text, #fff);
+  background: var(--brand-button-bg, var(--brand-primary, #00a884));
   border: 1px solid transparent;
   border-radius: var(--shape-radius, 8px);
   transition: opacity 0.2s ease;
 }
 
-.core-subscribe__button:hover:not(:disabled) { opacity: 0.88; }
-.core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
+.core-subscribe .core-subscribe__button:hover:not(:disabled) { opacity: 0.88; }
+.core-subscribe .core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
 
 .core-subscribe__error {
   margin: 0.6rem 0 0;
@@ -569,8 +573,8 @@
 }
 
 .core-consent-banner .core-consent-banner__accept {
-  background: var(--brand-primary, #00a884);
-  color: var(--brand-on-primary, #fff);
+  background: var(--brand-button-bg, var(--brand-primary, #00a884));
+  color: var(--brand-button-text, #fff);
 }
 
 .core-consent-banner .core-consent-banner__decline:hover,
@@ -606,8 +610,16 @@
   .core-consent-banner__text {
     flex: 0 1 auto;
   }
+  /* Stacked full width, Accept first: the labels ("Accept analytics only", "Decline all") never wrap in cramped columns. The markup keeps
+     Decline first (the order of a wide screen), so the column runs in reverse; every button is the same size, Decline as easy to press as Accept. */
   .core-consent-banner__actions {
-    justify-content: flex-end;
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .core-consent-banner .core-consent-banner__decline,
+  .core-consent-banner .core-consent-banner__accept {
+    width: 100%;
+    text-align: center;
   }
 }
 
