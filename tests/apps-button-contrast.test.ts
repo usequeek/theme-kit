@@ -13,9 +13,9 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** The declarations of the first top-level rule whose selector is exactly `selector`. */
+/** The declarations of the last top-level rule whose selector is exactly `selector`. */
 function rule(selector: string): string {
-  const start = css.indexOf(`\n${selector} {`);
+  const start = css.lastIndexOf(`\n${selector} {`);
   expect(start, `no rule for ${selector}`).toBeGreaterThanOrEqual(0);
   return css.slice(start, css.indexOf('}', start));
 }
