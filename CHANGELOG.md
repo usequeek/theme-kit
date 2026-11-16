@@ -24,9 +24,11 @@ Every store that uses the follow card, the subscribe form or the cookie banner s
   `--brand-on-accent`, the pair the tokens keep at 4.5:1. Before, the fill came from `--brand-button` (never set, so the accent)
   and the label from `--brand-button-text`, and a theme's `button { color: inherit }` reset won over it: dark text on the accent
   fill (Beaurify).
-- **Subscribe button and banner Accept.** The fill is now `--brand-button-bg` and the label `--brand-button-text` (the pair the
-  tokens keep readable together; `--brand-on-primary` was never emitted, so the label was always white). A merchant's
-  `colors.button` override therefore recolours these two buttons now.
+- **Subscribe button and banner Accept.** The fill stays the primary (`--brand-button-bg`); the label is now `--brand-on-primary`, a new
+  token the kit emits: the theme's on-accent when it reads at 4.5:1 on that fill, else the better of white and black. (The CSS already
+  asked for `--brand-on-primary` but nothing emitted it, so the label was always white: unreadable on a pale primary.) A merchant's
+  `colors.button` / `colors.button_text` override recolours these two buttons now, and `--brand-on-primary` follows it. The unsubscribe
+  page button gets the same label.
 - **Selector specificity.** The three button rules are two classes deep (`.core-follow-card .core-follow-card__btn`,
   `.core-subscribe .core-subscribe__button`, `.core-consent-banner .core-consent-banner__accept`). They beat a theme's
   `.theme-x button` reset, and tie a theme's own two-class override such as `.theme-allure .core-subscribe__button`

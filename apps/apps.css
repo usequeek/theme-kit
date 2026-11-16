@@ -316,14 +316,15 @@
   outline-offset: 1px;
 }
 
-/* Two classes deep, and the paired button tokens (fill `--brand-button-bg`, label `--brand-button-text`, kept readable together): see the follow card button. */
+/* Two classes deep (see the follow card button), on the primary: fill `--brand-button-bg`, label `--brand-on-primary`, which the tokens pick to read on that
+   fill (the theme's on-accent is tuned for the accent, not the primary, so it is not used blindly). */
 .core-subscribe .core-subscribe__button {
   padding: 0.7rem 1.25rem;
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
-  color: var(--brand-button-text, #fff);
+  color: var(--brand-on-primary, #fff);
   background: var(--brand-button-bg, var(--brand-primary, #00a884));
   border: 1px solid transparent;
   border-radius: var(--shape-radius, 8px);
@@ -580,7 +581,7 @@
 
 .core-consent-banner .core-consent-banner__accept {
   background: var(--brand-button-bg, var(--brand-primary, #00a884));
-  color: var(--brand-button-text, #fff);
+  color: var(--brand-on-primary, #fff);
 }
 
 .core-consent-banner .core-consent-banner__decline:hover,
