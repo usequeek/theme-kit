@@ -310,18 +310,6 @@ function readableFill(fill: string, label: string): string {
 }
 
 /**
- * The label for a button painted with `fill` (the primary): `preferred` (the theme's on-accent) when it reads at the AA minimum on
- * that fill, else whichever of white and black reads better. `on_accent` is tuned for the ACCENT, not for the primary, so it cannot
- * be assumed to read on the primary (Glow: dark on-accent, dark primary; Roast: black on-accent, brown primary).
- */
-function readableLabelOn(fill: string, preferred: string | undefined): string {
-  if (!fill) return preferred ?? '#ffffff';
-  if (preferred && (contrastRatio(fill, preferred) ?? 0) >= MIN_ON_ACCENT_CONTRAST) return preferred;
-  if (contrastRatio(fill, '#ffffff') === null) return preferred ?? '#ffffff';
-  return pickReadableTextColor(fill);
-}
-
-/**
  * Guards against `on_accent` silently pairing with an `accent` it was never
  * designed for. `accent` and `on_accent` are independent fields (see
  * `emitColorVars`) that can arrive from different layers of the merge in
@@ -496,8 +484,6 @@ export function expandDesignTokens(tokens?: DesignTokens | null, { explicitLabel
     vars['--brand-button-bg'] = buttonBg;
     vars['--brand-button-hover-bg'] = shade(buttonBg, 0.08);
   }
-  // The label of a button on the primary: the kit's subscribe button and cookie banner Accept paint `--brand-button-bg` and read this.
-  vars['--brand-on-primary'] = explicitLabel ? color.on_accent : readableLabelOn(buttonBg, color.on_accent);
 
   // TYPE
   emitTypeVars(type, vars);
@@ -626,9 +612,6 @@ export function getBrandCssVariables(
   if (config?.footer?.muted) vars['--brand-footer-muted'] = config.footer.muted;
   if (config?.colors?.button) vars['--brand-button-bg'] = config.colors.button;
   if (config?.colors?.button_text) vars['--brand-button-text'] = config.colors.button_text;
-  // A merchant's own button colour or label is theirs; the label of the primary-filled kit buttons follows them.
-  if (config?.colors?.button_text) vars['--brand-on-primary'] = config.colors.button_text;
-  else if (config?.colors?.button) vars['--brand-on-primary'] = readableLabelOn(config.colors.button, tokens?.color?.on_accent);
 
   return vars as CSSProperties;
 }

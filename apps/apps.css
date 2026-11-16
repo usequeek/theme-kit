@@ -162,10 +162,11 @@
   margin: 0;
 }
 
-/* Two classes deep on purpose: a theme's own `button { color: inherit }` reset (one class and an element beats a single class) left the label in
-   the card's text colour on the accent fill (dark maroon on crimson, Beaurify, 16/11/26). The fill and the label are the readable pair the
-   tokens guarantee at 4.5:1: `--brand-accent-fill` (the accent, deepened only when it had to be) and `--brand-on-accent`. */
-.core-follow-card .core-follow-card__btn {
+/* One class and two elements on purpose (`div button.…`, specificity 0,1,2): it beats a theme's `button { color: inherit }` reset (0,1,1), which
+   left the label in the card's text colour on the accent fill (dark maroon on crimson, Beaurify, 16/11/26), and still loses to a theme's own
+   two-class rule such as `.theme-carat .core-follow-card__btn` (0,2,0), which is meant to restyle it. The fill and the label are the readable
+   pair the tokens guarantee at 4.5:1: `--brand-accent-fill` (the accent, deepened only when it had to be) and `--brand-on-accent`. */
+div button.core-follow-card__btn {
   width: 100%;
   padding: 0.5rem 1rem;
   border: 0;
@@ -316,23 +317,22 @@
   outline-offset: 1px;
 }
 
-/* Two classes deep (see the follow card button), on the primary: fill `--brand-button-bg`, label `--brand-on-primary`, which the tokens pick to read on that
-   fill (the theme's on-accent is tuned for the accent, not the primary, so it is not used blindly). */
-.core-subscribe .core-subscribe__button {
+/* `form button.…` (0,1,2) for the same reason as the follow card button: beats a theme's `button` reset, yields to a theme's own two-class rule. */
+form button.core-subscribe__button {
   padding: 0.7rem 1.25rem;
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
   color: var(--brand-on-primary, #fff);
-  background: var(--brand-button-bg, var(--brand-primary, #00a884));
+  background: var(--brand-primary, #00a884);
   border: 1px solid transparent;
   border-radius: var(--shape-radius, 8px);
   transition: opacity 0.2s ease;
 }
 
-.core-subscribe .core-subscribe__button:hover:not(:disabled) { opacity: 0.88; }
-.core-subscribe .core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
+form button.core-subscribe__button:hover:not(:disabled) { opacity: 0.88; }
+form button.core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
 
 .core-subscribe__error {
   margin: 0.6rem 0 0;
@@ -580,7 +580,7 @@
 }
 
 .core-consent-banner .core-consent-banner__accept {
-  background: var(--brand-button-bg, var(--brand-primary, #00a884));
+  background: var(--brand-primary, #00a884);
   color: var(--brand-on-primary, #fff);
 }
 
