@@ -36,6 +36,8 @@ export function RelatedPosts({
             <div className="core-related__media">
               <Image
                 src={post.cover_image_url || undefined}
+                variants={post.cover_image_variants}
+                intent="card2x"
                 alt={post.title}
                 className="core-related__img"
                 placeholder={{ label: post.title, width: 600, height: 400, variant: 'card' }}

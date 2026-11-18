@@ -26,6 +26,7 @@ policy. Versions before this file started are in the git tags.
 - The follow card and the post byline pass the store's `logo_variants`
   (the follow card logo is now the kit `<Image>`), so they render small copies too.
 - `Category` (the `useCategories` item) types `image_variants`, which `/collections` already sends.
+- `RelatedPosts` passes the post's `cover_image_variants` with the `card2x` intent (its grid is one column on a phone), so each card renders a small copy and, like every card image, loads lazily.
 
 ## 0.5.0 - 2026-11-16
 
