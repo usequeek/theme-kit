@@ -64,11 +64,15 @@ const INTENT_CEILING: Record<ImageIntent, SrcSetTier | null> = {
  *  section full-bleed `100vw`: phone 390css DPR2→780→card2x(800) · DPR3→1170→view ·
  *          1440css desktop DPR1→1440→view(1600). Never the 2 MB original on a
  *          phone or an ordinary desktop.
- *          `section` is the ONE intent whose srcset may end in `original` (see
- *          resolveImageSources): a section photo must never look softer than the
- *          raw upload it replaces. Only a screen that needs more pixels than
- *          `view` holds (a full-width banner on a Retina or 4K desktop) picks it,
- *          which is exactly what that screen is served today.
+ *          `section` is the ONE intent whose srcset may end in `original`, and
+ *          its srcset is `view` + `original` ONLY (see resolveImageSources): a
+ *          section photo must never look softer than the raw upload it replaces.
+ *          A cropped (`object-fit: cover`) tall hero on a phone is drawn WIDER
+ *          than 100vw (a 16:9 photo in a 523px-tall box is drawn ~930px wide), so
+ *          `sizes="100vw"` would under-measure it and the small tiers would be
+ *          too soft: a phone gets `view` (WebP, at most 1600px, still about five
+ *          times lighter than a 2 MB PNG) and only a screen wider than `view`
+ *          picks the original, which is exactly what that screen is served today.
  *
  * `modal` is written as a media query (`(max-width: 456px) 92vw, 420px`,
  * arithmetically identical to `min(420px, 92vw)`: 420/0.92 = 456.5) rather
@@ -117,7 +121,8 @@ function usableTier(tier: ImageVariantTier | null | undefined): tier is ImageVar
  *    `src` prop keeps winning and behavior is byte-identical to today.
  *  - never emits `thumb` in a srcset.
  *  - `original` enters a srcset only for the `section` intent, and only as the
- *    top candidate, when its real width is strictly wider than the widest tier.
+ *    top candidate, when its real width is strictly wider than `view`; the
+ *    `section` srcset holds nothing but `view` and `original`.
  *  - never invents a url; null tiers are simply skipped.
  *  - never exceeds the intent's ceiling (downgrade-only).
  *  - dedupes candidates that collapsed to the same width on a small original,
@@ -149,7 +154,8 @@ export function resolveImageSources(
 
   const limit = SRCSET_TIERS.indexOf(ceiling);
   const byWidth = new Map<number, string>();
-  for (let i = 0; i <= limit; i += 1) {
+  // `section` starts at `view`: card and card2x are too small for a box that can be drawn wider than the viewport.
+  for (let i = intent === 'section' ? limit : 0; i <= limit; i += 1) {
     const tier = variants[SRCSET_TIERS[i]];
     // A tier with no usable width can't carry a `w` descriptor, and mixing
     // `w` and bare descriptors in one srcset makes the whole attribute invalid.

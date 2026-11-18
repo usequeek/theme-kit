@@ -6,7 +6,7 @@ import type { Block, BlockDataMap, MetaobjectsResolved } from './types/block';
 import type { Product } from './types/product';
 import { useTheme } from './theme-context';
 import { useStorefront } from './provider';
-import { mediaIndexTierUrl, useMediaIndex } from './media-index';
+import { mediaIndexBackgroundUrl, useMediaIndex } from './media-index';
 import { expandDesignTokensPartial } from './utils/brand';
 import {
   CoreButtonBlock,
@@ -164,9 +164,10 @@ export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
             ...(hasTokenVars ? tokenVars : {}),
             ...(bgImage
               ? {
-                  // Full-bleed, so the `view` copy (1600px) from the page's media
-                  // index, never the original upload; the raw url when none.
-                  backgroundImage: `url(${mediaIndexTierUrl(mediaIndex, bgImage)})`,
+                  // Full-bleed, so the page's `view` copy only when it holds as many
+                  // pixels as the original (a background has no srcset to step up
+                  // from); the raw url otherwise.
+                  backgroundImage: `url(${mediaIndexBackgroundUrl(mediaIndex, bgImage)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   color: '#fff',

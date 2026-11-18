@@ -7,22 +7,23 @@ policy. Versions before this file started are in the git tags.
 
 ### Added
 
-- `MediaIndexProvider`, `useMediaIndex()`, `lookupMediaIndex()` and `mediaIndexTierUrl()` (`media-index`): hand a Page or Post's
+- `MediaIndexProvider`, `useMediaIndex()`, `lookupMediaIndex()` and `mediaIndexBackgroundUrl()` (`media-index`): hand a Page or Post's
   `media_index` (the API's url to image-tiers sidecar) to everything below. Nested providers merge, the inner one winning, so a
   render that combines several pages mounts one each. Without a provider nothing changes.
-- Image intent `section` for a merchant's section photo that can run full-bleed: `sizes="100vw"`, `src` from `view`, a `card`/`card2x`/`view`
-  ladder, and `original` as the top candidate only when it is wider than `view` (so a Retina or 4K full-width banner still gets every
-  pixel it gets today, and a phone gets a small copy).
+- Image intent `section` for a merchant's section photo that can run full-bleed: `sizes="100vw"`, `src` from `view`, and a srcset of `view` plus
+  `original`, the original only when it is wider than `view`. A cropped tall hero is drawn wider than the viewport, so the small tiers
+  would be too soft for it: a phone gets `view` (WebP, at most 1600 px, about five times lighter than a 2 MB PNG), and only a screen
+  that needs more pixels than `view` holds picks the original, which is exactly what it is served today.
 - `types/media` (`ImageVariants`, `MediaIndex`, the tier types) in the `index.ts` barrel: themes name these types.
 
 ### Changed
 
 - **`<Image>` finds its own small copies.** When a call site passes no `variants` (undefined; `variants={null}` still means "none") and
-  its string `src` is a key of the page's media index, the image uses that entry, with the `section` intent when the call site named
-  none. An explicit `variants` or `intent` always wins. Gallery and banner slides and the image block in a theme
+  its string `src` is a key of the page's media index, the image uses that entry with the `section` intent, whatever intent the call site named (those
+  were picked when the image rendered the original). An explicit `variants` keeps its own `intent`. Gallery and banner slides and the image block in a theme
   stop shipping the original upload (a 2 MB PNG) to a phone. A store whose page has no index renders byte-identical to 0.5.0.
-- **Section background images.** A section's `bg_image` (a CSS background) uses the `view` copy from the index when there is one,
-  the raw url otherwise.
+- **Section background images.** A section's `bg_image` (a CSS background) uses the index's `view` copy only when it holds as many
+  pixels as the original (`view.w` at least `original.w`), the raw url otherwise: a CSS background has no srcset to step up from.
 - The follow card and the post byline pass the store's `logo_variants`
   (the follow card logo is now the kit `<Image>`), so they render small copies too.
 - `Category` (the `useCategories` item) types `image_variants`, which `/collections` already sends.

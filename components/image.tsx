@@ -53,8 +53,10 @@ type ImageProps = ImgHTMLAttributes<HTMLImageElement> & {
    * `sizes` is emitted. Only meaningful alongside `variants`. Defaults to 'raw'
    * ("best available single url, no responsive selection") so passing `variants`
    * without an `intent` can never accidentally downgrade a hero. When the
-   * variants come from the page's media index instead (see `variants`), it
-   * defaults to 'section'.
+   * variants come from the page's media index instead (see `variants`), the
+   * intent is ALWAYS 'section' and this prop is ignored: call sites picked
+   * theirs when the image rendered the original and the intent did nothing,
+   * so honouring it would load a smaller copy than the box needs.
    */
   intent?: ImageIntent;
 };
@@ -83,12 +85,13 @@ export function Image({ fallback, placeholder, variants: variantsProp, intent: i
   const storefront = useContext(StorefrontContext);
 
   // A call site that passes no `variants` (undefined; an explicit null means
-  // "none") gets the page's media index entry for its src, and, if it also named
-  // no intent, the full-bleed-safe 'section' intent. Explicit props always win.
+  // "none") gets the page's media index entry for its src and the full-bleed-safe
+  // 'section' intent, whatever intent the call site named (it was chosen when the
+  // image rendered the original). An explicit `variants` keeps its own `intent`.
   const mediaIndex = useMediaIndex();
   const indexed = variantsProp === undefined ? lookupMediaIndex(mediaIndex, props.src) : null;
   const variants = indexed ?? variantsProp;
-  const intent = intentProp ?? (indexed ? 'section' : 'raw');
+  const intent = indexed ? 'section' : (intentProp ?? 'raw');
 
   const resolved = resolveImageSources(variants, intent);
 

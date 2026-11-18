@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import type { ImageVariantTierName, ImageVariants, MediaIndex } from './types/media';
+import type { ImageVariants, MediaIndex } from './types/media';
 
 const MediaIndexContext = createContext<MediaIndex | null>(null);
 
@@ -56,14 +56,21 @@ export function lookupMediaIndex(index: MediaIndex | null | undefined, url: unkn
 }
 
 /**
- * The url of one tier of a raw url, for a CSS `background-image` (which has no
- * `srcset`). Falls back to the raw url when the index has no usable copy.
+ * The url for a CSS `background-image`, which has no `srcset` to step up from:
+ * the `view` copy only when it holds as many pixels as the original (`view.w` is
+ * at least `original.w`, so the same picture in WebP), else the raw url. A
+ * background is drawn full-bleed, so a copy with fewer pixels would be softer than
+ * what it renders today.
  */
-export function mediaIndexTierUrl(
-  index: MediaIndex | null | undefined,
-  url: string,
-  tier: ImageVariantTierName = 'view',
-): string {
-  const tierUrl = lookupMediaIndex(index, url)?.[tier]?.url;
-  return typeof tierUrl === 'string' && tierUrl.trim() !== '' ? tierUrl : url;
+export function mediaIndexBackgroundUrl(index: MediaIndex | null | undefined, url: string): string {
+  const variants = lookupMediaIndex(index, url);
+  const view = variants?.view;
+  const original = variants?.original;
+  if (
+    view && typeof view.url === 'string' && view.url.trim() !== '' &&
+    typeof view.w === 'number' && typeof original?.w === 'number' && view.w >= original.w
+  ) {
+    return view.url;
+  }
+  return url;
 }
