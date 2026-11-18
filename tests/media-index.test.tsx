@@ -164,6 +164,24 @@ describe('Image with a media index', () => {
     expect(inIndex(<Image src={RAW} variants={own} alt="" />)).toContain('src="https://media.example.com/own.png"');
   });
 
+  it('lets a call site\'s own sizes win whenever a srcset is emitted (a cropped tall hero is drawn wider than 100vw)', () => {
+    const SIZES = '(max-aspect-ratio: 1/1) 180vh, 100vw';
+    const withSizes = inIndex(<Image src={WIDE} sizes={SIZES} alt="" />);
+    expect(withSizes).toContain(`sizes="${SIZES}"`);
+    expect(withSizes).toContain('wide-view.webp 1600w, https://media.example.com/stores/1/wide.png 4000w');
+    expect(withSizes).not.toContain('sizes="100vw"');
+
+    // explicit variants: the call site's sizes still wins over the intent's
+    const own = tiers('https://media.example.com/own');
+    expect(inIndex(<Image src={RAW} variants={own} intent="card" sizes="40vw" alt="" />)).toContain('sizes="40vw"');
+    expect(inIndex(<Image src={RAW} variants={own} intent="card" alt="" />)).toContain('sizes="(max-width: 768px) 50vw');
+
+    // no srcset (original no wider than view): sizes means nothing and is not emitted
+    expect(inIndex(<Image src={RAW} sizes={SIZES} alt="" />)).not.toContain('sizes=');
+    // no variants at all: a plain image keeps no sizes either (as before)
+    expect(html(<Image src={OTHER} sizes={SIZES} alt="" />)).not.toContain('sizes=');
+  });
+
   it('merges nested providers, the inner one winning', () => {
     const inner: MediaIndex = { [OTHER]: tiers('https://media.example.com/stores/1/other'), [RAW]: tiers('https://media.example.com/stores/1/inner') };
     const out = html(

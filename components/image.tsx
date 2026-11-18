@@ -173,7 +173,9 @@ export function Image({ fallback, placeholder, variants: variantsProp, intent: i
       loading={loading}
       src={effectiveSrc}
       srcSet={effectiveSrcSet}
-      sizes={effectiveSizes}
+      // A call site's own `sizes` wins whenever a srcset is emitted: only it knows a box that is cropped
+      // (`object-fit: cover`) and drawn wider than the viewport. Without a srcset `sizes` means nothing.
+      sizes={effectiveSrcSet ? (props.sizes ?? effectiveSizes) : undefined}
       onError={(e) => {
         // 2-step chain: preferred tier → variants.original → placeholder.
         if (stage === 'primary') {
