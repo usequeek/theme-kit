@@ -3,6 +3,13 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.5 - 2026-11-18
+
+### Changed
+
+- `utils/image-srcset` (`resolveImageSources`, `ImageIntent`, `ResolvedImageSources`, `logoSrc`) is declared public in the
+  `index.ts` barrel: themes call `logoSrc()` for the store logo (0.5.3) and must build only against declared modules.
+
 ## 0.5.4 - 2026-11-18
 
 ### Added

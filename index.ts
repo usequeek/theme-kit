@@ -34,6 +34,8 @@ export * from './types/order';
 export * from './types/page';
 export * from './types/menu';
 export * from './types/media';
+// Which image tier a surface renders (`resolveImageSources`) and a store logo's url (`logoSrc`): pure, server-safe.
+export * from './utils/image-srcset';
 export * from './utils/format';
 export * from './utils/markdown';
 export * from './utils/menu-link';
