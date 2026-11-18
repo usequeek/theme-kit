@@ -221,7 +221,7 @@ export interface ProductsBlockProps extends ProductsBlockData {
 }
 
 export interface CategoriesBlockProps extends CategoriesBlockData {
-  categories?: Array<{ id: string; slug: string; name: string; image?: string | null }>;
+  categories?: Array<{ id: string; slug: string; name: string; image?: string | null; image_variants?: ImageVariants | null }>;
 }
 
 export interface BlogBlockProps extends BlogBlockData {

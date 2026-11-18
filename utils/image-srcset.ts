@@ -11,8 +11,13 @@ import type { ImageVariantTier, ImageVariantTierName, ImageVariants } from '../t
  * (~320px CSS) and the featured/poster card (~620px CSS). Both would
  * otherwise get the identical 480px `card` url, visibly soft on the poster
  * ones.
+ *
+ * `section` is the intent of a merchant-uploaded section photo (a gallery or
+ * banner slide, an image block) that may run full-bleed. The `<Image>` applies
+ * it by itself when it finds its `src` in the page's media index and the call
+ * site named no intent.
  */
-export type ImageIntent = 'avatar' | 'card' | 'card2x' | 'modal' | 'hero' | 'raw';
+export type ImageIntent = 'avatar' | 'card' | 'card2x' | 'modal' | 'hero' | 'section' | 'raw';
 
 export interface ResolvedImageSources {
   src: string | undefined;
@@ -25,7 +30,8 @@ const NONE: ResolvedImageSources = { src: undefined, srcSet: undefined, sizes: u
 /** Ascending by cap. `thumb` is excluded because it has no width; `original` is
  *  excluded on purpose — it is uncapped and unoptimized (raw jpg/png, possibly
  *  6000px), so letting a browser pick it off a srcset is the exact regression
- *  the tier map exists to prevent. `original` survives only as a last-resort
+ *  the tier map exists to prevent. The single exception is the `section` intent,
+ *  which appends it as the top candidate only when it is wider than `view`. `original` survives only as a last-resort
  *  `src` for the `raw` intent and as the onError step-2 retry. */
 const SRCSET_TIERS = ['card', 'card2x', 'view'] as const;
 type SrcSetTier = (typeof SRCSET_TIERS)[number];
@@ -42,6 +48,7 @@ const INTENT_CEILING: Record<ImageIntent, SrcSetTier | null> = {
   card2x: 'view',
   modal: 'card2x',
   hero: 'view',
+  section: 'view',
   raw: null, // "best single url, no responsive selection"
 };
 
@@ -54,6 +61,14 @@ const INTENT_CEILING: Record<ImageIntent, SrcSetTier | null> = {
  *  card2x  @768px→768css: DPR2→1536→view(1600) · desktop 620css: DPR2→1240→view
  *  modal   420css: DPR1→420→card(480) · DPR2→840→card2x(800, the ceiling)
  *  hero    desktop 700css: DPR1→700→view · DPR2→1400→view(1600)
+ *  section full-bleed `100vw`: phone 390css DPR2→780→card2x(800) · DPR3→1170→view ·
+ *          1440css desktop DPR1→1440→view(1600). Never the 2 MB original on a
+ *          phone or an ordinary desktop.
+ *          `section` is the ONE intent whose srcset may end in `original` (see
+ *          resolveImageSources): a section photo must never look softer than the
+ *          raw upload it replaces. Only a screen that needs more pixels than
+ *          `view` holds (a full-width banner on a Retina or 4K desktop) picks it,
+ *          which is exactly what that screen is served today.
  *
  * `modal` is written as a media query (`(max-width: 456px) 92vw, 420px`,
  * arithmetically identical to `min(420px, 92vw)`: 420/0.92 = 456.5) rather
@@ -67,6 +82,7 @@ const INTENT_SIZES: Record<ImageIntent, string | undefined> = {
   card2x: '(max-width: 768px) 100vw, (max-width: 1100px) 50vw, 620px',
   modal: '(max-width: 456px) 92vw, 420px',
   hero: '(max-width: 900px) calc(100vw - 32px), 700px',
+  section: '100vw',
   raw: undefined,
 };
 
@@ -85,6 +101,7 @@ const INTENT_SRC_ORDER: Record<ImageIntent, ImageVariantTierName[]> = {
   // very fallback the caller carefully picked. Returning undefined instead
   // lets the Image component's `resolved.src ?? props.src` defer to it.
   hero: ['view', 'card2x'],
+  section: ['view', 'card2x', 'card'],
   raw: ['original', 'view', 'card2x', 'card', 'thumb'],
 };
 
@@ -99,6 +116,8 @@ function usableTier(tier: ImageVariantTier | null | undefined): tier is ImageVar
  *  - null/undefined `variants` → every field undefined, so the caller's own
  *    `src` prop keeps winning and behavior is byte-identical to today.
  *  - never emits `thumb` in a srcset.
+ *  - `original` enters a srcset only for the `section` intent, and only as the
+ *    top candidate, when its real width is strictly wider than the widest tier.
  *  - never invents a url; null tiers are simply skipped.
  *  - never exceeds the intent's ceiling (downgrade-only).
  *  - dedupes candidates that collapsed to the same width on a small original,
@@ -141,6 +160,18 @@ export function resolveImageSources(
     // width the lower-cap encode (the smaller file) is the one we keep.
     if (!byWidth.has(tier.w)) {
       byWidth.set(tier.w, tier.url);
+    }
+  }
+
+  if (intent === 'section') {
+    const original = variants.original;
+    if (
+      usableTier(original) &&
+      typeof original.w === 'number' &&
+      Number.isFinite(original.w) &&
+      original.w > Math.max(0, ...byWidth.keys())
+    ) {
+      byWidth.set(original.w, original.url);
     }
   }
 

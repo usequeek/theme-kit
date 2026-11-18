@@ -18,6 +18,8 @@ export function PostMeta({ post, className }: { post: Post; className?: string }
 
   const authorName = post.author?.name ?? vendor.name ?? null;
   const authorAvatar = post.author?.avatar_url ?? vendor.logo ?? null;
+  // The vendor's tier map belongs to the vendor's logo only, never to an author's own avatar.
+  const avatarVariants = post.author?.avatar_url ? null : vendor.logo_variants;
   const published = post.published_at
     ? formatShopperDate(post.published_at, display.locale, { year: 'numeric', month: 'long', day: 'numeric' }, display.timeZone)
     : '';
@@ -29,6 +31,8 @@ export function PostMeta({ post, className }: { post: Post; className?: string }
         <span className="core-post-meta__author">
           <Image
             src={authorAvatar || undefined}
+            variants={avatarVariants}
+            intent="avatar"
             alt={authorName}
             className="core-post-meta__avatar"
             placeholder={{ label: authorName, width: 64, height: 64, variant: 'square' }}

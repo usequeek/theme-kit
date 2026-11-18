@@ -3,6 +3,30 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.1 - 2026-11-18
+
+### Added
+
+- `MediaIndexProvider`, `useMediaIndex()`, `lookupMediaIndex()` and `mediaIndexTierUrl()` (`media-index`): hand a Page or Post's
+  `media_index` (the API's url to image-tiers sidecar) to everything below. Nested providers merge, the inner one winning, so a
+  render that combines several pages mounts one each. Without a provider nothing changes.
+- Image intent `section` for a merchant's section photo that can run full-bleed: `sizes="100vw"`, `src` from `view`, a `card`/`card2x`/`view`
+  ladder, and `original` as the top candidate only when it is wider than `view` (so a Retina or 4K full-width banner still gets every
+  pixel it gets today, and a phone gets a small copy).
+- `types/media` (`ImageVariants`, `MediaIndex`, the tier types) in the `index.ts` barrel: themes name these types.
+
+### Changed
+
+- **`<Image>` finds its own small copies.** When a call site passes no `variants` (undefined; `variants={null}` still means "none") and
+  its string `src` is a key of the page's media index, the image uses that entry, with the `section` intent when the call site named
+  none. An explicit `variants` or `intent` always wins. Gallery and banner slides and the image block in a theme
+  stop shipping the original upload (a 2 MB PNG) to a phone. A store whose page has no index renders byte-identical to 0.5.0.
+- **Section background images.** A section's `bg_image` (a CSS background) uses the `view` copy from the index when there is one,
+  the raw url otherwise.
+- The follow card and the post byline pass the store's `logo_variants`
+  (the follow card logo is now the kit `<Image>`), so they render small copies too.
+- `Category` (the `useCategories` item) types `image_variants`, which `/collections` already sends.
+
 ## 0.5.0 - 2026-11-16
 
 ### Added

@@ -33,6 +33,7 @@ export * from './types/app-block';
 export * from './types/order';
 export * from './types/page';
 export * from './types/menu';
+export * from './types/media';
 export * from './utils/format';
 export * from './utils/markdown';
 export * from './utils/menu-link';

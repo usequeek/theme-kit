@@ -6,6 +6,7 @@ import type { Block, BlockDataMap, MetaobjectsResolved } from './types/block';
 import type { Product } from './types/product';
 import { useTheme } from './theme-context';
 import { useStorefront } from './provider';
+import { mediaIndexTierUrl, useMediaIndex } from './media-index';
 import { expandDesignTokensPartial } from './utils/brand';
 import {
   CoreButtonBlock,
@@ -96,6 +97,7 @@ export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
   const { config } = useStorefront();
   const defaultVariants = config.default_variants ?? {};
   const editMode = useEditMode();
+  const mediaIndex = useMediaIndex();
 
   const renderBlock = (block: Block, index: number): JSX.Element | null => {
     const variant = block.variant ?? defaultVariants[block.type] ?? undefined;
@@ -162,7 +164,9 @@ export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
             ...(hasTokenVars ? tokenVars : {}),
             ...(bgImage
               ? {
-                  backgroundImage: `url(${bgImage})`,
+                  // Full-bleed, so the `view` copy (1600px) from the page's media
+                  // index, never the original upload; the raw url when none.
+                  backgroundImage: `url(${mediaIndexTierUrl(mediaIndex, bgImage)})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   color: '#fff',

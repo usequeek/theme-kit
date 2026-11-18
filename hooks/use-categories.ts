@@ -5,12 +5,15 @@ import { useStorefront, useStorefrontLocale } from '../provider';
 import { createBrowserClient } from '../sdk/client';
 import { withLocaleQuery } from '../utils/locale';
 import { toError } from '../utils/to-error';
+import type { ImageVariants } from '../types/media';
 
 export interface Category {
   id: string;
   slug: string;
   name: string;
   image?: string | null;
+  /** The API's tier map for `image` (`/collections` sends it); null when the image is not Media-backed. */
+  image_variants?: ImageVariants | null;
   products_count?: number;
   children?: Category[];
 }

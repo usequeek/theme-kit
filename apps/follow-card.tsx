@@ -7,6 +7,7 @@ import { useUserStore } from '../stores/user-store';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { getQueekClient } from '../sdk/queek-client';
 import { formatCount } from '../utils/format';
+import { Image } from '../components/image';
 
 interface FollowData {
   following: boolean;
@@ -228,8 +229,10 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
       {previewMessage && <p className="core-follow-card__notice" role="status">{t('preview.action')}</p>}
       <div className="core-follow-card__body">
         {vendor.logo && (
-          <img
+          <Image
             src={vendor.logo}
+            variants={vendor.logo_variants}
+            intent="avatar"
             alt={vendor.name ?? ''}
             className="core-follow-card__logo"
           />

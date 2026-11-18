@@ -1,6 +1,7 @@
 'use client';
 
 import { useContext, useState, type ImgHTMLAttributes } from 'react';
+import { lookupMediaIndex, useMediaIndex } from '../media-index';
 import { StorefrontContext } from '../provider';
 import type { ImageVariants } from '../types/media';
 import { resolveBrandPalette } from '../utils/brand-palette';
@@ -41,13 +42,19 @@ type ImageProps = ImgHTMLAttributes<HTMLImageElement> & {
    * Purely additive: when absent — and whenever the API legitimately sends null
    * (off-host image, SVG, legacy upload) — this component renders the plain
    * image URL.
+   *
+   * Omit it (undefined) and a string `src` that is a key of the page's media
+   * index (`MediaIndexProvider`) uses that entry. Pass `null` to say "no
+   * variants" and skip the lookup.
    */
   variants?: ImageVariants | null;
   /**
    * What surface this image renders on. Drives which tier is preferred and what
    * `sizes` is emitted. Only meaningful alongside `variants`. Defaults to 'raw'
    * ("best available single url, no responsive selection") so passing `variants`
-   * without an `intent` can never accidentally downgrade a hero.
+   * without an `intent` can never accidentally downgrade a hero. When the
+   * variants come from the page's media index instead (see `variants`), it
+   * defaults to 'section'.
    */
   intent?: ImageIntent;
 };
@@ -69,11 +76,19 @@ type LoadStage = 'primary' | 'original' | 'failed';
  * @example
  * <Image src={product.media.image ?? ''} variants={product.media.image_variants} intent="card" alt={product.title} />
  */
-export function Image({ fallback, placeholder, variants, intent = 'raw', onError, ...props }: ImageProps) {
+export function Image({ fallback, placeholder, variants: variantsProp, intent: intentProp, onError, ...props }: ImageProps) {
   const [stage, setStage] = useState<LoadStage>('primary');
   // Read context directly — returns null outside a StorefrontProvider
   // (test environments, isolated captures) without throwing.
   const storefront = useContext(StorefrontContext);
+
+  // A call site that passes no `variants` (undefined; an explicit null means
+  // "none") gets the page's media index entry for its src, and, if it also named
+  // no intent, the full-bleed-safe 'section' intent. Explicit props always win.
+  const mediaIndex = useMediaIndex();
+  const indexed = variantsProp === undefined ? lookupMediaIndex(mediaIndex, props.src) : null;
+  const variants = indexed ?? variantsProp;
+  const intent = intentProp ?? (indexed ? 'section' : 'raw');
 
   const resolved = resolveImageSources(variants, intent);
 
