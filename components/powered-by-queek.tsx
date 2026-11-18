@@ -42,9 +42,11 @@ export interface PoweredByQueekProps {
  * keeps its child count, and the preferences link sits directly before the
  * attribution. The link renders only when the store uses analytics or an ad
  * pixel and the shopper has chosen; otherwise the group holds just the
- * attribution. A footer needs no extra markup, and a theme may restyle
- * `core-consent-link` in its own `theme.css` (the kit gives it a neutral
- * look).
+ * attribution. A footer needs no extra markup. The link reads as one of the
+ * footer's small links (inherited size and colour, no underline at rest, a
+ * middle dot before the credit), so a theme that sizes or colours
+ * `.core-powered-by` must give `.core-consent-link` the same values in one
+ * selector list.
  */
 export function PoweredByQueek({ className, hidden = false }: PoweredByQueekProps): JSX.Element | null {
   const store = useContext(StorefrontContext);

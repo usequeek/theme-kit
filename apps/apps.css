@@ -587,25 +587,48 @@ form button.core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
 .core-consent-banner .core-consent-banner__decline:hover,
 .core-consent-banner .core-consent-banner__accept:hover { opacity: 0.85; }
 
-/* The footer attribution slot: the cookie preferences link, then "Powered by Queek". No positioning, so a footer row keeps its layout. */
+/* The footer attribution slot: the cookie preferences link, a middle dot, then "Powered by Queek". No positioning, so a footer row keeps its layout. */
 .core-powered-by-group {
   display: inline-flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.75em;
+  gap: 0.6em;
 }
 
-/* Inherits size and colour from the footer row around it, not from the credit link: a theme whose credit has its own rule for them restyles this in its own theme.css. */
+/* Reads as one of the footer's small links (Dawn's policy links): same size and colour as the row around it, no underline at rest, underline on hover.
+   A theme whose `.core-powered-by` has its own size or colour must give `.core-consent-link` the same values in one selector list. */
 .core-consent-link {
+  appearance: none;
   background: none;
   border: 0;
   padding: 0;
   margin: 0;
   font: inherit;
   color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  line-height: inherit;
   text-align: start;
-  text-decoration: underline;
+  text-decoration: none;
   cursor: pointer;
+}
+
+.core-consent-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.core-consent-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Dawn's middle dot between the link and the credit. The empty alt text keeps it silent for screen readers; with the credit hidden the bare link has no group, so no dot. */
+.core-powered-by-group > .core-consent-link::after {
+  content: "\00B7" / "";
+  display: inline-block;
+  margin-inline-start: 0.6em;
+  text-decoration: none;
 }
 
 @media (max-width: 600px) {

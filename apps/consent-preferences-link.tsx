@@ -18,7 +18,9 @@ function ConsentPreferencesButton({ onReset }: { onReset: () => void }): JSX.Ele
 /**
  * The shopper's way back into their cookie choice, rendered by
  * `PoweredByQueek` in every theme footer (withdrawing consent must be as easy
- * as giving it). A plain inline button, never a floating one.
+ * as giving it). A plain inline button, never a floating one, that reads as one
+ * of the footer's small links: a theme that sizes or colours `.core-powered-by`
+ * must give `.core-consent-link` the same values.
  *
  * Shown only when the store uses analytics or an ad pixel, the shopper has
  * answered every question it asks, and the browser is not sending Global

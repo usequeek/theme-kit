@@ -3,6 +3,15 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.8 - 2026-11-18
+
+### Fixed
+
+- The footer's "Cookie preferences" link reads as one of the footer's small links, not a raw underlined button. `.core-consent-link` inherits
+  size, weight, colour, letter-spacing and line-height, has no underline at rest, underlines on hover, and shows a `focus-visible` outline.
+  A middle dot (silent for screen readers) separates it from "Powered by Queek". With the credit hidden the bare link has no dot.
+  A theme that sizes or colours `.core-powered-by` must give `.core-consent-link` the same values in one selector list.
+
 ## 0.5.7 - 2026-11-18
 
 ### Added
