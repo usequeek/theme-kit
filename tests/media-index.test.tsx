@@ -177,8 +177,8 @@ describe('Image with a media index', () => {
         </MediaIndexProvider>
       </MediaIndexProvider>,
     );
-    expect(out.match(/inner-view\.webp"/g)).toHaveLength(1);
-    expect(out).toContain('other-view.webp');
-    expect(out).toContain('stores/1/slide-view.webp"');
+    expect(out.match(/<img[^>]*src="[^"]*inner-view\.webp"/g)).toHaveLength(1);
+    expect(out).toMatch(/<img[^>]*src="[^"]*other-view\.webp"/);
+    expect(out).toMatch(/<img[^>]*src="[^"]*stores\/1\/slide-view\.webp"/);
   });
 });
