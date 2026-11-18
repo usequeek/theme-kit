@@ -1,7 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
-import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { Menu } from './types/menu';
 import type { ReviewItem } from './types/block';
 import type { Post } from './types/page';
@@ -225,6 +225,26 @@ export function useStorefront(): StorefrontContextValue {
 /** Whether this storefront is a theme demo with no backing store. */
 export function useIsThemePreview(): boolean {
   return useStorefront().previewData !== undefined;
+}
+
+/**
+ * The product count a theme may print, or `null` to print nothing. Counts ("6 products" under a
+ * collection title, a number on a category tile, a facet tally) stay hidden unless the store turns
+ * them on (`config.display.show_product_counts`, default off). Every theme prints a product count
+ * only through this, and renders no element at all for `null`, so no empty span or gap is left.
+ *
+ * @example
+ * const productCount = useProductCount();
+ * const shown = productCount(collection.products_count);
+ * return shown !== null ? <p>{t('shop.count', { count: shown })}</p> : null;
+ */
+export function useProductCount(): (count: number | null | undefined) => number | null {
+  const shows = useStorefront().config.display?.show_product_counts === true;
+
+  return useCallback(
+    (count: number | null | undefined): number | null => (shows && typeof count === 'number' && Number.isFinite(count) ? count : null),
+    [shows],
+  );
 }
 
 /**

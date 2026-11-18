@@ -3,6 +3,15 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.2 - 2026-11-18
+
+### Added
+
+- `useProductCount()` (`provider`): returns `(count) => number | null`, the product count a theme may print ("6 products",
+  a category tile's number, a facet tally), or `null` to print nothing. Counts are hidden unless the store turns them on.
+  The setting is `config.display.show_product_counts`, now in the config type, off by default. A theme prints every product
+  count through this hook and renders no element for `null`, so no empty span or gap is left.
+
 ## 0.5.1 - 2026-11-18
 
 ### Added

@@ -138,6 +138,7 @@ they keep the data already on screen. They return `isLoading`, except
 | `useHref()` | `hooks/use-href` | Builds a store-relative link |
 | `useLocales()` | `hooks/use-locales` | The store's languages and the active one |
 | `useStorefront()` / `useStorefrontLocale()` / `useThemeStrings()` | `provider` | The store, the request locale, the bound `t` |
+| `useProductCount()` | `provider` | `(count) => number \| null`: the product count to print, `null` unless the store turned counts on (`config.display.show_product_counts`, off by default). Print every product count through it and render nothing for `null` |
 
 ### Cart pricing
 

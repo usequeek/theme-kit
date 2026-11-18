@@ -187,6 +187,14 @@ export interface StorefrontConfig {
     heading?: string;
     body?: string;
   };
+  /**
+   * Store-wide display choices every theme honours. `show_product_counts` (default false): a theme
+   * prints a product count ("6 products") only when the store turns it on; read it through
+   * `useProductCount()`, never from here.
+   */
+  display?: {
+    show_product_counts?: boolean;
+  };
   /** Resolved semantic design tokens. Absent for stores that have none. */
   tokens?: DesignTokens | null;
   menus?: {
