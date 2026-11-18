@@ -10,9 +10,10 @@ export interface PoweredByQueekProps {
   /** Extra class so a footer can position the link — styling stays theme-owned. */
   className?: string;
   /**
-   * Lets a caller hide the attribution link from a prop. Defaults to false;
-   * themes always render it visible — there is no merchant-facing toggle for
-   * it. It never hides the cookie preferences link, which is not attribution.
+   * Lets a caller hide the attribution link from a prop. Defaults to false. The
+   * store's own switch (`config.display.show_powered_by`, on by default) hides it
+   * the same way, so a theme passes nothing for it. Neither hides the cookie
+   * preferences link, which is not attribution.
    */
   hidden?: boolean;
 }
@@ -20,6 +21,10 @@ export interface PoweredByQueekProps {
 /**
  * The storefront attribution link, owned by the kit: themes import and place
  * it, and never re-implement it.
+ *
+ * A merchant may hide the credit (Display, "Show Powered by Queek"): it is on
+ * unless `config.display.show_powered_by` is `false`, so a store that never
+ * saved the setting, or a payload without it, shows the credit.
  *
  * Required on every footer variant of every theme (enforced by the
  * `theme/footer-shows-powered-by` rule of `npm run check`). The link
@@ -42,9 +47,10 @@ export interface PoweredByQueekProps {
  * look).
  */
 export function PoweredByQueek({ className, hidden = false }: PoweredByQueekProps): JSX.Element | null {
-  const vendor = useContext(StorefrontContext)?.vendor;
+  const store = useContext(StorefrontContext);
+  const vendor = store?.vendor;
 
-  if (hidden) return <ConsentPreferencesLink />;
+  if (hidden || store?.config?.display?.show_powered_by === false) return <ConsentPreferencesLink />;
 
   return (
     <span className="core-powered-by-group">

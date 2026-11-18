@@ -3,6 +3,16 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.4 - 2026-11-18
+
+### Added
+
+- **A store can hide "Powered by Queek".** `PoweredByQueek` renders nothing for the credit when
+  `config.display.show_powered_by` is `false` (a new key of `StorefrontConfig.display`, default true: a store that never
+  saved it, or a payload without it, shows the credit). The same hide the `hidden` prop already gave, so every footer of
+  every theme follows the setting with no change. The shopper's cookie preferences link stays: it is not attribution.
+  The `theme/footer-shows-powered-by` rule is unchanged, every footer still places the component.
+
 ## 0.5.3 - 2026-11-18
 
 ### Changed

@@ -192,10 +192,13 @@ export interface StorefrontConfig {
   /**
    * Store-wide display choices every theme honours. `show_product_counts` (default false): a theme
    * prints a product count ("6 products") only when the store turns it on; read it through
-   * `useProductCount()`, never from here.
+   * `useProductCount()`, never from here. `show_powered_by` (default true): the footer
+   * "Powered by Queek" credit; `PoweredByQueek` hides it when this is `false`, so a theme
+   * places the component and reads nothing from here.
    */
   display?: {
     show_product_counts?: boolean;
+    show_powered_by?: boolean;
   };
   /** Resolved semantic design tokens. Absent for stores that have none. */
   tokens?: DesignTokens | null;

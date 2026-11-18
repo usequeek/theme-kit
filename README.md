@@ -560,9 +560,11 @@ export default function Footer() {
   (`utm_source=powered_by&utm_medium=storefront&utm_campaign=<store slug>`,
   campaign omitted when the store has no slug); the component reads the slug
   from the storefront context, so themes pass nothing.
-- `hidden` (default false) takes the attribution link's visibility from a prop;
-  it never hides the cookie preferences button. There is no merchant-facing
-  toggle for it — always render it visible.
+- A merchant may hide the credit: the component hides itself when
+  `config.display.show_powered_by` is `false` (on by default, so a store that
+  never saved the setting shows it). A theme places `<PoweredByQueek />` and
+  reads nothing. `hidden` (default false) is the same switch from a prop. Neither
+  hides the cookie preferences button.
 
 ## Cookie consent
 
