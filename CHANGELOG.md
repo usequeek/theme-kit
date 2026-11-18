@@ -16,7 +16,7 @@ policy. Versions before this file started are in the git tags.
 - **The cart keeps the tier map of its line image.** A line's `image` is the product's thumbnail, which the API sets to the full image unless the
   merchant chose a separate thumbnail file. When the picked url is that image, `addProduct` stores `image_variants` beside it (a variant's own
   picture with its own map); a separate thumbnail file is small already and stores none. A line saved before this has no `image_variants` and
-  renders as before. The default cart page renders its thumbnail through them (`card` at its 84 px box).
+  renders as before. The default cart page renders its thumbnail through them (`card`, sized to the 84 px square, which crops a 16:9 photo to about 150 px wide).
 
 ## 0.5.6 - 2026-11-18
 

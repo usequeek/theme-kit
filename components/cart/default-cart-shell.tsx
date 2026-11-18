@@ -123,7 +123,7 @@ export function DefaultCartShell({
                 return (
                 <li key={`${item.shop_id}-${item.id}`} className="core-cart-page__item">
                   {item.image ? (
-                    <Image src={item.image} variants={item.image_variants} intent="card" sizes="84px" alt={item.title} className="core-cart-page__item-img" />
+                    <Image src={item.image} variants={item.image_variants} intent="card" sizes="150px" alt={item.title} className="core-cart-page__item-img" />
                   ) : (
                     <div className="core-cart-page__item-img core-cart-page__item-img--placeholder" />
                   )}
