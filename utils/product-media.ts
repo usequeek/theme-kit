@@ -1,5 +1,5 @@
 import type { ImageVariants } from '../types/media';
-import type { Product, ProductImage } from '../types/product';
+import type { Product, ProductImage, ProductMedia } from '../types/product';
 
 export interface MediaFrame {
   id: string;
@@ -35,6 +35,19 @@ export function getSlideshowImages(product: Product): ProductImage[] {
     (entry): entry is ProductImage =>
       !!entry && typeof entry.url === 'string' && entry.url !== '',
   );
+}
+
+/**
+ * The tier map to pass to `<Image variants>` for a product picture: `media.image_variants` only when `src` IS the main image.
+ * A card or thumb often renders `media.thumbnail ?? media.image`; the API sets the thumbnail to the main image unless the merchant chose
+ * a separate thumbnail file, and `<Image>` renders the variants' url ahead of `src`, so the main photo's copies would replace the
+ * merchant's own thumbnail. Null for any other src (the thumbnail file is small already), for no src and for no media.
+ */
+export function mainImageVariants(
+  src: string | null | undefined,
+  media: Pick<ProductMedia, 'image' | 'image_variants'> | null | undefined,
+): ImageVariants | null {
+  return src && media && media.image === src ? (media.image_variants ?? null) : null;
 }
 
 /**

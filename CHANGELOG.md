@@ -11,6 +11,10 @@ policy. Versions before this file started are in the git tags.
   (the API's `image_variants` contract; `banner_variants` is null for a banner that is not Media-backed). A theme passes them to `<Image>`
   with an intent sized to the box, so a cart thumbnail and a page banner render a small WebP copy, never the original upload.
 
+- `mainImageVariants(src, media)` (`utils/product-media`): the `media.image_variants` to pass to `<Image variants>` only when `src` is the main
+  image. A card that renders `thumbnail ?? image` must not pair the main photo's tier map with a merchant's own separate thumbnail file,
+  because `<Image>` renders the variants' url ahead of `src`.
+
 ### Changed
 
 - **The cart keeps the tier map of its line image.** A line's `image` is the product's thumbnail, which the API sets to the full image unless the
