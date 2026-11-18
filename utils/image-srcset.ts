@@ -192,3 +192,21 @@ export function resolveImageSources(
 
   return { src, srcSet, sizes: INTENT_SIZES[intent] };
 }
+
+/**
+ * The one url a store logo renders from. A logo reaches a theme as a plain string
+ * (`HeaderProps.logo`), so it has no srcset and the call site's box is unknown:
+ * the `view` copy (WebP q98, at most 1600 px) holds every pixel a logo box up to
+ * 800 CSS px on a 2x screen (533 px on 3x) can show, at a fraction of the upload
+ * (a 2048 px JPG of 139 KB is a 38 KB WebP). Never a smaller tier: a wide wordmark
+ * on a 3x phone would come out softer than the upload it replaces. The raw `url`
+ * when there is no `view` copy, no copies at all (an SVG, an off-host file) or
+ * copies of a different file.
+ */
+export function logoSrc(url: string | null | undefined, variants: ImageVariants | null | undefined): string | null {
+  if (!url) {
+    return null;
+  }
+  const view = variants && variants.original?.url === url ? variants.view : null;
+  return usableTier(view) ? view.url : url;
+}

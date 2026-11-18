@@ -160,6 +160,8 @@ export interface StorefrontConfig {
   header?: {
     variant?: string;
     logo_url?: string | null;
+    /** The tier map of `logo_url`; null for an SVG or off-host logo. Render the logo through `logoSrc()`. */
+    logo_variants?: ImageVariants | null;
     announcement?: {
       enabled: boolean;
       text: string;

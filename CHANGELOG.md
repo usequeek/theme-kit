@@ -3,6 +3,23 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.3 - 2026-11-18
+
+### Changed
+
+- **Images below a page's opening blocks are lazy.** `PageRenderer` tells each block where it sits (`BlockPositionProvider`,
+  `useBlockPosition()`; only blocks that render count, and a renderer nested in a block starts at that block's position).
+  `<Image>` in the third rendered block or later is `loading="lazy"` and never `fetchPriority="high"`, whatever the call
+  site passed. A slider marks its first slide eager and high priority because it may be the hero; reused lower on a page,
+  that fetched (and React preloaded) those photos with the hero: on a Beaurify store 1.9 MB of a 3.5 MB phone page load.
+  The first two blocks, and images outside `PageRenderer`, keep the call site's choice.
+
+### Added
+
+- `logoSrc(url, variants)` (`utils/image-srcset`): the url a store logo renders from, the `view` copy (WebP q98, at most
+  1600 px) of `url` when the API sent one, else `url`. Never a smaller tier. `StorefrontConfig.header.logo_variants` (the
+  tier map of `header.logo_url`, sent by the storefront theme payload) joins the config type.
+
 ## 0.5.2 - 2026-11-18
 
 ### Added

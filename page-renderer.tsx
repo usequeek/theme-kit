@@ -6,6 +6,7 @@ import type { Block, BlockDataMap, MetaobjectsResolved } from './types/block';
 import type { Product } from './types/product';
 import { useTheme } from './theme-context';
 import { useStorefront } from './provider';
+import { BlockPositionProvider, useBlockPosition } from './block-position';
 import { mediaIndexBackgroundUrl, useMediaIndex } from './media-index';
 import { expandDesignTokensPartial } from './utils/brand';
 import {
@@ -98,12 +99,18 @@ export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
   const defaultVariants = config.default_variants ?? {};
   const editMode = useEditMode();
   const mediaIndex = useMediaIndex();
+  // Where each block sits for its images' loading (block-position.tsx): only blocks that render count, and a
+  // renderer nested in a block starts at that block's position, so a hero after an empty block keeps its priority.
+  const positionOffset = useBlockPosition() ?? 0;
+  let renderedCount = 0;
 
   const renderBlock = (block: Block, index: number): JSX.Element | null => {
     const variant = block.variant ?? defaultVariants[block.type] ?? undefined;
     const key = `${block.type}-${index}`;
     const node = renderInner(block, variant, key);
     if (node === null) return null;
+    const position = positionOffset + renderedCount;
+    renderedCount += 1;
 
     // Section-scoped design-token override: only wraps in an extra div when
     // the section actually sets `tokens` — no-override sections render
@@ -214,7 +221,7 @@ export function PageRenderer({ blocks }: { blocks: Block[] }): JSX.Element {
 
     const wrapped = (
       <EditableBlock key={key} index={index} type={block.type} variant={variant} enabled={editMode}>
-        {content}
+        <BlockPositionProvider index={position}>{content}</BlockPositionProvider>
       </EditableBlock>
     );
 

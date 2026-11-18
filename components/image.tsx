@@ -1,6 +1,7 @@
 'use client';
 
 import { useContext, useState, type ImgHTMLAttributes } from 'react';
+import { isBelowTopBlocks, useBlockPosition } from '../block-position';
 import { lookupMediaIndex, useMediaIndex } from '../media-index';
 import { StorefrontContext } from '../provider';
 import type { ImageVariants } from '../types/media';
@@ -157,6 +158,14 @@ export function Image({ fallback, placeholder, variants: variantsProp, intent: i
     effectiveSizes = undefined;
   }
 
+  // A block past the page's opening blocks is below the fold, so its images are
+  // lazy and never high priority, whatever the call site asked. A slider marks its
+  // first slide eager and high priority because it may be the hero; reused lower
+  // on the page, that made the browser (and React's SSR preloads) fetch those
+  // photos with the hero: 1.9 MB of a 3.5 MB phone page load on a Beaurify store.
+  const belowTop = isBelowTopBlocks(useBlockPosition());
+  const fetchPriority = belowTop && props.fetchPriority === 'high' ? undefined : props.fetchPriority;
+
   // Cards sit in grids and rails, mostly below the fold — and a card's hover
   // image is invisible until hover. Eager, a server-rendered grid of 24 cards
   // made React preload the first ~10 (also into the 103 Early Hints header) and
@@ -164,12 +173,13 @@ export function Image({ fallback, placeholder, variants: variantsProp, intent: i
   // first paint went from 1.8 s to 2.9 s on Slow 4G. Lazy is next/image's
   // default as well. A theme whose card IS the page's main image passes
   // loading="eager" or fetchPriority="high".
-  const lazyByDefault = (intent === 'card' || intent === 'card2x') && props.fetchPriority !== 'high';
-  const loading = props.loading ?? (lazyByDefault ? 'lazy' : undefined);
+  const lazyByDefault = (intent === 'card' || intent === 'card2x') && fetchPriority !== 'high';
+  const loading = belowTop ? 'lazy' : (props.loading ?? (lazyByDefault ? 'lazy' : undefined));
 
   return (
     <img
       {...props}
+      fetchPriority={fetchPriority}
       loading={loading}
       src={effectiveSrc}
       srcSet={effectiveSrcSet}
