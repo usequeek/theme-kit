@@ -209,6 +209,8 @@ export interface StorefrontConfig {
   default_variants?: Record<string, string>;
   pages?: Record<string, {
     banner?: string;
+    /** The tier map of `banner` (the API's `image_variants` contract); null when the banner is not Media-backed, absent without a banner. */
+    banner_variants?: ImageVariants | null;
     title?: string;
     subtitle?: string;
     /** QR-only header overrides, each falling back to the vendor's own

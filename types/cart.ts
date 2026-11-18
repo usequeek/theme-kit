@@ -1,3 +1,5 @@
+import type { ImageVariants } from './media';
+
 export interface CartAddon {
   addon_id: string;
   item_id: string;
@@ -12,6 +14,12 @@ export interface CartItem {
   title: string;
   slug?: string | null;
   image: string | null;
+  /**
+   * The tier map of `image` (the API's `image_variants`), kept so a cart thumbnail renders a small WebP copy: the line's `image` is
+   * the product's thumbnail, which the API sets to the full image unless the merchant chose another. Null when `image` is a separate,
+   * explicit thumbnail file (already small) or is not Media-backed; absent on a line saved before the kit kept it.
+   */
+  image_variants?: ImageVariants | null;
   unit_price: number;
   quantity: number;
   addons: CartAddon[];

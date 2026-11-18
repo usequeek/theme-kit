@@ -3,6 +3,21 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.7 - 2026-11-18
+
+### Added
+
+- `CartItem.image_variants` and `StorefrontConfig.pages[slug].banner_variants`: the tier maps of a cart line's image and of a page banner
+  (the API's `image_variants` contract; `banner_variants` is null for a banner that is not Media-backed). A theme passes them to `<Image>`
+  with an intent sized to the box, so a cart thumbnail and a page banner render a small WebP copy, never the original upload.
+
+### Changed
+
+- **The cart keeps the tier map of its line image.** A line's `image` is the product's thumbnail, which the API sets to the full image unless the
+  merchant chose a separate thumbnail file. When the picked url is that image, `addProduct` stores `image_variants` beside it (a variant's own
+  picture with its own map); a separate thumbnail file is small already and stores none. A line saved before this has no `image_variants` and
+  renders as before. The default cart page renders its thumbnail through them (`card` at its 84 px box).
+
 ## 0.5.6 - 2026-11-18
 
 ### Fixed

@@ -187,7 +187,11 @@ export const useCartStore = create<CartState>()(
         // A variant's own price/stock override the base product's — the same
         // precedence the quick-add flow uses.
         const unitPrice = (variant?.pricing.sale_amount ?? product.pricing.sale_amount) + addonTotal;
-        const itemImage = variant?.media.thumbnail ?? variant?.media.image ?? product.media.thumbnail ?? product.media.image ?? null;
+        const itemMedia = [variant?.media, product.media].find((media) => media && (media.thumbnail ?? media.image) != null);
+        const itemImage = itemMedia ? (itemMedia.thumbnail ?? itemMedia.image) : null;
+        // The tier map belongs to `media.image`: when the picked url IS that image (the API's thumbnail falls back to it) the line can
+        // render a small copy; a separate thumbnail file is small already.
+        const itemImageVariants = itemMedia && itemImage === itemMedia.image ? (itemMedia.image_variants ?? null) : null;
 
         // Confirm the add with a global toast (works across every theme) —
         // except on QR, which has its own persistent cart bar (QrCartBar)
@@ -235,6 +239,7 @@ export const useCartStore = create<CartState>()(
                 title: product.title,
                 slug: product.slug,
                 image: itemImage,
+                ...(itemImageVariants ? { image_variants: itemImageVariants } : {}),
                 unit_price: unitPrice,
                 quantity: Math.max(1, quantity),
                 addons,
