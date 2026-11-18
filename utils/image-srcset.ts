@@ -201,12 +201,19 @@ export function resolveImageSources(
  * (a 2048 px JPG of 139 KB is a 38 KB WebP). Never a smaller tier: a wide wordmark
  * on a 3x phone would come out softer than the upload it replaces. The raw `url`
  * when there is no `view` copy, no copies at all (an SVG, an off-host file) or
- * copies of a different file.
+ * copies of a different file, and when the upload is already a WebP no wider than
+ * `view`: the copy is then the same picture re-encoded, and often heavier (an 8 KB
+ * wordmark's `view` is 9.6 KB).
  */
 export function logoSrc(url: string | null | undefined, variants: ImageVariants | null | undefined): string | null {
   if (!url) {
     return null;
   }
-  const view = variants && variants.original?.url === url ? variants.view : null;
-  return usableTier(view) ? view.url : url;
+  const original = variants?.original;
+  const view = variants && original?.url === url ? variants.view : null;
+  if (!usableTier(view)) {
+    return url;
+  }
+  const samePixels = typeof view.w === 'number' && typeof original?.w === 'number' && view.w >= original.w;
+  return samePixels && /\.webp(?:[?#]|$)/i.test(url) ? url : view.url;
 }

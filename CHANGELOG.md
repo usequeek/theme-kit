@@ -3,6 +3,13 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.6 - 2026-11-18
+
+### Fixed
+
+- `logoSrc()` keeps a WebP upload that is no wider than its `view` copy: the copy is the same picture re-encoded at q98 and
+  can be heavier (a 1506 px, 8.3 KB wordmark's `view` is 9.6 KB). A JPG or PNG upload still gets its `view` WebP.
+
 ## 0.5.5 - 2026-11-18
 
 ### Changed

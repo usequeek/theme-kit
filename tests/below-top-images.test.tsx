@@ -106,6 +106,17 @@ describe('logoSrc', () => {
     expect(logoSrc(url, { ...variants, view: { url: '', w: 1600, h: 1600 } } as ImageVariants)).toBe(url);
   });
 
+  it('keeps a WebP upload no wider than view: the copy is the same picture, often heavier', () => {
+    const webp = 'https://media.usequeek.com/stores/1/upload.webp';
+    const small = { view: { url: 'https://media.usequeek.com/stores/1/upload-view.webp', w: 1506, h: 532 }, original: { url: webp, w: 1506, h: 532 } } as unknown as ImageVariants;
+    expect(logoSrc(webp, small)).toBe(webp);
+    const big = { ...small, original: { url: webp, w: 3000, h: 1060 } } as unknown as ImageVariants;
+    expect(logoSrc(webp, big)).toBe('https://media.usequeek.com/stores/1/upload-view.webp');
+    const png = 'https://media.usequeek.com/stores/1/logo.png';
+    const samePng = { view: { url: 'https://media.usequeek.com/stores/1/logo-view.webp', w: 1506, h: 532 }, original: { url: png, w: 1506, h: 532 } } as unknown as ImageVariants;
+    expect(logoSrc(png, samePng)).toBe('https://media.usequeek.com/stores/1/logo-view.webp');
+  });
+
   it('keeps the raw url without copies, or with copies of another file', () => {
     expect(logoSrc(url, null)).toBe(url);
     expect(logoSrc(url, undefined)).toBe(url);
