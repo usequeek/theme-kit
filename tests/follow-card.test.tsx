@@ -313,14 +313,23 @@ describe('FollowCard: every word is a theme string', () => {
 
 describe('FollowCard: the floating card never sits on the page footer', () => {
   type IoCallback = (entries: Array<{ target: Element; isIntersecting: boolean }>) => void;
-  const watchers: Array<{ callback: IoCallback; targets: Element[]; disconnected: boolean }> = [];
+  interface Watcher {
+    callback: IoCallback;
+    targets: Element[];
+    disconnected: boolean;
+  }
+  const watchers: Watcher[] = [];
+  const live = (): Watcher[] => watchers.filter((watcher) => !watcher.disconnected);
+  const watched = (): Element[] => live().flatMap((watcher) => watcher.targets);
 
   beforeEach(() => {
     watchers.length = 0;
+    // jsdom lays nothing out: a page 2000px tall in a 768px window scrolls.
+    Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 2000 });
     vi.stubGlobal(
       'IntersectionObserver',
       class {
-        private readonly watcher: { callback: IoCallback; targets: Element[]; disconnected: boolean };
+        private readonly watcher: Watcher;
         constructor(callback: IoCallback) {
           this.watcher = { callback, targets: [], disconnected: false };
           watchers.push(this.watcher);
@@ -337,6 +346,7 @@ describe('FollowCard: the floating card never sits on the page footer', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    delete (document.documentElement as { scrollHeight?: number }).scrollHeight;
     document.body.querySelectorAll('[data-test-footer]').forEach((node) => node.remove());
   });
 
@@ -347,23 +357,36 @@ describe('FollowCard: the floating card never sits on the page footer', () => {
     return footer;
   }
 
+  /** The observer reports one footer, as the browser does. */
   async function footerIs(footer: Element, isIntersecting: boolean): Promise<void> {
     await act(async () => {
-      watchers.forEach((watcher) => watcher.callback([{ target: footer, isIntersecting }]));
+      live()
+        .filter((watcher) => watcher.targets.includes(footer))
+        .forEach((watcher) => watcher.callback([{ target: footer, isIntersecting }]));
     });
   }
+
+  /** Lets the hook's next-frame DOM re-read run. */
+  async function nextFrame(): Promise<void> {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    });
+  }
+
+  const tucked = (): boolean => cards()[0]?.className.includes('core-follow-card--tucked') ?? false;
 
   it('tucks the floating card while the footer is on screen and brings it back after', async () => {
     const footer = addFooter();
     await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
 
-    expect(cards()[0]?.className).not.toContain('core-follow-card--tucked');
+    expect(watched()).toContain(footer);
+    expect(tucked()).toBe(false);
 
     await footerIs(footer, true);
-    expect(cards()[0]?.className).toContain('core-follow-card--tucked');
+    expect(tucked()).toBe(true);
 
     await footerIs(footer, false);
-    expect(cards()[0]?.className).not.toContain('core-follow-card--tucked');
+    expect(tucked()).toBe(false);
   });
 
   it('tucks the compact Following chip too', async () => {
@@ -374,17 +397,81 @@ describe('FollowCard: the floating card never sits on the page footer', () => {
     await footerIs(footer, true);
 
     expect(cards()[0]?.className).toContain('core-follow-card--compact');
-    expect(cards()[0]?.className).toContain('core-follow-card--tucked');
+    expect(tucked()).toBe(true);
   });
 
-  it('ignores a footer that belongs to a content block, not the page', async () => {
+  it('watches the page footer and ignores a footer that belongs to a content block', async () => {
     const article = document.createElement('article');
     article.setAttribute('data-test-footer', '');
     document.body.appendChild(article);
     const inner = addFooter(article);
+    const page = addFooter();
     await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
 
-    expect(watchers.flatMap((watcher) => watcher.targets)).not.toContain(inner);
+    expect(watchers.length).toBeGreaterThan(0);
+    expect(watched()).toContain(page);
+    expect(watched()).not.toContain(inner);
+  });
+
+  it('stays tucked while any one of two footers is on screen', async () => {
+    const first = addFooter();
+    const second = addFooter();
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    await footerIs(first, true);
+    await footerIs(second, true);
+    await footerIs(first, false);
+    expect(tucked()).toBe(true);
+
+    await footerIs(second, false);
+    expect(tucked()).toBe(false);
+  });
+
+  it('creates no observer and never hides the card when the page has no footer', async () => {
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    expect(watchers).toHaveLength(0);
+    expect(cards()).toHaveLength(1);
+    expect(tucked()).toBe(false);
+  });
+
+  it('never hides the card on a page that cannot scroll', async () => {
+    Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 0 });
+    const footer = addFooter();
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    await footerIs(footer, true);
+
+    expect(tucked()).toBe(false);
+  });
+
+  it('picks up a footer that mounts after the card', async () => {
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+    expect(watchers).toHaveLength(0);
+
+    const late = addFooter();
+    await nextFrame();
+    expect(watched()).toContain(late);
+
+    await footerIs(late, true);
+    expect(tucked()).toBe(true);
+  });
+
+  it('watches the new footer when the footer is replaced', async () => {
+    const old = addFooter();
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+    await footerIs(old, true);
+    expect(tucked()).toBe(true);
+
+    old.remove();
+    const next = addFooter();
+    await nextFrame();
+
+    expect(watched()).toContain(next);
+    expect(watched()).not.toContain(old);
+
+    await footerIs(next, false);
+    expect(tucked()).toBe(false);
   });
 
   it('keeps the dismiss working while the footer is out of view', async () => {
@@ -405,17 +492,19 @@ describe('FollowCard: the floating card never sits on the page footer', () => {
     await footerIs(footer, true);
 
     expect(cards()[0]?.className).toContain('core-follow-card--inline');
-    expect(cards()[0]?.className).not.toContain('core-follow-card--tucked');
+    expect(tucked()).toBe(false);
   });
 
   it('stops watching the footer when the card goes away', async () => {
     addFooter();
     await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+    expect(live().length).toBeGreaterThan(0);
 
     await act(async () => {
       root.render(<Store follow={{ enabled: false }}><FollowCard display="floating" /></Store>);
     });
 
-    expect(watchers.every((watcher) => watcher.disconnected)).toBe(true);
+    expect(watchers.length).toBeGreaterThan(0);
+    expect(live()).toHaveLength(0);
   });
 });

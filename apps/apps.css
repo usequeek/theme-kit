@@ -59,6 +59,13 @@
   transition: opacity 0.18s ease, visibility 0s linear 0.18s;
 }
 
+/* A card the shopper is typing in (the email box, the consent tick) stays put: hiding it would drop their focus. */
+.core-follow-card--tucked:focus-within {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .core-follow-card--floating,
   .core-follow-card--tucked {
@@ -396,6 +403,12 @@ form button.core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
   transition: opacity 0.18s ease, visibility 0s linear 0.18s;
 }
 
+.core-subscribe-floating--tucked:focus-within {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .core-subscribe-floating,
   .core-subscribe-floating--tucked {
@@ -440,7 +453,7 @@ form button.core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
 
   /* The small "Following" chip sits at the right edge at the same height: lift this card above it. */
   .core-follow-card--compact.core-follow-card--floating ~ .core-subscribe-floating {
-    bottom: 8rem;
+    bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
   }
 }
 

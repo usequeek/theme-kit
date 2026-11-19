@@ -135,6 +135,7 @@ they keep the data already on screen. They return `isLoading`, except
 | `useAuth()` | `hooks/use-auth` | The signed-in customer and sign-in modal controls |
 | `useVariantSelection(product, preferredVariantPId?)` | `hooks/use-variant-selection` | Option selection state and the add-to-cart gate; opens on a linked `?variant=` |
 | `useSearch(query, products, collections)` | `hooks/use-search` | Instant search over data you hold |
+| `useFooterInView(active?)` | `hooks/use-footer-in-view` | True while the page's own `<footer>` is on screen; a card pinned to the bottom hides while it is true |
 | `useHref()` | `hooks/use-href` | Builds a store-relative link |
 | `useLocales()` | `hooks/use-locales` | The store's languages and the active one |
 | `useStorefront()` / `useStorefrontLocale()` / `useThemeStrings()` | `provider` | The store, the request locale, the bound `t` |
