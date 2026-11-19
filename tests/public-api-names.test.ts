@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { makeItemId, useCartStore } from '../stores/cart-store';
 import * as lineProperties from '../utils/line-properties';
 import * as lineTextStore from '../stores/line-text-store';
+import * as footerInView from '../hooks/use-footer-in-view';
 
 const ROOT = resolve(__dirname, '..');
 
@@ -115,6 +116,11 @@ describe('public API names recorded from 0.1.25', () => {
     expect(typeof lineProperties.visibleLineProperties).toBe('function');
     expect(typeof lineTextStore.useLineTextStore).toBe('function');
     expect(typeof lineTextStore.readLineText).toBe('function');
+  });
+
+  it('useFooterInView is exported from the client barrel', () => {
+    expect(barrelModules('client.ts').has('hooks/use-footer-in-view')).toBe(true);
+    expect(typeof footerInView.useFooterInView).toBe('function');
   });
 
   it('the cookie-consent modules are exported from the barrels', () => {

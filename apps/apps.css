@@ -49,8 +49,9 @@
   transition: opacity 0.18s ease, visibility 0s;
 }
 
-/* The page footer is on screen: the card steps aside so it never sits on the footer's links. It keeps its box (visibility, not
-   display), so the buttons that stack above it (WhatsApp, an app's bubble) do not jump, and it is out of the tab order while hidden. */
+/* The page footer is on screen (useFooterInView): the card steps aside so it never sits on the footer's links. It keeps its box
+   (visibility, not display), so the buttons that stack above it (WhatsApp, an app's bubble) do not jump, and it is out of the tab
+   order while hidden. The floating subscribe card does the same (below). */
 .core-follow-card--tucked {
   opacity: 0;
   visibility: hidden;
@@ -384,6 +385,22 @@ form button.core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transition: opacity 0.18s ease, visibility 0s;
+}
+
+/* The page footer is on screen (useFooterInView): same hidden state as the follow card, after the base rule so its transition wins. */
+.core-subscribe-floating--tucked {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-subscribe-floating,
+  .core-subscribe-floating--tucked {
+    transition: none;
+  }
 }
 
 .core-subscribe-floating__dismiss {
@@ -412,7 +429,7 @@ form button.core-subscribe__button:disabled { opacity: 0.6; cursor: default; }
     left: 1rem;
     right: 1rem;
     width: auto;
-    bottom: 5rem;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* One floating card at a time on a phone: the follow card and this one are both full width at the same height, and the shell

@@ -13,6 +13,14 @@ policy. Versions before this file started are in the git tags.
   screen, and returns when the shopper scrolls back up. A `<footer>` inside `main`, an article, section, aside, nav or header is not
   the page footer. The dismiss is unchanged. On a phone the card's bottom offset also adds `env(safe-area-inset-bottom)`.
 
+### Added
+
+- `useFooterInView(active = true)` (`hooks/use-footer-in-view`, exported from the client barrel): true while the page's own `<footer>` is
+  on screen, with the footer rule `FollowCard` uses (a `<footer>` inside `main`, an article, section, aside, nav or header is ignored).
+  A card pinned to the viewport bottom hides while it is true. `FollowCard` now uses it. The floating subscribe card can too: add
+  `core-subscribe-floating--tucked` (transparent, `visibility: hidden`, not clickable, box kept) while it is true. The phone offset of
+  `.core-subscribe-floating` also adds `env(safe-area-inset-bottom)`.
+
 ## 0.5.8 - 2026-11-18
 
 ### Fixed

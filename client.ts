@@ -38,6 +38,7 @@ export * from './api/orders';
 export * from './hooks/use-href';
 export * from './hooks/use-locales';
 export * from './hooks/use-markets';
+export * from './hooks/use-footer-in-view';
 export * from './hooks/use-auth';
 export * from './hooks/use-cart';
 export * from './hooks/use-shop-cart';
