@@ -47,6 +47,11 @@ function flattenCategories(items: Category[]): Category[] {
  * count. On failure the list is empty and `error` is set; the hook never
  * throws.
  *
+ * Without `ids` it asks for the store's storefront list (`storefront=1`), so it
+ * follows the merchant's collections-page settings: an empty collection is left
+ * out, like on `/shop`. With `ids` it asks for `include_empty=0` only, so a
+ * hand-picked smart collection is never dropped by those settings.
+ *
  * @example
  * const { categories } = useCategories({ limit: 6 });
  */
@@ -95,7 +100,9 @@ export function useCategories(options?: {
           return;
         }
 
-        const query: Record<string, string> = { include_empty: '1' };
+        // Pinned ids are filtered client-side and storefront=1 can switch the API to manual-only
+        // collections, which would drop a hand-picked smart collection: hide empty ones only.
+        const query: Record<string, string> = idsKey ? { include_empty: '0' } : { storefront: '1' };
         const response = await client.get<CategoriesResponse>('/collections', withLocaleQuery(query, locale));
         let items = flattenCategories(Array.isArray(response.data) ? response.data : []);
 

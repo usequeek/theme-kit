@@ -3,6 +3,16 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.10 - 2026-11-19
+
+### Fixed
+
+- Categories sections follow the store's collections-page settings (storefront mode): an empty collection no longer shows as a tile.
+  `useCategories` asked `/collections` for `include_empty=1`, so a homepage categories section listed collections with no published
+  products while `/shop` did not. It now sends `storefront=1`, the same request the shop filter uses; with `ids` pinned it sends `include_empty=0` instead (the ids are
+  filtered here, and storefront mode could drop a hand-picked smart collection). The editor preview path and the
+  `ids` / `limit` handling are unchanged.
+
 ## 0.5.9 - 2026-11-19
 
 ### Fixed
