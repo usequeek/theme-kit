@@ -3,6 +3,16 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## Unreleased
+
+### Fixed
+
+- The floating follow card (and the "Following" chip) no longer sits on the footer's links on a phone. It is pinned to the viewport
+  bottom, so scrolled to the end it covered the middle of the footer. It now steps aside (`core-follow-card--tucked`: transparent,
+  `visibility: hidden`, not clickable, its box kept so the buttons stacked above it do not jump) while the page's own `<footer>` is on
+  screen, and returns when the shopper scrolls back up. A `<footer>` inside `main`, an article, section, aside, nav or header is not
+  the page footer. The dismiss is unchanged. On a phone the card's bottom offset also adds `env(safe-area-inset-bottom)`.
+
 ## 0.5.8 - 2026-11-18
 
 ### Fixed

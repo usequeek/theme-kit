@@ -310,3 +310,112 @@ describe('FollowCard: every word is a theme string', () => {
     expect(source).not.toMatch(/Follow this store|Don't show again|exclusive offers|Share my contact|Following\.\.\./);
   });
 });
+
+describe('FollowCard: the floating card never sits on the page footer', () => {
+  type IoCallback = (entries: Array<{ target: Element; isIntersecting: boolean }>) => void;
+  const watchers: Array<{ callback: IoCallback; targets: Element[]; disconnected: boolean }> = [];
+
+  beforeEach(() => {
+    watchers.length = 0;
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        private readonly watcher: { callback: IoCallback; targets: Element[]; disconnected: boolean };
+        constructor(callback: IoCallback) {
+          this.watcher = { callback, targets: [], disconnected: false };
+          watchers.push(this.watcher);
+        }
+        observe(node: Element): void {
+          this.watcher.targets.push(node);
+        }
+        disconnect(): void {
+          this.watcher.disconnected = true;
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.body.querySelectorAll('[data-test-footer]').forEach((node) => node.remove());
+  });
+
+  function addFooter(parent: Element = document.body): HTMLElement {
+    const footer = document.createElement('footer');
+    footer.setAttribute('data-test-footer', '');
+    parent.appendChild(footer);
+    return footer;
+  }
+
+  async function footerIs(footer: Element, isIntersecting: boolean): Promise<void> {
+    await act(async () => {
+      watchers.forEach((watcher) => watcher.callback([{ target: footer, isIntersecting }]));
+    });
+  }
+
+  it('tucks the floating card while the footer is on screen and brings it back after', async () => {
+    const footer = addFooter();
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    expect(cards()[0]?.className).not.toContain('core-follow-card--tucked');
+
+    await footerIs(footer, true);
+    expect(cards()[0]?.className).toContain('core-follow-card--tucked');
+
+    await footerIs(footer, false);
+    expect(cards()[0]?.className).not.toContain('core-follow-card--tucked');
+  });
+
+  it('tucks the compact Following chip too', async () => {
+    sdk.get.mockResolvedValue({ data: { following: true, shared_contact: false, followers_count: 1200 } });
+    const footer = addFooter();
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    await footerIs(footer, true);
+
+    expect(cards()[0]?.className).toContain('core-follow-card--compact');
+    expect(cards()[0]?.className).toContain('core-follow-card--tucked');
+  });
+
+  it('ignores a footer that belongs to a content block, not the page', async () => {
+    const article = document.createElement('article');
+    article.setAttribute('data-test-footer', '');
+    document.body.appendChild(article);
+    const inner = addFooter(article);
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    expect(watchers.flatMap((watcher) => watcher.targets)).not.toContain(inner);
+  });
+
+  it('keeps the dismiss working while the footer is out of view', async () => {
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('.core-follow-card__dismiss')?.click();
+    });
+
+    expect(cards()).toHaveLength(0);
+    expect(window.localStorage.getItem('queek_follow_card_dismissed')).toBe(JSON.stringify(['v1']));
+  });
+
+  it('never tucks the inline card: it is in the footer by design', async () => {
+    const footer = addFooter();
+    await mount({ enabled: true, display: 'footer' }, <FollowCard display="inline" />);
+
+    await footerIs(footer, true);
+
+    expect(cards()[0]?.className).toContain('core-follow-card--inline');
+    expect(cards()[0]?.className).not.toContain('core-follow-card--tucked');
+  });
+
+  it('stops watching the footer when the card goes away', async () => {
+    addFooter();
+    await mount({ enabled: true, display: 'floating' }, <FollowCard display="floating" />);
+
+    await act(async () => {
+      root.render(<Store follow={{ enabled: false }}><FollowCard display="floating" /></Store>);
+    });
+
+    expect(watchers.every((watcher) => watcher.disconnected)).toBe(true);
+  });
+});

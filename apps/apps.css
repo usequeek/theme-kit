@@ -46,6 +46,23 @@
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transition: opacity 0.18s ease, visibility 0s;
+}
+
+/* The page footer is on screen: the card steps aside so it never sits on the footer's links. It keeps its box (visibility, not
+   display), so the buttons that stack above it (WhatsApp, an app's bubble) do not jump, and it is out of the tab order while hidden. */
+.core-follow-card--tucked {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-follow-card--floating,
+  .core-follow-card--tucked {
+    transition: none;
+  }
 }
 
 /* Follow Card positions */
@@ -215,7 +232,7 @@ div button.core-follow-card__btn {
     left: 1rem;
     right: 1rem;
     width: auto;
-    bottom: 5rem;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
   /* The compact following state stays a small chip at the right edge. */
   .core-follow-card--compact.core-follow-card--floating {
@@ -230,7 +247,7 @@ div button.core-follow-card__btn {
     left: 1rem;
     right: 1rem;
     width: auto;
-    bottom: 5rem;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
     top: auto;
     transform: none;
   }

@@ -42,6 +42,9 @@ const POSITION_CLASS: Record<string, string> = {
   'center-left': 'core-follow-card--center-left',
 };
 
+/** Ancestors that make a `<footer>` part of a content block rather than the page footer. */
+const PAGE_FOOTER_EXCLUDE = 'main, article, section, aside, nav, header';
+
 /**
  * Where the merchant put the card: `footer` is the inline mount a theme places in its footer, anything else
  * (`floating`, and the retired `block`) is the floating mount the shell places.
@@ -71,6 +74,36 @@ function registerInlineMount(): () => void {
     inlineMounts -= 1;
     mountListeners.forEach((notify) => notify());
   };
+}
+
+/**
+ * True while the page's own footer is on screen. A card pinned to the viewport bottom would sit on the footer's links once the
+ * shopper scrolls to the end, so the floating card tucks away for as long as it is. Only the shell's footer counts: a `<footer>`
+ * inside an article, section, aside, nav or header (a product card, a blog post) is not the page footer.
+ */
+function useFooterInView(active: boolean): boolean {
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (!active || typeof IntersectionObserver === 'undefined') {
+      setInView(false);
+      return undefined;
+    }
+    const footers = Array.from(document.querySelectorAll('footer')).filter((node) => !node.closest(PAGE_FOOTER_EXCLUDE));
+    if (footers.length === 0) return undefined;
+    const visible = new Set<Element>();
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => (entry.isIntersecting ? visible.add(entry.target) : visible.delete(entry.target)));
+      setInView(visible.size > 0);
+    });
+    footers.forEach((node) => observer.observe(node));
+    return () => {
+      observer.disconnect();
+      setInView(false);
+    };
+  }, [active]);
+
+  return inView;
 }
 
 /**
@@ -131,6 +164,10 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
     }
   }, [vendor.id]);
 
+  const isFloatingMount = mount === 'floating';
+  const onScreen = !!followConfig?.enabled && shows && checked && (isFollowing || !dismissed);
+  const tucked = useFooterInView(isFloatingMount && onScreen);
+
   const handleFollow = useCallback(async () => {
     if (isThemePreview) {
       setPreviewMessage(true);
@@ -185,11 +222,13 @@ export function FollowCard({ display }: { display?: 'floating' | 'inline' } = {}
   if (!followConfig?.enabled || !shows || !checked) return null;
 
   const storeName = vendor.name ?? t('follow.thisstore');
-  const isFloating = mount === 'floating';
+  const isFloating = isFloatingMount;
   const posClass = isFloating
     ? POSITION_CLASS[followConfig.position ?? 'bottom-right'] ?? POSITION_CLASS['bottom-right']
     : '';
-  const placement = isFloating ? `core-follow-card--floating ${posClass}` : 'core-follow-card--inline';
+  const placement = isFloating
+    ? `core-follow-card--floating ${posClass}${tucked ? ' core-follow-card--tucked' : ''}`
+    : 'core-follow-card--inline';
 
   // A shopper who follows still sees the card, compact, with the way out: Unfollow. Dismissing the prompt never hides it.
   if (isFollowing) {
