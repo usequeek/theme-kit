@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import { Fragment } from 'react';
+import { Link } from '../navigation';
 
 /**
  * Strip markdown syntax to plain text. Use for previews / single-line contexts
@@ -39,6 +40,13 @@ function withBasePath(href: string, basePath?: string): string {
   return `${basePath}${href}`;
 }
 
+// Root-relative ("/about"), not protocol-relative ("//host"): the only hrefs
+// the router can move to without a full page load. Everything else (http(s),
+// mailto:, tel:, #anchors, bare relative paths) stays a plain anchor.
+function isInternalHref(href: string): boolean {
+  return href.startsWith('/') && !href.startsWith('//');
+}
+
 function parseInline(text: string, keyPrefix: string, basePath?: string): React.ReactNode[] {
   const parts = text.split(INLINE_RE).filter(Boolean);
 
@@ -75,9 +83,13 @@ function parseInline(text: string, keyPrefix: string, basePath?: string): React.
     const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
     if (linkMatch) {
       const [, label, href] = linkMatch;
+      const resolved = withBasePath(href, basePath);
+      if (isInternalHref(href)) {
+        return <Link key={key} href={resolved}>{label}</Link>;
+      }
       const isExternal = href.startsWith('http://') || href.startsWith('https://');
       return (
-        <a key={key} href={withBasePath(href, basePath)} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+        <a key={key} href={resolved} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
           {label}
         </a>
       );

@@ -3,6 +3,14 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.11 - 2026-11-22
+
+### Fixed
+
+- Internal links in merchant markdown (footer columns, taglines, page content) move without a full page reload. `renderMarkdown` rendered every
+  link as a plain `<a href>`, so a root-relative link such as `/about` reloaded the whole storefront; it now uses the kit's `Link`. External
+  links keep `target="_blank" rel="noopener noreferrer"`; `mailto:`, `tel:`, `#anchor` and `//host` links stay plain anchors; `basePath` prefixing is unchanged.
+
 ## 0.5.10 - 2026-11-19
 
 ### Fixed
