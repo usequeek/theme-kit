@@ -3,6 +3,14 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.12 - 2026-11-24
+
+### Changed
+
+- The cart's "Continue shopping" link and the empty cart's "Browse products" link go to the shop (`/shop`, all products) instead of the store home,
+  the way Shopify's Dawn links its cart's continue link to the all-products collection. Same element, class and styling; only the target moves.
+  Merchants can reword the link's text through the `cart.summary.continue` and `cart.empty.browse` keys.
+
 ## 0.5.11 - 2026-11-22
 
 ### Fixed

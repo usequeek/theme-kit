@@ -24,7 +24,7 @@ const base: CartItem = {
 
 const LABELS = { 'app.engraving.text': 'Engraving text' };
 
-function render(items: CartItem[]): string {
+function render(items: CartItem[], empty = false): string {
   const noop = (): void => {};
   const shell: JSX.Element = (
     <StorefrontProvider vendor={{ id: 'v1', slug: 'demo', name: 'Demo' } as never} config={{} as never} menus={[]}>
@@ -32,7 +32,7 @@ function render(items: CartItem[]): string {
         items={items}
         currency="NGN"
         total={10000}
-        empty={false}
+        empty={empty}
         onIncrease={noop}
         onDecrease={noop}
         onRemove={noop}
@@ -80,5 +80,24 @@ describe('DefaultCartShell line text', () => {
     expect(html).not.toContain('secret-value');
     expect(html).not.toContain('bearer-secret');
     expect(html.match(/core-cart-page__item-price/g)).toHaveLength(1);
+  });
+});
+
+describe('DefaultCartShell continue links', () => {
+  const links = (html: string, className: string): string[] =>
+    [...html.matchAll(new RegExp(`<a href="([^"]*)"[^>]*class="${className}"`, 'g'))].map((match) => match[1]);
+
+  it('the summary "Continue shopping" link goes to the shop (all products), not the store home', () => {
+    const html = render([base]);
+
+    expect(links(html, 'core-cart-page__continue-link')).toEqual(['/demo/shop']);
+    expect(html).toContain('class="core-cart-page__continue-link">Continue shopping</a>');
+  });
+
+  it('the empty-cart browse link goes to the shop too, with the same class', () => {
+    const html = render([], true);
+
+    expect(links(html, 'core-checkout__back-link')).toEqual(['/demo/shop']);
+    expect(html).toContain('class="core-checkout__back-link">Browse products</a>');
   });
 });

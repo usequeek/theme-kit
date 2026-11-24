@@ -103,7 +103,7 @@ export function DefaultCartShell({
         <h1 className="core-cart-page__title">{t('cart.title')}</h1>
         <div className="core-cart-page__empty">
           <p>{t('cart.empty.message')}</p>
-          <Link href={href('/')} className="core-checkout__back-link">{t('cart.empty.browse')}</Link>
+          <Link href={href('/shop')} className="core-checkout__back-link">{t('cart.empty.browse')}</Link>
         </div>
       </div>
     );
@@ -266,7 +266,7 @@ export function DefaultCartShell({
               </svg>
               {t('cart.checkout.action')}
             </Link>
-            <Link href={href('/')} className="core-cart-page__continue-link">{t('cart.summary.continue')}</Link>
+            <Link href={href('/shop')} className="core-cart-page__continue-link">{t('cart.summary.continue')}</Link>
           </div>
         </div>
       </div>
