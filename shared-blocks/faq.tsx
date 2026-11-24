@@ -2,6 +2,21 @@
 
 import type { JSX } from 'react';
 import type { FaqBlockData } from '../types/block';
+import { renderMarkdown } from '../utils/markdown';
+
+/**
+ * An answer carrying formatting (a line break, **bold**, _italic_, a [link](/x) or `code`) renders as markdown: paragraphs and inline
+ * emphasis, never raw HTML. A plain answer keeps rendering as the bare text it always did, so no existing store's FAQ markup moves.
+ */
+const FORMATTED_ANSWER = /\n|\*|_|\[|`/;
+
+function FaqAnswer({ answer }: { answer: unknown }): JSX.Element {
+  const text = typeof answer === 'string' ? answer : '';
+
+  return (
+    <div className="core-block-faq__answer">{FORMATTED_ANSWER.test(text) ? renderMarkdown(text) : text}</div>
+  );
+}
 
 /**
  * Framework-owned FAQ block. Renders an accessible, SSR-friendly accordion
@@ -36,7 +51,7 @@ export function CoreFaqBlock({ heading, items }: FaqBlockData): JSX.Element | nu
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </summary>
-            <div className="core-block-faq__answer">{item.answer}</div>
+            <FaqAnswer answer={item.answer} />
           </details>
         ))}
       </div>

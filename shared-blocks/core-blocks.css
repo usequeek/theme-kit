@@ -1222,6 +1222,17 @@
   line-height: 1.6;
 }
 
+/* A formatted answer (markdown): paragraphs and lists sit flush with the answer box, one clear gap between them. The `> :is() + :is()`
+ * selector outranks a theme's bare `.theme-x p { margin: 0 }`, so the gap survives every theme. */
+.core-block-faq__answer > :is(p, ul, ol) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.core-block-faq__answer > :is(p, ul, ol) + :is(p, ul, ol) {
+  margin-top: 1em;
+}
+
 /* ── Policies listing (core fallback for /policies) ──────────────
  * Themeable via `.theme-<slug> .core-policies__*` overrides. Pure CSS
  * variables — tint follows the active theme automatically.

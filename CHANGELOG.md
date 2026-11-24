@@ -3,6 +3,14 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.14 - 2026-11-24
+
+### Changed
+
+- FAQ answers render formatting: a blank line starts a new paragraph (with a clear gap between paragraphs), and `**bold**`,
+  `_italic_`, links and lists render instead of showing their markdown characters. Never raw HTML. A plain answer renders exactly as
+  before (same markup), so no existing FAQ changes unless it already carried formatting characters.
+
 ## 0.5.13 - 2026-11-24
 
 ### Changed
