@@ -3,6 +3,13 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.15 - 2026-11-24
+
+### Fixed
+
+- The gap between paragraphs of a formatted FAQ answer now shows on themes whose prose reset (`.content-stack :is(p, ul, ol)`)
+  tied the 0.5.14 rule and loaded later (Beaurify). The rule is scoped under `.core-block-faq` to outrank it.
+
 ## 0.5.14 - 2026-11-24
 
 ### Changed

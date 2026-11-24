@@ -1222,14 +1222,15 @@
   line-height: 1.6;
 }
 
-/* A formatted answer (markdown): paragraphs and lists sit flush with the answer box, one clear gap between them. The `> :is() + :is()`
- * selector outranks a theme's bare `.theme-x p { margin: 0 }`, so the gap survives every theme. */
-.core-block-faq__answer > :is(p, ul, ol) {
+/* A formatted answer (markdown): paragraphs and lists sit flush with the answer box, one clear gap between them. Scoped under
+ * `.core-block-faq` (specificity 0,2,2) so the gap outranks a theme's prose resets — `.theme-x p { margin: 0 }` (0,1,1) and
+ * `html :where(.theme-x) .content-stack :is(p, ul, ol) { margin: 0 }` (0,1,2), which loads later and won a 0,1,2 tie. */
+.core-block-faq .core-block-faq__answer > :is(p, ul, ol) {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-.core-block-faq__answer > :is(p, ul, ol) + :is(p, ul, ol) {
+.core-block-faq .core-block-faq__answer > :is(p, ul, ol) + :is(p, ul, ol) {
   margin-top: 1em;
 }
 
