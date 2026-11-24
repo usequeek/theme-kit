@@ -3,6 +3,13 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.13 - 2026-11-24
+
+### Changed
+
+- The checkout page's back link ("Continue shopping") goes to the shop (`/shop`) instead of the store home, like the cart's continue link
+  since 0.5.12. Same element, class and styling. Merchants can reword it through the `checkout.page.back` key.
+
 ## 0.5.12 - 2026-11-24
 
 ### Changed

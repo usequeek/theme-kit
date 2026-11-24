@@ -55,7 +55,7 @@ export function DefaultCheckoutShell({
           {/* Left pane: white — form */}
           <div className="core-checkout__page-form">
             <div className="core-checkout__page-header">
-              <Link href={href('/')} className="core-checkout__back">
+              <Link href={href('/shop')} className="core-checkout__back">
                 <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" width="14" height="14">
                   <path d="M10 13L5 8l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
