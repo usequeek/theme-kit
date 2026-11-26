@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { Image } from '../components/image';
 import { ProductMediaFrame } from '../components/product-media-frame';
 import type { ImageVariants } from '../types/media';
-import type { MediaFrame } from '../utils/product-media';
+import type { Product } from '../types/product';
+import { buildMediaFrames, type MediaFrame } from '../utils/product-media';
 
 /**
  * Card images are lazy by default. Server-rendered product grids (the /shop
@@ -34,28 +35,49 @@ describe('Image loading defaults', () => {
 });
 
 /**
- * A product page's largest image is its primary photo (buildMediaFrames' first frame, id `main`; the LCP element on
- * every measured product page, 26/11/26). It loads eagerly, without fetchPriority="high" (measured slower: it races the
- * page's CSS); the rest of the gallery, thumbnails and slides hidden until their turn are lazy, so they never race it.
+ * Whatever a product page shows first is never lazy (the PDP photo was the LCP element on every measured product
+ * page, 26/11/26): the first frame of buildMediaFrames, and any frame a theme builds itself (the default theme's
+ * selected-variant hero `{ id: 'variant' }`, its modal hero `{ id: 'image' }`). Only buildMediaFrames' later frames,
+ * thumbnails and avatar-sized frames are lazy. No fetchPriority="high" (measured slower: it races the page's CSS).
  */
 describe('ProductMediaFrame loading', () => {
   const html = (el: JSX.Element) => renderToStaticMarkup(el);
   const tier = (name: string, w: number) => ({ url: `https://media.usequeek.com/p-${name}.webp`, w, h: w });
   const variants = { thumb: { url: 'https://media.usequeek.com/p-thumb.webp', w: null, h: null }, card: tier('card', 480), card2x: tier('card2x', 800), view: tier('view', 1600), original: { url: 'https://media.usequeek.com/p.jpg', w: 2000, h: 2000 } } as unknown as ImageVariants;
-  const frame = (id: string): MediaFrame => ({ id, url: 'https://media.usequeek.com/p-view.webp', alt: 'Gown', type: 'image', variants });
+  const frame = (id: string, extra: Partial<MediaFrame> = {}): MediaFrame => ({ id, url: 'https://media.usequeek.com/p-view.webp', alt: 'Gown', type: 'image', variants, ...extra });
+  const product = {
+    title: 'Gown',
+    media: {
+      image: 'https://media.usequeek.com/a.jpg',
+      images: [
+        { id: 1, url: 'https://media.usequeek.com/a.jpg', alt: 'A', variants: null },
+        { id: 2, url: 'https://media.usequeek.com/b.jpg', alt: 'B', variants: null },
+        { id: 3, url: 'https://media.usequeek.com/c.jpg', alt: 'C', variants: null },
+      ],
+    },
+  } as unknown as Product;
 
-  it('the primary photo as a main frame is eager (no loading attribute, no fetchPriority), with its srcset', () => {
-    const out = html(<ProductMediaFrame frame={frame('main')} variant="main" />);
-    expect(out).not.toContain('fetchPriority');
-    expect(out).not.toContain('loading=');
-    expect(out).toContain('srcSet="https://media.usequeek.com/p-card.webp 480w');
+  it('the main, variant and image frames (the first thing shown) are eager, with no fetchPriority, with their srcset', () => {
+    for (const id of ['main', 'variant', 'image']) {
+      const out = html(<ProductMediaFrame frame={frame(id)} variant="main" />);
+      expect(out, id).not.toContain('loading=');
+      expect(out, id).not.toContain('fetchPriority');
+      expect(out, id).toContain('srcSet="https://media.usequeek.com/p-card.webp 480w');
+    }
   });
 
-  it('every other frame, a thumbnail of the primary and an avatar-sized main frame are lazy', () => {
+  it('buildMediaFrames marks only the frames after the first lazy', () => {
+    const frames = buildMediaFrames(product);
+    expect(frames.map((f) => f.lazy ?? false)).toEqual([false, true, true]);
+    expect(html(<ProductMediaFrame frame={frames[0]} variant="main" />)).not.toContain('loading=');
+    expect(html(<ProductMediaFrame frame={frames[1]} variant="main" />)).toContain('loading="lazy"');
+  });
+
+  it('a later gallery frame, a thumbnail and an avatar-sized frame are lazy and never high', () => {
     for (const el of [
-      <ProductMediaFrame key="a" frame={frame('42')} variant="main" />,
+      <ProductMediaFrame key="a" frame={frame('42', { lazy: true })} variant="main" />,
       <ProductMediaFrame key="b" frame={frame('main')} variant="thumbnail" />,
-      <ProductMediaFrame key="c" frame={frame('main')} variant="main" intent="avatar" />,
+      <ProductMediaFrame key="c" frame={frame('variant')} variant="main" intent="avatar" />,
     ]) {
       const out = html(el);
       expect(out).toContain('loading="lazy"');

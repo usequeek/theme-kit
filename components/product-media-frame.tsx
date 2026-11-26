@@ -24,12 +24,13 @@ interface ProductMediaFrameProps {
  * Pass a frame from `buildMediaFrames(product)`. `variant="thumbnail"` renders a
  * muted video with no controls, so the browser shows its first frame.
  *
- * The product's primary photo (`buildMediaFrames`' first frame, id `main`) drawn
- * as a main frame is the product page's largest image: it loads eagerly. Every
- * other frame (the rest of the gallery, thumbnails, a slide hidden until its turn)
- * is lazy, so it never competes with it. No `fetchPriority="high"`: on three live
- * stores under Lighthouse Slow 4G it made the photo race the page's CSS and LCP
- * came 0.4-1.0 s later than plain eager (26/11/26).
+ * Loading: a frame is lazy only when nothing about it can be the first thing a
+ * product page shows: a later frame of `buildMediaFrames` (`frame.lazy`), a
+ * thumbnail, or an avatar-sized frame. Every other frame (the first one, a
+ * selected variant's photo, a modal's hero, any frame a theme builds itself) loads
+ * eagerly as before. No `fetchPriority="high"`: on three live stores under
+ * Lighthouse Slow 4G it made the photo race the page's CSS and LCP came 0.4-1.0 s
+ * later than plain eager (26/11/26).
  */
 export function ProductMediaFrame({
   frame,
@@ -55,7 +56,7 @@ export function ProductMediaFrame({
   // Thumbnail strips render at ~64-90px across every theme — the `thumb` tier
   // (a fixed-src tier that is never part of a srcset) is exactly right there.
   const resolvedIntent: ImageIntent = intent ?? (variant === 'thumbnail' ? 'avatar' : 'hero');
-  const primary = frame.id === 'main' && variant === 'main' && resolvedIntent !== 'avatar';
+  const lazy = frame.lazy === true || variant === 'thumbnail' || resolvedIntent === 'avatar';
 
   return (
     <Image
@@ -65,7 +66,7 @@ export function ProductMediaFrame({
       placeholder={placeholder}
       variants={frame.variants}
       intent={resolvedIntent}
-      loading={primary ? undefined : 'lazy'}
+      loading={lazy ? 'lazy' : undefined}
     />
   );
 }

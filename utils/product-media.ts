@@ -10,6 +10,12 @@ export interface MediaFrame {
    *  ProductMediaFrame → <Image variants>. Absent for video frames and for
    *  non-Media-backed images. */
   variants?: ImageVariants | null;
+  /** True on every frame `buildMediaFrames` returns after the first: a gallery's
+   *  later photos start off-screen (below the first, or a slide not yet shown), so
+   *  ProductMediaFrame loads them lazily. Never set on the first frame, nor on a
+   *  frame a theme builds itself (a selected variant's photo, a modal's hero):
+   *  whatever a page shows first is never lazy. */
+  lazy?: boolean;
 }
 
 /**
@@ -123,5 +129,5 @@ export function buildMediaFrames(product: Product): MediaFrame[] {
     frames.push({ id: 'video', url: product.media.video_url, alt: product.title, type: 'video' });
   }
 
-  return frames;
+  return frames.map((frame, index) => (index === 0 ? frame : { ...frame, lazy: true }));
 }

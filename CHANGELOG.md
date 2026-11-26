@@ -11,9 +11,10 @@ policy. Versions before this file started are in the git tags.
   360 px (`LOGO_MAX_CSS_HEIGHT` 120 px x a 3x screen), whichever is less. A square 1024 px JPG logo (118 KB) now renders its
   480 px `card` copy (23 KB) where it rendered the upload whenever the logo had no `view` copy; a wide wordmark steps up to a
   taller copy, or keeps the upload, never softer. An upload the API did not measure keeps the `view` copy as before.
-- `ProductMediaFrame`: every frame except the product's primary photo drawn as a main frame (`buildMediaFrames`' first frame, the
-  product page's largest image, which stays eager) is `loading="lazy"`: the rest of the gallery, thumbnails and slides hidden until
-  their turn no longer download with it. No `fetchPriority="high"` on the primary: measured, it made LCP later, not earlier.
+- `buildMediaFrames` marks every frame after the first `lazy: true` (new optional `MediaFrame.lazy`), and `ProductMediaFrame`
+  renders those frames, thumbnails and avatar-sized frames with `loading="lazy"`: a gallery's later photos and slides hidden until
+  their turn no longer download with the product photo. Whatever a page shows first stays eager: the first frame and any frame a
+  theme builds itself (a selected variant's photo, a modal's hero). No `fetchPriority="high"`: measured, it made LCP later.
 
 ## 0.5.15 - 2026-11-24
 
