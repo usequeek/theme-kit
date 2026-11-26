@@ -25,9 +25,11 @@ interface ProductMediaFrameProps {
  * muted video with no controls, so the browser shows its first frame.
  *
  * The product's primary photo (`buildMediaFrames`' first frame, id `main`) drawn
- * as a main frame is the product page's largest image: it loads eagerly with
- * `fetchPriority="high"`. Every other frame (the rest of the gallery, thumbnails,
- * a slide hidden until its turn) is lazy, so it never competes with it.
+ * as a main frame is the product page's largest image: it loads eagerly. Every
+ * other frame (the rest of the gallery, thumbnails, a slide hidden until its turn)
+ * is lazy, so it never competes with it. No `fetchPriority="high"`: on three live
+ * stores under Lighthouse Slow 4G it made the photo race the page's CSS and LCP
+ * came 0.4-1.0 s later than plain eager (26/11/26).
  */
 export function ProductMediaFrame({
   frame,
@@ -63,7 +65,6 @@ export function ProductMediaFrame({
       placeholder={placeholder}
       variants={frame.variants}
       intent={resolvedIntent}
-      fetchPriority={primary ? 'high' : undefined}
       loading={primary ? undefined : 'lazy'}
     />
   );
