@@ -3,6 +3,18 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.16 - 2026-11-26
+
+### Changed
+
+- `logoSrc` renders the smallest copy of the logo that still holds every pixel it can show: at least as tall as the upload or
+  360 px (`LOGO_MAX_CSS_HEIGHT` 120 px x a 3x screen), whichever is less. A square 1024 px JPG logo (118 KB) now renders its
+  480 px `card` copy (23 KB) where it rendered the upload whenever the logo had no `view` copy; a wide wordmark steps up to a
+  taller copy, or keeps the upload, never softer. An upload the API did not measure keeps the `view` copy as before.
+- `ProductMediaFrame`: the product's primary photo drawn as a main frame (`buildMediaFrames`' first frame) loads eagerly with
+  `fetchPriority="high"`: it is the product page's largest image. Every other frame (the rest of the gallery, thumbnails, slides
+  hidden until their turn) is `loading="lazy"`.
+
 ## 0.5.15 - 2026-11-24
 
 ### Fixed

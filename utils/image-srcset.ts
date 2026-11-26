@@ -194,26 +194,62 @@ export function resolveImageSources(
 }
 
 /**
+ * The tallest box any theme draws a store logo in, in CSS px: Deluxr's merchant
+ * logo height (`header.logo_height`, 16..120). Every other header and footer logo
+ * box is 26..72 px tall, and every one is bounded by its height (a wide wordmark
+ * grows sideways, never taller). A theme that draws a logo taller than this must
+ * raise it, or `logoSrc` hands it a copy softer than the upload.
+ */
+export const LOGO_MAX_CSS_HEIGHT = 120;
+
+/** The densest screen a logo copy is sized for (a 3x phone). */
+const LOGO_MAX_DPR = 3;
+
+/** Smallest first: the first copy tall enough wins. */
+const LOGO_TIERS = ['card', 'card2x', 'view'] as const;
+
+/**
  * The one url a store logo renders from. A logo reaches a theme as a plain string
- * (`HeaderProps.logo`), so it has no srcset and the call site's box is unknown:
- * the `view` copy (WebP q98, at most 1600 px) holds every pixel a logo box up to
- * 800 CSS px on a 2x screen (533 px on 3x) can show, at a fraction of the upload
- * (a 2048 px JPG of 139 KB is a 38 KB WebP). Never a smaller tier: a wide wordmark
- * on a 3x phone would come out softer than the upload it replaces. The raw `url`
- * when there is no `view` copy, no copies at all (an SVG, an off-host file) or
- * copies of a different file, and when the upload is already a WebP no wider than
- * `view`: the copy is then the same picture re-encoded, and often heavier (an 8 KB
- * wordmark's `view` is 9.6 KB).
+ * (`HeaderProps.logo`), so it has no srcset: the url is the smallest copy that still
+ * holds every pixel the logo can show, i.e. at least as tall as the upload or as
+ * {@link LOGO_MAX_CSS_HEIGHT} x 3 (360 px), whichever is less. A copy keeps the
+ * upload's shape, so one tall enough is wide enough for a wordmark of any width: a
+ * square 1024 px JPG of 118 KB renders its 480 px `card` (23 KB), a 4:1 wordmark its
+ * `view`. Never softer than the upload. When the API did not measure the upload, the
+ * `view` copy (at most 1600 px), as before. The raw `url` when no copy is tall enough,
+ * there are no copies at all (an SVG, an off-host file) or copies of a different
+ * file, and when the upload is already a WebP no wider than the copy: the copy is
+ * then the same picture re-encoded, and often heavier (an 8 KB wordmark's `view` is
+ * 9.6 KB).
  */
 export function logoSrc(url: string | null | undefined, variants: ImageVariants | null | undefined): string | null {
   if (!url) {
     return null;
   }
   const original = variants?.original;
-  const view = variants && original?.url === url ? variants.view : null;
-  if (!usableTier(view)) {
+  if (!variants || !original || original.url !== url) {
     return url;
   }
-  const samePixels = typeof view.w === 'number' && typeof original?.w === 'number' && view.w >= original.w;
-  return samePixels && /\.webp(?:[?#]|$)/i.test(url) ? url : view.url;
+  const copy = smallestLogoCopy(variants, original);
+  if (!copy) {
+    return url;
+  }
+  const samePixels = typeof copy.w === 'number' && typeof original.w === 'number' && copy.w >= original.w;
+  return samePixels && /\.webp(?:[?#]|$)/i.test(url) ? url : copy.url;
+}
+
+function smallestLogoCopy(variants: ImageVariants, original: ImageVariantTier): ImageVariantTier | null {
+  const measured = typeof original.h === 'number' && Number.isFinite(original.h) && original.h > 0;
+  if (!measured) {
+    return usableTier(variants.view) ? variants.view : null;
+  }
+  const needed = Math.min(original.h as number, LOGO_MAX_CSS_HEIGHT * LOGO_MAX_DPR);
+  for (const name of LOGO_TIERS) {
+    const tier = variants[name];
+    if (usableTier(tier) && typeof tier.h === 'number' && tier.h >= needed) {
+      return tier;
+    }
+  }
+
+  return null;
 }

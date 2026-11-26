@@ -23,6 +23,11 @@ interface ProductMediaFrameProps {
  * One frame of a product's media gallery: an image through `Image`, or a video.
  * Pass a frame from `buildMediaFrames(product)`. `variant="thumbnail"` renders a
  * muted video with no controls, so the browser shows its first frame.
+ *
+ * The product's primary photo (`buildMediaFrames`' first frame, id `main`) drawn
+ * as a main frame is the product page's largest image: it loads eagerly with
+ * `fetchPriority="high"`. Every other frame (the rest of the gallery, thumbnails,
+ * a slide hidden until its turn) is lazy, so it never competes with it.
  */
 export function ProductMediaFrame({
   frame,
@@ -48,6 +53,7 @@ export function ProductMediaFrame({
   // Thumbnail strips render at ~64-90px across every theme — the `thumb` tier
   // (a fixed-src tier that is never part of a srcset) is exactly right there.
   const resolvedIntent: ImageIntent = intent ?? (variant === 'thumbnail' ? 'avatar' : 'hero');
+  const primary = frame.id === 'main' && variant === 'main' && resolvedIntent !== 'avatar';
 
   return (
     <Image
@@ -57,6 +63,8 @@ export function ProductMediaFrame({
       placeholder={placeholder}
       variants={frame.variants}
       intent={resolvedIntent}
+      fetchPriority={primary ? 'high' : undefined}
+      loading={primary ? undefined : 'lazy'}
     />
   );
 }
