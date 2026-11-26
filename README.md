@@ -123,7 +123,8 @@ they keep the data already on screen. They return `isLoading`, except
 | `useProducts(options?)` | `hooks/use-products` | A product list: `{ products, isLoading, error }` |
 | `useProductBySlug(slug)` | `hooks/use-products` | One product by slug: `{ product, isLoading, error }` |
 | `useProductDetail(listProduct, isOpen, vendorSlug?, locale?)` | `hooks/use-product-detail` | A list product completed with variants and add-ons |
-| `useRelatedProducts(slug, limit?)` | `hooks/use-related-products` | Related products |
+| `useRelatedProducts(slug, limit?, { fallback }?)` | `hooks/use-related-products` | Related products; `fallback` (e.g. `{ sort: 'popular', limit: 9 }`) is read only when none come back |
+| `useProductSections({ enabled }?)` | `hooks/use-product-sections` | The catalogue in sections; `enabled: false` (a closed search sheet) reads nothing until it turns true |
 | `useShop(options?)` + `useShopParams()` | `hooks/use-shop`, `hooks/use-shop-params` | The shop catalogue page and its URL state |
 | `useCollectionParams()` | `hooks/use-collection-params` | Search, sort and page state for a collection page |
 | `useCategories(options?)` | `hooks/use-categories` | Categories, flattened |
