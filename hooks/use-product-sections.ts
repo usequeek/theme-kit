@@ -53,11 +53,27 @@ const EMPTY_RESULT: SectionsResult = { sections: [], groups: [] };
 const sectionsCache = new Map<string, SectionsResult>();
 const inflightSections = new Map<string, Promise<SectionsResult>>();
 
-export function useProductSections(): {
+/**
+ * The store's catalogue grouped into sections (and, on the QR menu, its tabs),
+ * read once per store, platform and locale and then kept for the page.
+ *
+ * Pass `{ enabled: false }` from a component that is mounted but not showing
+ * yet (a search sheet that is closed): nothing is requested until it turns
+ * true, so a visitor who never opens it never pays for the read. Without the
+ * option it reads straight away, as it always did. Disabled, `sections` stay
+ * empty (or the cached result, when one exists) and `isLoading` is true until
+ * the first read lands, so a sheet that opens on it shows its loading state.
+ *
+ * @example
+ * const isOpen = useSearchModalStore((s) => s.isOpen);
+ * const { sections, isLoading } = useProductSections({ enabled: isOpen });
+ */
+export function useProductSections(options?: { enabled?: boolean }): {
   sections: ProductSection[];
   groups: MenuGroup[];
   isLoading: boolean;
 } {
+  const enabled = options?.enabled ?? true;
   const { previewData, vendor } = useStorefront();
   const locale = useStorefrontLocale();
   // Cache per vendor AND platform — the grouped catalogue can differ between
@@ -72,6 +88,8 @@ export function useProductSections(): {
   const [isLoading, setIsLoading] = useState(!sectionsCache.has(cacheKey));
 
   useEffect(() => {
+    if (!enabled) return undefined;
+
     let cancelled = false;
     const previewProducts = previewData?.products;
 
@@ -164,7 +182,7 @@ export function useProductSections(): {
     });
 
     return () => { cancelled = true; };
-  }, [previewData?.products, vendor.slug, cacheKey, locale]);
+  }, [enabled, previewData?.products, vendor.slug, cacheKey, locale]);
 
   return { sections: result.sections, groups: result.groups, isLoading };
 }

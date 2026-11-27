@@ -14,6 +14,7 @@ export * from './theme-variant-resolver';
 export * from './shared-blocks';
 export * from './components/blog';
 export * from './components/image';
+export * from './components/search-loading';
 export * from './media-index';
 export * from './components/product-metafields';
 export * from './components/powered-by-queek';
