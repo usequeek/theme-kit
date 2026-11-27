@@ -5,11 +5,10 @@ import { useStorefront, useStorefrontLocale } from '../provider';
 import type { Product } from '../types/product';
 import type { ApiResponse } from '../types/product';
 import { createBrowserClient } from '../sdk/client';
-import { fetchProductList } from '../utils/fetch-product-list';
 import { withLocaleQuery } from '../utils/locale';
 import { extractProducts, normalizeProduct } from '../utils/product-normalizer';
 import { toError } from '../utils/to-error';
-import type { ProductQuery } from './use-products';
+import { fetchProductList, type ProductQuery } from './use-products';
 
 /**
  * Products related to the one being viewed (up to `limit`, default 4). The

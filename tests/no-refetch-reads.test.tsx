@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorefrontProvider } from '../provider';
 import { useProductSections } from '../hooks/use-product-sections';
 import { useRelatedProducts } from '../hooks/use-related-products';
+import { SearchResultsLoading } from '../components/search-loading';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -168,5 +169,15 @@ describe('useRelatedProducts fallback', () => {
 
     expect(asked).toEqual([]);
     expect((seen.current as { products: { slug: string }[] }).products.map((p) => p.slug)).toEqual(['p2']);
+  });
+});
+
+describe('SearchResultsLoading', () => {
+  it('is a busy status region with no text, so a sheet needs no string for it', () => {
+    mount(<SearchResultsLoading rows={3} />);
+    const region = host.querySelector('[role="status"]');
+    expect(region?.getAttribute('aria-busy')).toBe('true');
+    expect(region?.children).toHaveLength(3);
+    expect(host.textContent).toBe('');
   });
 });

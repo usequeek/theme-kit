@@ -3,17 +3,6 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
-## 0.5.16 - 2026-11-26
-
-### Changed
-
-- `useProductSections({ enabled })`: a search sheet that is mounted but closed no longer reads the catalogue on every page load.
-  `enabled: false` requests nothing; it reads when it turns true (once per store, platform and locale, then cached). No option = reads
-  straight away, as before.
-- `useRelatedProducts(slug, limit, { fallback })`: a theme that fills an empty "related" rail with popular products asks for them
-  only when the related list is empty (or fails), instead of always reading both. Same lists on screen; one request fewer on every
-  product that has related items. Without `fallback` nothing changes.
-
 ## 0.5.15 - 2026-11-24
 
 ### Fixed
