@@ -15,6 +15,17 @@ policy. Versions before this file started are in the git tags.
   renders those frames, thumbnails and avatar-sized frames with `loading="lazy"`: a gallery's later photos and slides hidden until
   their turn no longer download with the product photo. Whatever a page shows first stays eager: the first frame and any frame a
   theme builds itself (a selected variant's photo, a modal's hero). No `fetchPriority="high"`: measured, it made LCP later.
+- `useProductSections({ enabled })`: with `enabled: false` (a search sheet that has not been opened) the hook reads nothing and
+  returns no sections until it turns true; calling it with no argument behaves as before. A page no longer fetches the whole
+  catalogue in the browser for a closed sheet.
+- `useRelatedProducts(slug, limit?, { fallback }?)`: the `fallback` list (e.g. `{ sort: 'popular', limit: 9 }`) is read only when
+  the related list came back empty, and the hook reports `usedFallback`. A product with related products no longer makes a second
+  request. The list read itself is the new exported `fetchProductList`, shared with `useProducts` so both ask the API the same way.
+
+### Added
+
+- `SearchResultsLoading` (`components/search-loading`, exported from the client entry): shimmer rows for a search sheet's results
+  area while the catalogue is still being read, so a sheet opens at once instead of showing an empty list or "no matches".
 
 ## 0.5.15 - 2026-11-24
 

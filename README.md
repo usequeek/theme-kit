@@ -124,7 +124,8 @@ they keep the data already on screen. They return `isLoading`, except
 | `useProductBySlug(slug)` | `hooks/use-products` | One product by slug: `{ product, isLoading, error }` |
 | `useProductDetail(listProduct, isOpen, vendorSlug?, locale?)` | `hooks/use-product-detail` | A list product completed with variants and add-ons |
 | `useRelatedProducts(slug, limit?, { fallback }?)` | `hooks/use-related-products` | Related products; `fallback` (e.g. `{ sort: 'popular', limit: 9 }`) is read only when none come back |
-| `useProductSections({ enabled }?)` | `hooks/use-product-sections` | The catalogue in sections; `enabled: false` (a closed search sheet) reads nothing until it turns true |
+| `useProductSections({ enabled }?)` | `hooks/use-product-sections` | The catalogue in sections (render `SearchResultsLoading` from `components/search-loading` while it loads); `enabled: false` (a closed search sheet) reads nothing until it turns true |
+| `logoSrc(url, variants)` | `utils/image-srcset` | The smallest copy of a store logo tall enough for a 120 px logo box on a 3x screen (`LOGO_MAX_CSS_HEIGHT`); a theme that draws a taller logo must raise it |
 | `useShop(options?)` + `useShopParams()` | `hooks/use-shop`, `hooks/use-shop-params` | The shop catalogue page and its URL state |
 | `useCollectionParams()` | `hooks/use-collection-params` | Search, sort and page state for a collection page |
 | `useCategories(options?)` | `hooks/use-categories` | Categories, flattened |
@@ -141,6 +142,13 @@ they keep the data already on screen. They return `isLoading`, except
 | `useLocales()` | `hooks/use-locales` | The store's languages and the active one |
 | `useStorefront()` / `useStorefrontLocale()` / `useThemeStrings()` | `provider` | The store, the request locale, the bound `t` |
 | `useProductCount()` | `provider` | `(count) => number \| null`: the product count to print, `null` unless the store turned counts on (`config.display.show_product_counts`, off by default). Print every product count through it and render nothing for `null` |
+
+### Image loading
+
+`ProductMediaFrame` (and `buildMediaFrames`, which marks `MediaFrame.lazy` on every frame after the first) renders a product gallery's
+later frames, thumbnails and avatar-sized frames with `loading="lazy"`. Whatever a product page shows first (the first frame, a selected
+variant's photo, a modal hero) stays eager, without `fetchPriority="high"` (measured: it made LCP later). `logoSrc` renders the smallest
+logo copy that still holds every pixel a 120 px logo box shows on a 3x screen (`LOGO_MAX_CSS_HEIGHT`).
 
 ### Cart pricing
 
