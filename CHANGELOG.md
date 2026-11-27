@@ -3,6 +3,17 @@
 All notable changes to `@usequeek/theme-kit`. See the README for the versioning
 policy. Versions before this file started are in the git tags.
 
+## 0.5.17 - 2026-11-27
+
+### Changed
+
+- Google sign-in starts on the store's own `/auth/google` route (`<basePath>/auth/google?return_to=<this page>`, relative):
+  `initiateGoogleAuth` navigates there instead of asking the sign-in service for a Google URL with the page's full address as
+  the return. The storefront handler starts Google server-side, keeps the flow's state in an HttpOnly cookie, and Google returns
+  the shopper to the store's `/auth/callback` landing, which redeems the one-time code on the server; no code reaches a themed
+  page or its scripts any more (G7 S1). New export `googleSignInStartHref(basePath, location)`. Needs a storefront that serves
+  `/auth/google`.
+
 ## 0.5.16 - 2026-11-26
 
 ### Changed

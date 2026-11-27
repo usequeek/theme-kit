@@ -4,9 +4,10 @@ import type { JSX } from 'react';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { QueekSdkError, type EmailVerifyOtpResponse } from '@usequeek/client-sdk';
 import { useIsThemePreview, useStorefront, useThemeStrings } from '../provider';
-import { getQueekClient, setAuthTokens, QUEEK_AUTH_URL } from '../sdk/queek-client';
+import { getQueekClient, setAuthTokens } from '../sdk/queek-client';
 import { useAuthModalStore } from '../stores/auth-modal-store';
 import { useUserStore } from '../stores/user-store';
+import { navigateTo } from '../utils/navigate';
 
 export type AuthStep =
   | 'email-otp'
@@ -85,10 +86,20 @@ export function mapEmailError(err: unknown, t: (key: string) => string): string 
   return t('auth.error.generic');
 }
 
+/**
+ * Where a store's Google sign-in starts: `<basePath>/auth/google?return_to=<this page>`. `return_to` is the page's own
+ * path and query, relative (the handler accepts nothing else), so the shopper comes back where they were.
+ */
+export function googleSignInStartHref(basePath: string, location: Pick<Location, 'pathname' | 'search'>): string {
+  const returnTo = `${location.pathname || '/'}${location.search}`;
+
+  return `${basePath}/auth/google?return_to=${encodeURIComponent(returnTo)}`;
+}
+
 const AuthFlowContext = createContext<AuthFlowValue | null>(null);
 
 export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Element {
-  const { vendor } = useStorefront();
+  const { vendor, basePath } = useStorefront();
   const t = useThemeStrings();
   const isThemePreview = useIsThemePreview();
   const closeModal = useAuthModalStore((s) => s.close);
@@ -125,8 +136,7 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
     });
   }
 
-  // OAuth round-trip handling lives in core-modal-layer's GoogleCallbackHandler
-  // — it must stay mounted whether or not the auth modal is open.
+  // The Google return lands on the storefront's own /auth/callback page (G7 S1), which redeems the code server-side.
 
   // ── Email OTP flow (primary) ──────────────────────────────────────────────
 
@@ -268,38 +278,13 @@ export function AuthFlowProvider({ children }: { children: ReactNode }): JSX.Ele
 
   // ── Google OAuth ──────────────────────────────────────────────────────────
 
+  // The store's own /auth/google handler (G7 S1) starts Google on the server and keeps the flow's state in an HttpOnly cookie;
+  // Google sends the shopper back to the store's /auth/callback landing, never to this page, so no code ever reaches it.
   const initiateGoogleAuth = async (): Promise<void> => {
     if (blockPreview()) return;
     setError(null);
     setLoading(true);
-    try {
-      const returnTo = typeof window !== 'undefined' ? window.location.href : '';
-      const slug = vendor.slug ?? '';
-      const url = `${QUEEK_AUTH_URL}/oauth/google/start?channel=storefront&vendor_slug=${encodeURIComponent(slug)}&return_to=${encodeURIComponent(returnTo)}`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error(`The Queek sign-in service answered HTTP ${res.status} when starting Google sign-in. Retry, or use email sign-in.`);
-      }
-      // Response envelope: { status, message, data: { url } }
-      const body = (await res.json()) as {
-        data?: { url?: string; redirect_url?: string };
-        url?: string;
-        redirect_url?: string;
-      };
-      const redirectUrl =
-        body.data?.url ?? body.data?.redirect_url ?? body.url ?? body.redirect_url;
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      } else {
-        throw new Error('The Queek sign-in service did not return a Google redirect URL.');
-      }
-    } catch (err) {
-      // The shopper sees the translated message; the cause stays in the console for the theme developer.
-      console.error('[theme-kit] could not start Google sign-in:', err);
-      setError(t('auth.error.google'));
-    } finally {
-      setLoading(false);
-    }
+    navigateTo(googleSignInStartHref(basePath, window.location));
   };
 
   // ── Navigation ────────────────────────────────────────────────────────────

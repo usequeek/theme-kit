@@ -21,6 +21,8 @@ vi.mock('../sdk/queek-client', () => ({
   QUEEK_AUTH_URL: 'https://auth.example.test',
 }));
 // Keep Q&A read traffic separate from the shopper write under test.
+const navigate = vi.hoisted(() => ({ to: vi.fn() }));
+vi.mock('../utils/navigate', () => ({ navigateTo: navigate.to }));
 vi.mock('../sdk/client', () => ({ createBrowserClient: () => ({ get: vi.fn().mockResolvedValue({ data: { questions: [] } }) }) }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const notice = 'This is a theme preview, so nothing was sent.';
@@ -63,6 +65,7 @@ function noRequests() {
   expect(sdk.emailVerifyOtp).not.toHaveBeenCalled();
   expect(sdk.emailRegisterOtp).not.toHaveBeenCalled();
   expect(fetch).not.toHaveBeenCalled();
+  expect(navigate.to).not.toHaveBeenCalled();
 }
 beforeEach(() => {
   vi.resetAllMocks();
@@ -144,7 +147,11 @@ describe('all auth entry points', () => {
     if (action === 'submitEmailLogin') expect(sdk.post).toHaveBeenCalledExactlyOnceWith('/client/auth/email/login', { email: 'a@b.test', password: 'password123', platform: 'client_web' });
     // Password sign-up proves the address first: this step only sends the code; the account is made after it is verified (see below).
     if (action === 'submitEmailRegister') { expect(sdk.emailRequestOtp).toHaveBeenCalledExactlyOnceWith({ email: 'a@b.test' }); expect(sdk.post).not.toHaveBeenCalled(); }
-    if (action === 'initiateGoogleAuth') expect(fetch).toHaveBeenCalledExactlyOnceWith(`https://auth.example.test/oauth/google/start?channel=storefront&vendor_slug=acme&return_to=${encodeURIComponent(location.href)}`);
+    // G7 S1: the store's own <basePath>/auth/google handler (this mount: /acme) starts Google; the kit calls nothing, relative return_to only.
+    if (action === 'initiateGoogleAuth') {
+      expect(navigate.to).toHaveBeenCalledExactlyOnceWith(`/acme/auth/google?return_to=${encodeURIComponent(location.pathname + location.search)}`);
+      expect(fetch).not.toHaveBeenCalled();
+    }
     expect(flow.error).toBeNull();
   });
 });
